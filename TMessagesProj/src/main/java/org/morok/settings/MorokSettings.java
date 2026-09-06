@@ -89,7 +89,7 @@ public final class MorokSettings {
     }
 
     public static PrivacySettings privacy(int accountSlot) {
-        long userId = userId(accountSlot);
+        long userId = authenticatedUserId(accountSlot);
         PrivacySettings result = privacy.get(userId);
         if (result == null) {
             PrivacySettings loaded = forUser(userId).privacy();
@@ -100,13 +100,13 @@ public final class MorokSettings {
     }
 
     public static void setPrivacy(int accountSlot, PrivacySettings settings) {
-        long userId = userId(accountSlot);
+        long userId = authenticatedUserId(accountSlot);
         forUser(userId).savePrivacy(settings);
         privacy.put(userId, settings);
     }
 
     public static ArchiveSettings archive(int accountSlot) {
-        long userId = userId(accountSlot);
+        long userId = authenticatedUserId(accountSlot);
         ArchiveSettings result = archive.get(userId);
         if (result == null) {
             ArchiveSettings loaded = forUser(userId).archive();
@@ -117,7 +117,7 @@ public final class MorokSettings {
     }
 
     public static void setArchive(int accountSlot, ArchiveSettings settings) {
-        long userId = userId(accountSlot);
+        long userId = authenticatedUserId(accountSlot);
         forUser(userId).saveArchive(settings);
         archive.put(userId, settings);
     }
@@ -130,7 +130,7 @@ public final class MorokSettings {
     /** Applies a reviewed bundle locally. Existing chat exceptions remain scoped to the destination account. */
     public static synchronized void applyProfile(int accountSlot, SettingsProfile profile) {
         if (profile == null) throw new IllegalArgumentException("Profile is required");
-        long userId = userId(accountSlot);
+        long userId = authenticatedUserId(accountSlot);
         SettingsRepository deviceRepository = repository("morok_device");
         SettingsRepository accountRepository = forUser(userId);
         deviceRepository.checkWritable();
@@ -146,10 +146,10 @@ public final class MorokSettings {
 
     /** Resolve a reusable upstream account slot to its authenticated stable identity. */
     public static SettingsRepository forAccount(int accountSlot) {
-        return forUser(userId(accountSlot));
+        return forUser(authenticatedUserId(accountSlot));
     }
 
-    private static long userId(int accountSlot) {
+    public static long authenticatedUserId(int accountSlot) {
         if (accountSlot < 0 || accountSlot >= UserConfig.MAX_ACCOUNT_COUNT) {
             throw new IllegalArgumentException("Invalid Telegram account slot");
         }

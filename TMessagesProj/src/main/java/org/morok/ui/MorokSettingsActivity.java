@@ -41,7 +41,7 @@ import java.util.Locale;
 public final class MorokSettingsActivity extends BaseFragment {
     private static final int GLASS = 1, REDUCED = 2, THEMES = 3, POWER = 4, RESET = 5;
     private static final int MEMORY = 6, PROXY = 7, PRIVACY = 8, ROUND_VIDEO = 9, ARCHIVE = 10;
-    private static final int TRANSFER = 11, APPEARANCE_MODE = 12;
+    private static final int TRANSFER = 11, APPEARANCE_MODE = 12, APP_PROFILES = 13;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -91,6 +91,9 @@ public final class MorokSettingsActivity extends BaseFragment {
             switch (rows.get(position).id) {
                 case APPEARANCE_MODE:
                     showAppearanceModes(context);
+                    break;
+                case APP_PROFILES:
+                    presentFragment(new MorokProfilesActivity(currentAccount));
                     break;
                 case GLASS:
                     apply(settings.withLiquidGlass(!settings.liquidGlass));
@@ -171,6 +174,9 @@ public final class MorokSettingsActivity extends BaseFragment {
         add(ACTION, POWER, R.string.MorokPowerSettings);
         add(ACTION, RESET, R.string.MorokResetAppearance);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokDeviceSettingsInfo);
+        add(HEADER, 0, R.string.MorokAppProfilesHeader);
+        add(ACTION, APP_PROFILES, R.string.MorokAppProfilesTitle);
+        if (query.isEmpty()) add(INFO, 0, R.string.MorokAppProfilesShortcutInfo);
         add(HEADER, 0, R.string.MorokRoundVideoCameraHeader);
         add(ACTION, ROUND_VIDEO, R.string.MorokRoundVideoTitle);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokRoundVideoShortcutInfo);

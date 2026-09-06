@@ -31,12 +31,12 @@
 | Жесты/long press/быстрые действия | P1 | реализуется | «Запомнить»; редактор жестов/профилей впереди |
 | Copy selection/templates/drafts/chat aliases/notes | P1 | требование | Штатные сценарии сохранены; локальные дополнения впереди |
 | Call/video confirm/double tap/local undo send | P1 | требование | Фиктивной отмены после отправки нет |
-| Плеер/позиция/скорость/sleep timer/autoplay | P1 | требование | Штатный плеер сохранён |
+| Плеер/позиция/скорость/sleep timer/autoplay | P1 | реализуется | Штатный плеер сохранён; именованные профили управляют существующими LiteMode autoplay video/GIF. Позиция, sleep timer и дополнительные скорости впереди |
 | Downloads queue/pause/priority/traffic limits | P1 | требование | Штатный stack; ускорение не заявляется |
 | Local filters/spoilers/noise | P1 | требование | Sponsored messages и серверная синхронизация сохраняются |
-| Notifications/lock/screen sharing/privacy profiles | P1 | реализуется | Reminders без цитат на lock screen; общий профиль впереди |
+| Notifications/lock/screen sharing/privacy profiles | P1 | реализуется | Четыре локальных профиля и сохранённый Custom с review-before-apply; Stealth сужает штатный notification preview для сообщений/story без server update. Имена отправителя/чата могут оставаться; FCM/lock-screen/screen-sharing device matrix впереди |
 | Перевод/расшифровка | P1 | ограничено сервером | Штатные API/Premium-условия; проверка аккаунта не проведена |
-| Export/import profiles/schema/preview | P1 | реализуется | SAF export/import переносимых MOROK appearance/round-video/account privacy флагов, строгая схема v1 и preview diff реализованы; chat/account IDs, secrets, proxy, archive/Memory исключены. Именованные профили, темы Telegram и отдельный зашифрованный перенос архива впереди |
+| Export/import profiles/schema/preview | P1 | реализуется | SAF export/import переносимых MOROK appearance/round-video/account privacy флагов и отдельные именованные локальные профили со строгими схемами и preview реализованы; chat/account IDs, secrets, proxy, archive/Memory исключены. Темы Telegram и отдельный зашифрованный перенос архива впереди |
 | Камера и качество кружочков | P1 | реализуется | Experimental OFF-by-default профили, Camera2 AF/EIS/FPS, codec fallback и opt-in bounded metadata diagnostics реализованы; физические A/B и recipient-тесты не проведены, см. `ROUND_VIDEO_AUDIT.md` |
 | Плагины/SDK/safe mode, OCR/ASR, перенос данных | P2 | требование | Отдельные будущие этапы; основной клиент не зависит от плагинов |
 | Чужие keys, fake Premium, снятие secret/TTL/noforwards | — | вне согласованного объёма | Явно исключены утверждённым ТЗ |

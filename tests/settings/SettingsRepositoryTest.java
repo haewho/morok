@@ -1,5 +1,8 @@
 import java.util.HashMap;
 import java.util.Map;
+import org.morok.settings.AppProfilePresets;
+import org.morok.settings.AppProfileState;
+import org.morok.settings.AppProfileStateCodec;
 import org.morok.settings.AppearanceMode;
 import org.morok.settings.AppearanceSettings;
 import org.morok.settings.ArchiveSettings;
@@ -198,6 +201,72 @@ public final class SettingsRepositoryTest {
         check(encodedProfile.equals(SettingsProfileCodec.encode(decodedProfile)),
                 "settings transfer format has deterministic canonical output");
 
+        AppProfileState profileCurrent = new AppProfileState(profile, true, false, true,
+                AppProfileState.NETWORK_KEEP);
+        AppProfileState normal = AppProfilePresets.create(AppProfilePresets.NORMAL, profileCurrent);
+        check(normal.settings.appearance.liquidGlass && !normal.settings.appearance.reducedEffects
+                        && normal.autoplayVideos && normal.autoplayGifs && normal.notificationContent
+                        && !normal.settings.privacy.ghostPreset,
+                "Normal restores Telegram-like appearance, autoplay and standard privacy");
+        check(normal.settings.roundVideo.enhanced
+                        && RoundVideoSettings.PROFILE_HIGH.equals(normal.settings.roundVideo.profile),
+                "Normal preserves the current round-video experiment");
+        AppProfileState stealth = AppProfilePresets.create(AppProfilePresets.STEALTH, profileCurrent);
+        check(!stealth.settings.appearance.liquidGlass && !stealth.settings.appearance.reducedEffects
+                        && stealth.settings.privacy.ghostPreset && !stealth.autoplayVideos
+                        && !stealth.autoplayGifs && !stealth.notificationContent,
+                "Stealth enables the documented local privacy set and hides notification content");
+        AppProfileState work = AppProfilePresets.create(AppProfilePresets.WORK, profileCurrent);
+        check(work.settings.appearance.liquidGlass && !work.autoplayVideos && !work.autoplayGifs
+                        && work.notificationContent && !work.settings.privacy.ghostPreset,
+                "Work keeps normal appearance and notification content while stopping autoplay");
+        AppProfileState saver = AppProfilePresets.create(AppProfilePresets.SAVER, profileCurrent);
+        check(!saver.settings.appearance.liquidGlass && saver.settings.appearance.reducedEffects
+                        && !saver.autoplayVideos && !saver.autoplayGifs && saver.notificationContent,
+                "Saver combines minimum effects with disabled autoplay");
+        check(AppProfileState.NETWORK_KEEP.equals(normal.networkPolicy)
+                        && AppProfileState.NETWORK_KEEP.equals(stealth.networkPolicy)
+                        && AppProfileState.NETWORK_KEEP.equals(work.networkPolicy)
+                        && AppProfileState.NETWORK_KEEP.equals(saver.networkPolicy),
+                "every built-in profile preserves the current network route");
+        check(AppProfilePresets.detect(normal) == AppProfilePresets.NORMAL
+                        && AppProfilePresets.detect(stealth) == AppProfilePresets.STEALTH
+                        && AppProfilePresets.detect(work) == AppProfilePresets.WORK
+                        && AppProfilePresets.detect(saver) == AppProfilePresets.SAVER,
+                "built-in profiles are detected from their managed state");
+        check(AppProfilePresets.detect(profileCurrent) == AppProfilePresets.CUSTOM,
+                "a mixed autoplay state is detected as Custom");
+        String encodedAppProfile = AppProfileStateCodec.encode(stealth);
+        AppProfileState decodedAppProfile = AppProfileStateCodec.decode(encodedAppProfile);
+        check(AppProfilePresets.detect(decodedAppProfile) == AppProfilePresets.STEALTH
+                        && decodedAppProfile.settings.roundVideo.enhanced
+                        && AppProfileState.NETWORK_KEEP.equals(decodedAppProfile.networkPolicy),
+                "local app profile round-trips all managed policy");
+        check(encodedAppProfile.equals(AppProfileStateCodec.encode(decodedAppProfile)),
+                "local app profile format has deterministic canonical output");
+        String[] invalidAppProfiles = {
+                encodedAppProfile.replace("format=1", "format=2"),
+                encodedAppProfile.replace("autoplay.videos=false\n", ""),
+                encodedAppProfile.replace("network.policy=keep\n\n", "network.policy=keep\nunknown=x\n\n"),
+                encodedAppProfile.replace("autoplay.gifs=false", "autoplay.gifs=1"),
+                encodedAppProfile.replace("network.policy=keep", "network.policy=proxy"),
+                encodedAppProfile.replace("notifications.content=false\n", "notifications.content=false\nnotifications.content=false\n"),
+                "NOT_MOROK\n" + encodedAppProfile
+        };
+        for (String invalidAppProfile : invalidAppProfiles) {
+            boolean invalidRejected = false;
+            try { AppProfileStateCodec.decode(invalidAppProfile); }
+            catch (IllegalArgumentException expected) { invalidRejected = true; }
+            check(invalidRejected, "malformed, incomplete, duplicate, unknown and future app profiles are rejected");
+        }
+        boolean oversizedAppProfileRejected = false;
+        try {
+            StringBuilder oversized = new StringBuilder();
+            while (oversized.length() <= AppProfileStateCodec.MAX_CHARACTERS) oversized.append('x');
+            AppProfileStateCodec.decode(oversized.toString());
+        } catch (IllegalArgumentException expected) { oversizedAppProfileRejected = true; }
+        check(oversizedAppProfileRejected, "oversized local app profile is rejected before parsing");
+
         String[] invalidProfiles = {
                 encodedProfile.replace("format=1", "format=2"),
                 encodedProfile.replace("appearance.liquid_glass=false\n", ""),
@@ -235,6 +304,6 @@ public final class SettingsRepositoryTest {
         catch (IllegalStateException expected) { rejected = true; }
         check(rejected && device.writes == oldWrites, "newer schema cannot be downgraded by reset");
         check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 10, "newer schema kept intact");
-        System.out.println("PASS: settings defaults, migration, isolation, archive, round-video, privacy, strict secret-free profile transfer, invalid IDs, downgrade refusal");
+        System.out.println("PASS: settings defaults, migration, isolation, archive, round-video, privacy, strict transfer, reviewed app profiles, invalid IDs, downgrade refusal");
     }
 }

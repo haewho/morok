@@ -18,7 +18,11 @@ fi
     "$project_dir/TMessagesProj/src/main/java/org/morok/settings/RoundVideoSettings.java" \
     "$project_dir/TMessagesProj/src/main/java/org/morok/settings/SettingsProfile.java" \
     "$project_dir/TMessagesProj/src/main/java/org/morok/settings/SettingsProfileCodec.java" \
+    "$project_dir/TMessagesProj/src/main/java/org/morok/settings/AppProfileState.java" \
+    "$project_dir/TMessagesProj/src/main/java/org/morok/settings/AppProfileStateCodec.java" \
+    "$project_dir/TMessagesProj/src/main/java/org/morok/settings/AppProfilePresets.java" \
     "$project_dir/TMessagesProj/src/main/java/org/morok/settings/SettingsStore.java" \
     "$project_dir/TMessagesProj/src/main/java/org/morok/settings/SettingsRepository.java" \
     "$project_dir/tests/settings/SettingsRepositoryTest.java"
 "$settings_java" -cp "$settings_test_dir" SettingsRepositoryTest
+python3 "$project_dir/tests/settings/test_app_profiles_integration.py"

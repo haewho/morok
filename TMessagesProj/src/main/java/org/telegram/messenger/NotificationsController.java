@@ -66,6 +66,7 @@ import androidx.core.graphics.drawable.IconCompat;
 
 import com.google.common.collect.Lists;
 
+import org.morok.settings.MorokAppProfiles;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.messenger.utils.tlutils.TLKeyboardHelper;
 import org.telegram.messenger.utils.tlutils.TlUtils;
@@ -1809,7 +1810,8 @@ public class NotificationsController extends BaseController implements Notificat
             preview[0] = true;
         }
         SharedPreferences preferences = getAccountInstance().getNotificationsSettings();
-        boolean dialogPreviewEnabled = preferences.getBoolean("content_preview_" + dialogId, true);
+        boolean dialogPreviewEnabled = MorokAppProfiles.showsNotificationContent(currentAccount)
+                && preferences.getBoolean("content_preview_" + dialogId, true);
         if (messageObject.isFcmMessage()) {
             if (chat_id == 0 && fromId != 0) {
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O_MR1) {
@@ -2488,7 +2490,12 @@ public class NotificationsController extends BaseController implements Notificat
         if (AndroidUtilities.needShowPasscode() || SharedConfig.isWaitingForPasscodeEnter) {
             return LocaleController.getString(R.string.YouHaveNewMessage);
         }
+        boolean morokShowsNotificationContent = MorokAppProfiles.showsNotificationContent(currentAccount);
         if (messageObject.isStoryPush || messageObject.isStoryMentionPush) {
+            if (!morokShowsNotificationContent) {
+                if (preview != null) preview[0] = false;
+                return LocaleController.getString(R.string.YouHaveNewMessage);
+            }
             return "!" + messageObject.messageOwner.message;
         }
         long dialogId = messageObject.messageOwner.dialog_id;
@@ -2502,7 +2509,8 @@ public class NotificationsController extends BaseController implements Notificat
             chatId = fromId < 0 ? -fromId : 0;
         }
         SharedPreferences preferences = getAccountInstance().getNotificationsSettings();
-        boolean dialogPreviewEnabled = preferences.getBoolean("content_preview_" + dialogId, true);
+        boolean dialogPreviewEnabled = morokShowsNotificationContent
+                && preferences.getBoolean("content_preview_" + dialogId, true);
         if (messageObject.isFcmMessage()) {
             if (chatId == 0 && fromId != 0) {
                 if (!dialogPreviewEnabled || !preferences.getBoolean("EnablePreviewAll", true)) {
