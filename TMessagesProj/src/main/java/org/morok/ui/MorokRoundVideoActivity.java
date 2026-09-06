@@ -1,14 +1,20 @@
 package org.morok.ui;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.morok.camera.RoundVideoDiagnostics;
 import org.morok.settings.MorokSettings;
 import org.morok.settings.RoundVideoSettings;
 import org.telegram.messenger.LocaleController;
@@ -28,7 +34,8 @@ import java.util.ArrayList;
 
 /** Device-local opt-in controls for the existing Telegram instant-camera encoder. */
 public final class MorokRoundVideoActivity extends BaseFragment {
-    private static final int ENHANCED = 1, PROFILE = 2, RESET = 3;
+    private static final int ENHANCED = 1, PROFILE = 2, RESET = 3, DIAGNOSTICS = 4, VIEW_DIAGNOSTICS = 5,
+            CLEAR_DIAGNOSTICS = 6;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -67,6 +74,19 @@ public final class MorokRoundVideoActivity extends BaseFragment {
                         .setMessage(text(R.string.MorokRoundVideoResetInfo))
                         .setPositiveButton(text(R.string.Reset), (dialog, which) -> apply(RoundVideoSettings.DEFAULT))
                         .setNegativeButton(text(R.string.Cancel), null).create());
+            } else if (rows.get(position).id == DIAGNOSTICS) {
+                boolean enabled = !RoundVideoDiagnostics.enabled();
+                RoundVideoDiagnostics.setEnabled(enabled);
+                if (enabled) RoundVideoDiagnostics.record("diagnostics", "enabled=true");
+                rebuildRows();
+            } else if (rows.get(position).id == VIEW_DIAGNOSTICS) {
+                showDiagnostics(context);
+            } else if (rows.get(position).id == CLEAR_DIAGNOSTICS) {
+                showDialog(new AlertDialog.Builder(context).setTitle(text(R.string.MorokRoundVideoDiagnosticsClear))
+                        .setMessage(text(R.string.MorokRoundVideoDiagnosticsClearInfo))
+                        .setPositiveButton(text(R.string.Clear), (dialog, which) -> {
+                            RoundVideoDiagnostics.clear(); rebuildRows();
+                        }).setNegativeButton(text(R.string.Cancel), null).create());
             }
         });
         rebuildRows();
@@ -100,7 +120,31 @@ public final class MorokRoundVideoActivity extends BaseFragment {
         rows.add(new Row(INFO, 0, text(R.string.MorokRoundVideoProfileInfo)));
         rows.add(new Row(INFO, 0, text(R.string.MorokRoundVideoStabilizationInfo)));
         rows.add(new Row(ACTION, RESET, text(R.string.MorokRoundVideoReset)));
+        rows.add(new Row(HEADER, 0, text(R.string.MorokRoundVideoDiagnosticsHeader)));
+        rows.add(new Row(CHECK, DIAGNOSTICS, text(R.string.MorokRoundVideoDiagnosticsEnabled)));
+        rows.add(new Row(INFO, 0, text(R.string.MorokRoundVideoDiagnosticsInfo)));
+        rows.add(new Row(ACTION, VIEW_DIAGNOSTICS, text(R.string.MorokRoundVideoDiagnosticsView)));
+        rows.add(new Row(ACTION, CLEAR_DIAGNOSTICS, text(R.string.MorokRoundVideoDiagnosticsClear)));
         if (adapter != null) adapter.notifyDataSetChanged();
+    }
+
+    private void showDiagnostics(Context context) {
+        String report = RoundVideoDiagnostics.report();
+        TextView content = new TextView(context);
+        content.setText(report); content.setTextIsSelectable(true); content.setTextSize(13);
+        content.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+        int padding = org.telegram.messenger.AndroidUtilities.dp(18);
+        content.setPadding(padding, padding, padding, padding);
+        ScrollView scroll = new ScrollView(context); scroll.addView(content);
+        showDialog(new AlertDialog.Builder(context).setTitle(text(R.string.MorokRoundVideoDiagnosticsView))
+                .setView(scroll).setNegativeButton(text(R.string.Close), null)
+                .setPositiveButton(text(R.string.Copy), (dialog, which) -> {
+                    ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (clipboard != null) {
+                        clipboard.setPrimaryClip(ClipData.newPlainText("MOROK round-video diagnostics", report));
+                        Toast.makeText(context, text(R.string.TextCopied), Toast.LENGTH_SHORT).show();
+                    }
+                }).create());
     }
 
     private static String profileLabel(RoundVideoSettings settings) {
@@ -144,10 +188,14 @@ public final class MorokRoundVideoActivity extends BaseFragment {
                 TextCheckCell cell = (TextCheckCell) holder.itemView;
                 cell.setColors(Theme.key_windowBackgroundWhiteBlackText, Theme.key_switchTrack,
                         Theme.key_switchTrackChecked, Theme.key_windowBackgroundWhite, Theme.key_windowBackgroundWhite);
-                cell.setTextAndCheck(row.title, MorokSettings.roundVideo().enhanced, false);
+                cell.setTextAndCheck(row.title, row.id == ENHANCED
+                        ? MorokSettings.roundVideo().enhanced : RoundVideoDiagnostics.enabled(), false);
             } else {
                 TextSettingsCell cell = (TextSettingsCell) holder.itemView;
                 if (row.id == PROFILE) cell.setTextAndValue(row.title, profileLabel(MorokSettings.roundVideo()), true);
+                else if (row.id == VIEW_DIAGNOSTICS) cell.setTextAndValue(row.title,
+                        LocaleController.formatString(R.string.MorokRoundVideoDiagnosticsEvents,
+                                RoundVideoDiagnostics.count()), true);
                 else cell.setText(row.title, false);
                 cell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
             }

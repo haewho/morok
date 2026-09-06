@@ -86,6 +86,13 @@
     <string name="MorokRoundVideoResetInfo">Disable enhanced round videos and restore the Auto profile?</string>
     <string name="MorokRoundVideoDowngraded">The selected round-video profile is unavailable for this camera or AVC encoder. MOROK will use a compatible lower profile.</string>
     <string name="MorokRoundVideoEnabledStatus">Experimental on</string>
+    <string name="MorokRoundVideoDiagnosticsHeader">Local diagnostics</string>
+    <string name="MorokRoundVideoDiagnosticsEnabled">Record round-video diagnostics</string>
+    <string name="MorokRoundVideoDiagnosticsInfo">Off by default. Keeps up to 40 local metadata events: requested profile, dimensions, bitrate, encoder, Camera2 controls and fallbacks. It never stores frames, audio, account IDs or file paths, and sends nothing automatically.</string>
+    <string name="MorokRoundVideoDiagnosticsView">View diagnostics</string>
+    <string name="MorokRoundVideoDiagnosticsEvents">%1$d events</string>
+    <string name="MorokRoundVideoDiagnosticsClear">Clear diagnostics</string>
+    <string name="MorokRoundVideoDiagnosticsClearInfo">Remove every retained round-video diagnostic event from this device?</string>
     <string name="MorokSettingsTransfer">Transfer settings</string>
     <string name="MorokSettingsTransferInfo">Export or import MOROK appearance, round-video and current-account privacy controls. Import always shows the exact local changes before applying them.</string>
     <string name="MorokSettingsTransferHeader">Settings profile</string>

@@ -37,7 +37,7 @@
 | Notifications/lock/screen sharing/privacy profiles | P1 | реализуется | Reminders без цитат на lock screen; общий профиль впереди |
 | Перевод/расшифровка | P1 | ограничено сервером | Штатные API/Premium-условия; проверка аккаунта не проведена |
 | Export/import profiles/schema/preview | P1 | реализуется | SAF export/import переносимых MOROK appearance/round-video/account privacy флагов, строгая схема v1 и preview diff реализованы; chat/account IDs, secrets, proxy, archive/Memory исключены. Именованные профили, темы Telegram и отдельный зашифрованный перенос архива впереди |
-| Камера и качество кружочков | P1 | реализуется | Experimental OFF-by-default профили, Camera2 AF/EIS/FPS и codec fallback реализованы; физические A/B и recipient-тесты не проведены, см. `ROUND_VIDEO_AUDIT.md` |
+| Камера и качество кружочков | P1 | реализуется | Experimental OFF-by-default профили, Camera2 AF/EIS/FPS, codec fallback и opt-in bounded metadata diagnostics реализованы; физические A/B и recipient-тесты не проведены, см. `ROUND_VIDEO_AUDIT.md` |
 | Плагины/SDK/safe mode, OCR/ASR, перенос данных | P2 | требование | Отдельные будущие этапы; основной клиент не зависит от плагинов |
 | Чужие keys, fake Premium, снятие secret/TTL/noforwards | — | вне согласованного объёма | Явно исключены утверждённым ТЗ |
 

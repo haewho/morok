@@ -71,6 +71,7 @@ import androidx.core.graphics.ColorUtils;
 import com.google.android.exoplayer2.ExoPlayer;
 
 import org.morok.camera.RoundVideoQuality;
+import org.morok.camera.RoundVideoDiagnostics;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.AutoDeleteMediaTask;
@@ -3244,6 +3245,9 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                     FileLog.e("MOROK enhanced round video encoder failed; retrying upstream before recording",
                             enhancedCodecFailure);
                     releaseFailedVideoEncoder();
+                    RoundVideoDiagnostics.record("encoder_fallback", "reason="
+                            + enhancedCodecFailure.getClass().getSimpleName() + " output="
+                            + videoWidth + " bitrate_kbps=" + (videoBitrate / 1024));
                     videoEncoderName = null;
                     videoWidth = videoHeight = upstreamVideoResolution;
                     videoBitrate = upstreamVideoBitrate;
@@ -3251,6 +3255,10 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                     AndroidUtilities.runOnUIThread(() -> Toast.makeText(ApplicationLoader.applicationContext,
                             LocaleController.getString(R.string.MorokRoundVideoDowngraded), Toast.LENGTH_LONG).show());
                 }
+                RoundVideoDiagnostics.record("encoder_ready", "output=" + videoWidth + "x" + videoHeight
+                        + " fps=" + FRAME_RATE + " bitrate_kbps=" + (videoBitrate / 1024)
+                        + " encoder=" + (videoEncoderName == null ? "platform_default" : videoEncoderName)
+                        + " resumed=" + fromPause);
 
                 if (!fromPause) {
                     boolean isSdCard = ImageLoader.isSdCardPath(videoFile);

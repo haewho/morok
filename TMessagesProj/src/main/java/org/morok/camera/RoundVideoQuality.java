@@ -36,9 +36,16 @@ public final class RoundVideoQuality {
         try {
             settings = MorokSettings.roundVideo();
         } catch (RuntimeException unavailableSettings) {
+            RoundVideoDiagnostics.record("plan", "result=upstream reason=settings_unavailable output="
+                    + upstreamResolution + " bitrate_kbps=" + upstreamBitrateKbps);
             return Plan.upstream(upstreamResolution, upstreamBitrateKbps);
         }
-        if (!settings.enhanced) return Plan.upstream(upstreamResolution, upstreamBitrateKbps);
+        if (!settings.enhanced) {
+            RoundVideoDiagnostics.record("plan", "result=upstream reason=disabled output="
+                    + upstreamResolution + " bitrate_kbps=" + upstreamBitrateKbps
+                    + " preview=" + previewWidth + "x" + previewHeight);
+            return Plan.upstream(upstreamResolution, upstreamBitrateKbps);
+        }
 
         int sourceShortSide = Math.min(previewWidth, previewHeight);
         int desired = settings.desiredResolution(upstreamResolution);
@@ -58,10 +65,17 @@ public final class RoundVideoQuality {
                     + plan.resolution + " bitrateKbps=" + plan.bitrateKbps
                     + " preview=" + previewWidth + "x" + previewHeight
                     + " downgraded=" + plan.downgraded);
+            RoundVideoDiagnostics.record("plan", "result=enhanced profile=" + plan.profile
+                    + " output=" + plan.resolution + " bitrate_kbps=" + plan.bitrateKbps
+                    + " preview=" + previewWidth + "x" + previewHeight
+                    + " encoder=" + plan.encoderName + " downgraded=" + plan.downgraded);
             return plan;
         }
         FileLog.d("MOROK round video falling back to upstream: no supported source/AVC combination for "
                 + desired + " from " + previewWidth + "x" + previewHeight);
+        RoundVideoDiagnostics.record("plan", "result=upstream reason=no_supported_source_codec profile="
+                + settings.profile + " desired=" + desired + " output=" + upstreamResolution
+                + " bitrate_kbps=" + upstreamBitrateKbps + " preview=" + previewWidth + "x" + previewHeight);
         return new Plan(false, upstreamResolution, upstreamBitrateKbps, true, settings.profile, null);
     }
 

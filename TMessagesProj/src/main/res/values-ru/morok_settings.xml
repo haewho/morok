@@ -86,6 +86,13 @@
     <string name="MorokRoundVideoResetInfo">Выключить улучшенные кружочки и вернуть профиль «Авто»?</string>
     <string name="MorokRoundVideoDowngraded">Выбранный профиль недоступен для этой камеры или AVC-энкодера. MOROK использует совместимый профиль ниже.</string>
     <string name="MorokRoundVideoEnabledStatus">Эксперимент включён</string>
+    <string name="MorokRoundVideoDiagnosticsHeader">Локальная диагностика</string>
+    <string name="MorokRoundVideoDiagnosticsEnabled">Записывать диагностику кружочков</string>
+    <string name="MorokRoundVideoDiagnosticsInfo">По умолчанию выключено. Хранит до 40 локальных событий с метаданными: выбранный профиль, размер, битрейт, энкодер, параметры Camera2 и откаты. Кадры, звук, ID аккаунта и пути файлов не сохраняются; автоматически ничего не отправляется.</string>
+    <string name="MorokRoundVideoDiagnosticsView">Посмотреть диагностику</string>
+    <string name="MorokRoundVideoDiagnosticsEvents">Событий: %1$d</string>
+    <string name="MorokRoundVideoDiagnosticsClear">Очистить диагностику</string>
+    <string name="MorokRoundVideoDiagnosticsClearInfo">Удалить все сохранённые события диагностики кружочков с этого устройства?</string>
     <string name="MorokSettingsTransfer">Перенос настроек</string>
     <string name="MorokSettingsTransferInfo">Экспорт и импорт оформления Морока, параметров кружочков и приватности текущего аккаунта. Перед применением импорта всегда показывается точный список локальных изменений.</string>
     <string name="MorokSettingsTransferHeader">Профиль настроек</string>

@@ -30,6 +30,7 @@ import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
+import org.morok.camera.RoundVideoDiagnostics;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLog;
@@ -528,6 +529,10 @@ public class Camera2Session {
                             + " fps=" + stableFps
                             + " continuousAf=" + contains(afModes, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
                             + " eis=" + contains(stabilizationModes, CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON));
+                    RoundVideoDiagnostics.record("camera2_request", "front=" + isFront + " preview="
+                            + previewSize.getWidth() + "x" + previewSize.getHeight() + " fps=" + stableFps
+                            + " continuous_af=" + contains(afModes, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
+                            + " eis=" + contains(stabilizationModes, CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON));
                 } else {
                     captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<Integer>(30, 60));
                 }
@@ -554,6 +559,7 @@ public class Camera2Session {
             FileLog.e("Camera2Sessions setRepeatingRequest error in updateCaptureRequest", e);
             if (morokRoundVideoTuning && recordingVideo) {
                 FileLog.e("MOROK Camera2 round tuning rejected; retrying the upstream request");
+                RoundVideoDiagnostics.record("camera2_fallback", "reason=" + e.getClass().getSimpleName());
                 morokRoundVideoTuning = false;
                 updateCaptureRequest();
             }
