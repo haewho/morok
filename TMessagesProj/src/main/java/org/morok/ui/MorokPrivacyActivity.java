@@ -29,7 +29,7 @@ import java.util.ArrayList;
 
 /** Account-local experimental controls; only behavior with semantic hooks is exposed here. */
 public final class MorokPrivacyActivity extends BaseFragment {
-    private static final int GHOST = 1, HIDE_TYPING = 2, HIDE_ONLINE = 3, HIDE_CONTENT_READ = 4, RESET = 5;
+    private static final int GHOST = 1, HIDE_TYPING = 2, HIDE_ONLINE = 3, HIDE_CONTENT_READ = 4, HIDE_READ = 5, RESET = 6;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -73,6 +73,9 @@ public final class MorokPrivacyActivity extends BaseFragment {
                     break;
                 case HIDE_CONTENT_READ:
                     apply(settings.withHideContentRead(!settings.hideContentRead));
+                    break;
+                case HIDE_READ:
+                    apply(settings.withHideRead(!settings.hideRead));
                     break;
                 case RESET:
                     showDialog(new AlertDialog.Builder(context)
@@ -130,6 +133,10 @@ public final class MorokPrivacyActivity extends BaseFragment {
             rows.add(new Row(INFO, 0, text(R.string.MorokHideContentReadInfo)));
             rows.add(new Row(INFO, 0, text(settings().hidesContentRead()
                     ? R.string.MorokContentReadSuppressedStatus : R.string.MorokContentReadNormalStatus)));
+            rows.add(new Row(CHECK, HIDE_READ, text(R.string.MorokHideRead)));
+            rows.add(new Row(INFO, 0, text(R.string.MorokHideReadInfo)));
+            rows.add(new Row(INFO, 0, text(settings().hidesRead()
+                    ? R.string.MorokReadSuppressedStatus : R.string.MorokReadNormalStatus)));
             rows.add(new Row(ACTION, RESET, text(R.string.MorokPrivacyReset)));
         } else {
             rows.add(new Row(INFO, 0, text(R.string.MorokPrivacyLoginRequired)));
@@ -176,7 +183,8 @@ public final class MorokPrivacyActivity extends BaseFragment {
                         Theme.key_windowBackgroundWhite, Theme.key_windowBackgroundWhite);
                 boolean checked = row.id == GHOST ? settings.ghostPreset
                         : row.id == HIDE_TYPING ? settings.hideTyping
-                        : row.id == HIDE_ONLINE ? settings.hideOnline : settings.hideContentRead;
+                        : row.id == HIDE_ONLINE ? settings.hideOnline
+                        : row.id == HIDE_CONTENT_READ ? settings.hideContentRead : settings.hideRead;
                 ((TextCheckCell) holder.itemView).setTextAndCheck(row.title, checked, false);
             } else {
                 ((TextSettingsCell) holder.itemView).setText(row.title, false);

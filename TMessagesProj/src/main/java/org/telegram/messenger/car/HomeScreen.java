@@ -410,7 +410,7 @@ public class HomeScreen extends Screen
         @Override
         public void onMarkAsRead() {
             AndroidUtilities.runOnUIThread(() -> {
-                MessagesController.getInstance(currentAccount).markDialogAsRead(
+                MessagesController.getInstance(currentAccount).markDialogAsReadInTelegram(
                         dialogId, maxId, maxId, 0, false, 0, 0, true, 0);
                 MessagesController.getInstance(currentAccount).markReactionsAsRead(dialogId, 0);
             });

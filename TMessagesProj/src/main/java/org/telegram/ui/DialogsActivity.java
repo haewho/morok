@@ -9570,11 +9570,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
         }
         if (getMessagesController().isForum(did) || getMessagesController().isMonoForumWithManageRights(did)) {
-            getMessagesController().markAllTopicsAsRead(did);
+            getMessagesController().markAllTopicsAsReadInTelegram(did);
         }
 
         getMessagesController().markMentionsAsRead(did, 0);
-        getMessagesController().markDialogAsRead(did, dialog.top_message, dialog.top_message, dialog.last_message_date, false, 0, 0, true, 0);
+        getMessagesController().markDialogAsReadInTelegram(did, dialog.top_message, dialog.top_message, dialog.last_message_date, false, 0, 0, true, 0);
 
         if (selectedDialogIndex >= 0) {
             frozenDialogsList.remove(selectedDialogIndex);
@@ -9597,10 +9597,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             long did = dialogs.get(i).id;
             TLRPC.Dialog dialog = dialogs.get(i);
             if (getMessagesController().isForum(did) || getMessagesController().isMonoForumWithManageRights(did)) {
-                getMessagesController().markAllTopicsAsRead(did);
+                getMessagesController().markAllTopicsAsReadInTelegram(did);
             }
             getMessagesController().markMentionsAsRead(did, 0);
-            getMessagesController().markDialogAsRead(did, dialog.top_message, dialog.top_message, dialog.last_message_date, false, 0, 0, true, 0);
+            getMessagesController().markDialogAsReadInTelegram(did, dialog.top_message, dialog.top_message, dialog.last_message_date, false, 0, 0, true, 0);
         }
         if (selectedDialogIndex >= 0) {
             frozenDialogsList.remove(selectedDialogIndex);

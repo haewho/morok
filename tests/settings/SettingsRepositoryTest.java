@@ -34,7 +34,7 @@ public final class SettingsRepositoryTest {
         repo.saveAppearance(new AppearanceSettings(false, true));
         SettingsRepository restarted = new SettingsRepository(device);
         check(!restarted.appearance().liquidGlass && restarted.appearance().reducedEffects, "restart persistence");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 4, "additive schema migration");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 5, "additive schema migration");
         restarted.resetAppearance();
         check(restarted.appearance().liquidGlass && !restarted.appearance().reducedEffects, "category reset defaults");
         check("keep".equals(device.values.get("future.unrelated")), "reset preserves other settings");
@@ -50,25 +50,29 @@ public final class SettingsRepositoryTest {
                 .appearance().liquidGlass, "stable identity survives reassigned slots");
 
         PrivacySettings defaults = new SettingsRepository(accounts.get(second)).privacy();
-        check(!defaults.ghostPreset && !defaults.hideTyping && !defaults.hideOnline && !defaults.hideContentRead
-                && !defaults.hidesTyping() && !defaults.hidesOnline() && !defaults.hidesContentRead(), "privacy defaults preserve Telegram behavior");
+        check(!defaults.ghostPreset && !defaults.hideTyping && !defaults.hideOnline && !defaults.hideContentRead && !defaults.hideRead
+                && !defaults.hidesTyping() && !defaults.hidesOnline() && !defaults.hidesContentRead() && !defaults.hidesRead(), "privacy defaults preserve Telegram behavior");
         SettingsRepository firstAccount = new SettingsRepository(accounts.get(first));
-        firstAccount.savePrivacy(new PrivacySettings(true, false, false, false));
+        firstAccount.savePrivacy(new PrivacySettings(true, false, false, false, false));
         check(firstAccount.privacy().hidesTyping(), "ghost preset enables its documented typing policy");
         check(firstAccount.privacy().hidesOnline(), "ghost preset enables its documented online policy");
         check(firstAccount.privacy().hidesContentRead(), "ghost preset enables its documented content-read policy");
+        check(firstAccount.privacy().hidesRead(), "ghost preset enables its documented message-read policy");
         check(!firstAccount.privacy().allowsTypingAction(0), "typing is suppressed by the preset");
         check(firstAccount.privacy().allowsTypingAction(PrivacySettings.ACTION_CANCEL), "typing cancellation remains allowed");
         firstAccount.savePrivacy(firstAccount.privacy().withGhostPreset(false).withHideTyping(true));
         check(firstAccount.privacy().hidesTyping(), "individual typing setting is independent of preset");
         check(!firstAccount.privacy().hidesOnline(), "disabling preset restores online when its individual flag is off");
         check(!firstAccount.privacy().hidesContentRead(), "disabling preset restores content-read when its individual flag is off");
+        check(!firstAccount.privacy().hidesRead(), "disabling preset restores message-read when its individual flag is off");
         firstAccount.savePrivacy(firstAccount.privacy().withHideOnline(true));
         check(firstAccount.privacy().hidesOnline(), "individual online setting is independent of preset");
         firstAccount.savePrivacy(firstAccount.privacy().withHideContentRead(true));
         check(firstAccount.privacy().hidesContentRead(), "individual content-read setting is independent of preset");
+        firstAccount.savePrivacy(firstAccount.privacy().withHideRead(true));
+        check(firstAccount.privacy().hidesRead(), "individual message-read setting is independent of preset");
         PrivacySettings secondAccountPrivacy = new SettingsRepository(accounts.get(second)).privacy();
-        check(!secondAccountPrivacy.hidesTyping() && !secondAccountPrivacy.hidesContentRead(),
+        check(!secondAccountPrivacy.hidesTyping() && !secondAccountPrivacy.hidesContentRead() && !secondAccountPrivacy.hidesRead(),
                 "privacy is isolated by stable account");
         firstAccount.resetPrivacy();
         check(firstAccount.privacy().allowsTypingAction(0), "privacy reset restores normal Telegram behavior");
@@ -79,13 +83,13 @@ public final class SettingsRepositoryTest {
             check(rejected, "invalid unauthenticated identity rejected: " + invalid);
         }
 
-        device.values.put(SettingsRepository.SCHEMA_KEY, 5);
+        device.values.put(SettingsRepository.SCHEMA_KEY, 6);
         int oldWrites = device.writes;
         boolean rejected = false;
         try { restarted.resetAppearance(); }
         catch (IllegalStateException expected) { rejected = true; }
         check(rejected && device.writes == oldWrites, "newer schema cannot be downgraded by reset");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 5, "newer schema kept intact");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 6, "newer schema kept intact");
         System.out.println("PASS: settings defaults, additive migration, restart, resets, stable-account privacy isolation, ghost policy, invalid IDs, downgrade refusal");
     }
 }

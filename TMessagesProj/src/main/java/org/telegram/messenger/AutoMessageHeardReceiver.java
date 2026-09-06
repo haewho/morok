@@ -33,7 +33,7 @@ public class AutoMessageHeardReceiver extends BroadcastReceiver {
                     TLRPC.User user1 = accountInstance.getMessagesStorage().getUserSync(dialogId);
                     AndroidUtilities.runOnUIThread(() -> {
                         accountInstance.getMessagesController().putUser(user1, true);
-                        MessagesController.getInstance(currentAccount).markDialogAsRead(dialogId, maxId, maxId, 0, false, 0, 0, true, 0);
+                        MessagesController.getInstance(currentAccount).markDialogAsReadInTelegram(dialogId, maxId, maxId, 0, false, 0, 0, true, 0);
                         MessagesController.getInstance(currentAccount).markReactionsAsRead(dialogId, 0);
                     });
                 });
@@ -46,14 +46,14 @@ public class AutoMessageHeardReceiver extends BroadcastReceiver {
                     TLRPC.Chat chat1 = accountInstance.getMessagesStorage().getChatSync(-dialogId);
                     AndroidUtilities.runOnUIThread(() -> {
                         accountInstance.getMessagesController().putChat(chat1, true);
-                        MessagesController.getInstance(currentAccount).markDialogAsRead(dialogId, maxId, maxId, 0, false, 0, 0, true, 0);
+                        MessagesController.getInstance(currentAccount).markDialogAsReadInTelegram(dialogId, maxId, maxId, 0, false, 0, 0, true, 0);
                         MessagesController.getInstance(currentAccount).markReactionsAsRead(dialogId, 0);
                     });
                 });
                 return;
             }
         }
-        MessagesController.getInstance(currentAccount).markDialogAsRead(dialogId, maxId, maxId, 0, false, 0, 0, true, 0);
+        MessagesController.getInstance(currentAccount).markDialogAsReadInTelegram(dialogId, maxId, maxId, 0, false, 0, 0, true, 0);
         MessagesController.getInstance(currentAccount).markReactionsAsRead(dialogId, 0);
     }
 }

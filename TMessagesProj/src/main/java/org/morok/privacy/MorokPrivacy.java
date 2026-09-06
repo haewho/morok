@@ -29,4 +29,12 @@ public final class MorokPrivacy {
             return true;
         }
     }
+
+    public static boolean allowsReadReceipt(int account) {
+        try {
+            return !MorokSettings.privacy(account).hidesRead();
+        } catch (RuntimeException unavailableAccountOrSettings) {
+            return true;
+        }
+    }
 }

@@ -223,7 +223,7 @@ public final class MorokSettingsActivity extends BaseFragment {
                         try {
                             PrivacySettings privacy = MorokSettings.privacy(currentAccount);
                             value = text(privacy.ghostPreset ? R.string.MorokGhostActiveStatus
-                                    : privacy.hidesTyping() || privacy.hidesOnline() || privacy.hidesContentRead()
+                                    : privacy.hidesTyping() || privacy.hidesOnline() || privacy.hidesContentRead() || privacy.hidesRead()
                                             ? R.string.MorokPrivacyCustomStatus : R.string.MorokPrivacyOffStatus);
                         } catch (RuntimeException ignored) {}
                     }

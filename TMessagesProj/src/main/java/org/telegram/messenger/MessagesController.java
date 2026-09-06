@@ -1059,12 +1059,24 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public void markAllTopicsAsRead(long did) {
+        markAllTopicsAsRead(did, false);
+    }
+
+    public void markAllTopicsAsReadInTelegram(long did) {
+        markAllTopicsAsRead(did, true);
+    }
+
+    private void markAllTopicsAsRead(long did, boolean forceServerRead) {
         getMessagesStorage().loadTopics(did, topics -> {
             AndroidUtilities.runOnUIThread(() -> {
                 if (topics != null) {
                     for (int i = 0; i < topics.size(); i++) {
                         TLRPC.TL_forumTopic topic = topics.get(i);
-                        getMessagesController().markDialogAsRead(did, topic.top_message, 0, topic.topMessage != null ? topic.topMessage.date : 0, false, isMonoForum(did) ? DialogObject.getPeerDialogId(topic.from_id) : topic.id, 0, true, 0);
+                        if (forceServerRead) {
+                            getMessagesController().markDialogAsReadInTelegram(did, topic.top_message, 0, topic.topMessage != null ? topic.topMessage.date : 0, false, isMonoForum(did) ? DialogObject.getPeerDialogId(topic.from_id) : topic.id, 0, true, 0);
+                        } else {
+                            getMessagesController().markDialogAsRead(did, topic.top_message, 0, topic.topMessage != null ? topic.topMessage.date : 0, false, isMonoForum(did) ? DialogObject.getPeerDialogId(topic.from_id) : topic.id, 0, true, 0);
+                        }
                         getMessagesStorage().updateRepliesMaxReadId(-did, isMonoForum(did) ? DialogObject.getPeerDialogId(topic.from_id) : topic.id, topic.top_message, 0, true);
                     }
                 }
@@ -1251,6 +1263,7 @@ public class MessagesController extends BaseController implements NotificationCe
         public int maxId;
         public int maxDate;
         public long sendRequestTime;
+        public boolean forceServerRead;
     }
 
     public static class PrintingUser {
@@ -14569,6 +14582,12 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     private void completeReadTask(ReadTask task) {
+        // MOROK discards an already queued ordinary receipt if local-read mode was enabled during
+        // Telegram's five-second delay. Explicit sync and secret-chat semantics remain available.
+        if (!task.forceServerRead && !DialogObject.isEncryptedDialog(task.dialogId)
+                && !org.morok.privacy.MorokPrivacy.allowsReadReceipt(currentAccount)) {
+            return;
+        }
         if (task.replyId != 0 && task.monoForumPeerId == 0) {
             TLRPC.TL_messages_readDiscussion req = new TLRPC.TL_messages_readDiscussion();
             req.msg_id = (int) task.replyId;
@@ -14685,6 +14704,14 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public void markDialogAsRead(long dialogId, int maxPositiveId, int maxNegativeId, int maxDate, boolean popup, long threadId, int countDiff, boolean readNow, int scheduledCount) {
+        markDialogAsRead(dialogId, maxPositiveId, maxNegativeId, maxDate, popup, threadId, countDiff, readNow, scheduledCount, false);
+    }
+
+    public void markDialogAsReadInTelegram(long dialogId, int maxPositiveId, int maxNegativeId, int maxDate, boolean popup, long threadId, int countDiff, boolean readNow, int scheduledCount) {
+        markDialogAsRead(dialogId, maxPositiveId, maxNegativeId, maxDate, popup, threadId, countDiff, readNow, scheduledCount, true);
+    }
+
+    private void markDialogAsRead(long dialogId, int maxPositiveId, int maxNegativeId, int maxDate, boolean popup, long threadId, int countDiff, boolean readNow, int scheduledCount, boolean forceServerRead) {
         boolean createReadTask;
 
         if (threadId != 0) {
@@ -14807,6 +14834,13 @@ public class MessagesController extends BaseController implements NotificationCe
             monoForumPeerId = 0;
         }
 
+        // Local DB, dialog counters and notifications were updated above. Do not queue a server
+        // cursor for ordinary chats unless this came from the explicit Mark as read action.
+        if (createReadTask && !forceServerRead && !DialogObject.isEncryptedDialog(dialogId)
+                && !org.morok.privacy.MorokPrivacy.allowsReadReceipt(currentAccount)) {
+            createReadTask = false;
+        }
+
         if (createReadTask) {
             Utilities.stageQueue.postRunnable(() -> {
                 ReadTask currentReadTask;
@@ -14833,6 +14867,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 }
                 currentReadTask.maxDate = maxDate;
                 currentReadTask.maxId = maxPositiveId;
+                currentReadTask.forceServerRead |= forceServerRead;
                 if (readNow) {
                     completeReadTask(currentReadTask);
                 }

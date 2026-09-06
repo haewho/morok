@@ -804,7 +804,7 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
                             topic = topicsController.findTopic(chatId, list.get(i));
                             if (topic != null) {
                                 getMessagesController().markMentionsAsRead(-chatId, topic.id);
-                                getMessagesController().markDialogAsRead(-chatId, topic.top_message, 0, topic.topMessage != null ? topic.topMessage.date : 0, false, topic.id, 0, true, 0);
+                                getMessagesController().markDialogAsReadInTelegram(-chatId, topic.top_message, 0, topic.topMessage != null ? topic.topMessage.date : 0, false, topic.id, 0, true, 0);
                                 getMessagesStorage().updateRepliesMaxReadId(chatId, topic.id, topic.top_message, 0, true);
                             }
                         }
