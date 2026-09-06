@@ -1,0 +1,29 @@
+# Точки интеграции с Telegram
+
+База: `62b56a07ca7e30e39f7fd00a6728d6bbd716ca1c`. При переносе проверяйте символы и окружающую семантику, не только номера строк. Документ фиксирует фактические вмешательства текущей ветки; отсутствие конфликтов git не подтверждает их корректность.
+
+| Файл / символ | Событие и порядок | Поток / инвариант | Проверка |
+|---|---|---|---|
+| `settings.gradle`, `build.gradle`, `gradle/morok-config.gradle` | Выбор основного APK-модуля и чтение локальной конфигурации до module evaluation | Gradle; нет зависимости от чужих API/Firebase/signing fixtures | Полный build, morokPreflight, отказ release без credentials |
+| `TMessagesProj/build.gradle`, `gradle/morok-library.gradle` | Генерация собственных BuildConfig fields и res directory | Gradle; Java/JNI namespace сохранён, ABI arm64 | Java/C++ build, APK abi report |
+| `TMessagesProj_App/build.gradle`, `gradle/morok-app.gradle` | Собственная подпись/package/account type и проверка release до pre-build | Gradle; debug key локальный, release key постоянный, без подмены identity | apksigner/aapt2 и release validation |
+| `BuildVars` fields / `getSmsHash` / `isBetaApp` | Инициализация приложения | API/Google/SMS поля только из своей конфигурации; чужой APK updater/passkeys identity отключены | BuildConfig+APK audit; авторизация требует device test |
+| `LoginActivity.PhoneView.onNextPressed` | До запроса телефона/отправки auth request | UI; отсутствие API credentials объясняется до авторизации | Emulator login screen; авторизованная регрессия отдельно |
+| `LocaleController.getStringInternal`, `MorokBrand.localizedName` | До обращения к облачному language pack для own identity keys | UI/локализация; обновлённый language pack не заменяет MOROK на Telegram, прочие строки штатные | Locale/unit resource audit, emulator ru/en |
+| `ContactsController.checkAppAccount` и остальные AccountManager queries | Создание/поиск Android accounts | Штатные потоки; тип аккаунта равен runtime package, не захватывает официальный клиент | XML/Java identity audit, соседняя установка/контакты |
+| `res/xml/auth.xml`, `auth_menu.xml`, `sync_contacts.xml` | Android AccountManager UI и sync registration | Ресурс `morok_account_type` задаётся отдельно для debug/release | Слитый manifest/resources и device regression |
+| `PushListenerController.GooglePushListenerServiceProvider.hasServices/onRequestPushToken` | До Firebase init/token work | Возврат при отсутствии собственного Firebase; не выдаёт FCM готовность | Debug without Firebase, позже собственный FCM/device test |
+| Основной manifest и `config/*/AndroidManifest*.xml` | Установка, запуск, providers, receivers, backup | Раздельные authorities; Memory receiver/provider не экспортируются; cloud+device transfer закрытых данных исключены | Merged manifest, APK install, Keystore/instrumentation |
+| `LauncherIconController.LauncherIcon`, `AppIconsSelectorCell.updateIconsVisibility` | Исправление/выбор launcher alias | UI; все старые alias ведут к Личине; предложен только утверждённый знак | Ресурсы и launcher screenshots |
+| `res/values*/styles.xml` и brand assets | Splash и adaptive/monochrome icons | Android resource selection; исходный логотип не возвращается при смене маски | XML references, raster previews, emulator launch |
+| `IntroActivity.createView` | До авторизации | UI; MOROK mark/title, доступ к настройкам и прокси без входа | Emulator onboarding/navigation |
+| `ProfileActivity` MOROK row / settings search | Раздел настроек аккаунта | UI; обычная навигация не заменяется | Native screen, search, [APPEARANCE](APPEARANCE.md) |
+| `LiteMode.isEnabled`, blur3 drawable/provider/source classes | До затратного capture/render и при выборе цвета fallback | UI/render; отказ от прозрачного draw/capture на покрытых путях, без пересоздания чатов | Полная таблица символов и ограничений в [APPEARANCE](APPEARANCE.md) |
+| `ChatActivity` `OPTION_MOROK_REMEMBER`, меню / `processSelectedOption` | Явное действие для одного поддерживаемого сообщения | UI; eligibility до снимка; файловая/crypto запись асинхронно; ни отправки, ни обхода TTL/noforwards | Memory domain tests + device acceptance |
+| `UserConfig.clearConfig` → `MorokMemoryStore.onLogout` | До очистки и повторного использования слота | Синхронная revocation + фоновые удаления; данные и grants не переносятся в новую сессию | Identity tests, logout/key/file fault injection |
+| `ApplicationLoader.postInitApplication` | После штатной загрузки аккаунтов | UI dispatch: proxy.start, reminder.restoreAll, MemoryObserver.start; idempotent observers | Restart/offline emulator; authenticated restart отдельно |
+| `MemoryObserver.didReceivedNotification` | `replaceMessagesObjects`, `messagesDeleted`, `historyCleared` после штатной обработки | UI immutable bounded captures → последовательная очередь; только ранее сохранённые карточки, без отмены updates | Memory tests, [MEMORY](MEMORY.md), catch-up device test |
+| `LaunchActivity.handleIntent` → OPEN_MEMORY | После обычной проверки passcode | UI; stable user ID разрешается в актуальный slot; неверный аккаунт не открывается | Reminder/source navigation/device lock test |
+| `ProxyRotationController.didReceivedNotification`, `checkProxyAndSwitchRunnable`, `switchToAvailable` | Перед встроенными проверками и переключением | UI; флаг выключенной ротации действительно запрещает новые probes/переключения | Proxy review/tests и network failover device test |
+
+Память не является полным архивом всех new/edit/delete/difference. `MessagesStorage`, входящие seq/pts/qts и общий MTProto callback не изменены. Подавления online/read/typing нет. Подробные собственные API, guarantees и оставшиеся crash/network проверки — в `MEMORY.md`, `PROXY.md`, `APPEARANCE.md` и `TESTING.md`.

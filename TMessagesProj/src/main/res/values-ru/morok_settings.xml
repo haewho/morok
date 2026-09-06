@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokSettings">Настройки Морока</string>
+    <string name="MorokAppearance">Оформление</string>
+    <string name="MorokLiquidGlass">Liquid Glass</string>
+    <string name="MorokLiquidGlassInfo">Включено — штатные стеклянные эффекты Telegram с учётом устройства и энергосбережения. Выключено — сплошные поверхности новых стеклянных панелей без отрисовки их размытия. Часть прежних эффектов пока не охвачена.</string>
+    <string name="MorokLiquidGlassLegacyInfo">Эта версия Android не поддерживает преломление стекла Telegram: нужен Android 13. Включено — доступное штатное размытие, выключено — сплошные поверхности новых стеклянных панелей. Часть прежних эффектов пока не охвачена.</string>
+    <string name="MorokReducedEffects">Минимум анимаций</string>
+    <string name="MorokReducedEffectsInfo">Уменьшает анимации эмодзи, стикеров, фонов чата, частиц и звонков, которыми управляет энергосбережение Telegram. Переходы между экранами и воспроизведение медиа настраиваются отдельно.</string>
+    <string name="MorokThemes">Темы и оформление чатов</string>
+    <string name="MorokPowerSettings">Энергосбережение и эффекты</string>
+    <string name="MorokResetAppearance">Сбросить оформление Морока</string>
+    <string name="MorokResetAppearanceInfo">Разрешить штатное стекло и вернуть исходный режим анимаций? Тема Telegram и настройки энергосбережения сохранятся.</string>
+    <string name="MorokDeviceSettingsInfo">Оформление общее для всех аккаунтов на устройстве. Изменения сохраняются локально и применяются без повторного открытия чатов.</string>
+    <string name="MorokLocalTools">Локальные инструменты</string>
+    <string name="MorokMemoryShortcut">Память Морока</string>
+    <string name="MorokSettingsNewerVersion">Настройки сохранены более новой версией Морока. Обновите приложение, чтобы изменить их.</string>
+    <string name="MorokLiquidGlassUnavailableInfo">Штатное преломление сейчас отключено настройками эффектов или энергосбережения Telegram. Включено — доступное штатное размытие, выключено — сплошные поверхности новых стеклянных панелей без отрисовки их размытия. Часть прежних эффектов пока не охвачена.</string>
+</resources>

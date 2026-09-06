@@ -10,6 +10,7 @@ import android.os.Build;
 import androidx.annotation.RequiresApi;
 import androidx.core.math.MathUtils;
 
+import org.morok.appearance.MorokAppearance;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
@@ -151,7 +152,18 @@ public class LiteMode {
             // always enabled for tablets
             return true;
         }
-        return (getValue() & preprocessFlag(flag)) > 0;
+        int effectiveValue = getValue();
+        if (MorokAppearance.opaqueSurfaces()) {
+            effectiveValue &= ~FLAG_CHAT_BLUR;
+            // Keep the refraction capability bit intact: upstream caches its pipeline at
+            // construction. MOROK stops drawing/capture at blur3 boundaries instead.
+        }
+        if (MorokAppearance.reducedEffects()) {
+            effectiveValue &= ~(FLAGS_ANIMATED_STICKERS | FLAGS_ANIMATED_EMOJI |
+                    FLAG_CHAT_BACKGROUND | FLAG_CHAT_SCALE | FLAG_CHAT_THANOS |
+                    FLAG_CALLS_ANIMATIONS | FLAG_PARTICLES);
+        }
+        return (effectiveValue & preprocessFlag(flag)) > 0;
     }
 
     public static boolean isEnabledSetting(int flag) {

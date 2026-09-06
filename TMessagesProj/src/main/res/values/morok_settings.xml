@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokSettings">MOROK Settings</string>
+    <string name="MorokAppearance">Appearance</string>
+    <string name="MorokLiquidGlass">Liquid Glass</string>
+    <string name="MorokLiquidGlassInfo">On allows Telegram’s built-in glass effects, subject to your device and power saving settings. Off uses solid surfaces for the new glass panels and disables their blur rendering. Some older effects are not yet covered.</string>
+    <string name="MorokLiquidGlassLegacyInfo">This Android version does not support Telegram’s glass refraction shader (Android 13 required). On allows supported native blur; off makes the new glass panels solid. Some older effects are not yet covered.</string>
+    <string name="MorokReducedEffects">Reduce animations</string>
+    <string name="MorokReducedEffectsInfo">Reduces animated emoji, stickers, chat backgrounds, particles and call effects controlled by Telegram’s power settings. Navigation transitions and media playback keep their separate settings.</string>
+    <string name="MorokThemes">Themes and chat appearance</string>
+    <string name="MorokPowerSettings">Power saving and effects</string>
+    <string name="MorokResetAppearance">Reset MOROK appearance</string>
+    <string name="MorokResetAppearanceInfo">Allow native glass and restore the default animation policy? Your Telegram theme and power saving preferences will be kept.</string>
+    <string name="MorokDeviceSettingsInfo">Appearance applies to all accounts on this device. Changes are saved locally and applied without reopening chats.</string>
+    <string name="MorokLocalTools">Local tools</string>
+    <string name="MorokMemoryShortcut">MOROK Memory</string>
+    <string name="MorokSettingsNewerVersion">These settings were saved by a newer MOROK version. Update the app before changing them.</string>
+    <string name="MorokLiquidGlassUnavailableInfo">Native refraction is currently disabled by Telegram’s effect or power settings. On allows available native blur; off makes the new glass panels solid and stops their blur rendering. Some older effects are not yet covered.</string>
+</resources>

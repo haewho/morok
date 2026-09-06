@@ -7,6 +7,7 @@ import android.graphics.Color;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.math.MathUtils;
 
+import org.morok.appearance.MorokAppearance;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
@@ -252,7 +253,7 @@ public class BlurredBackgroundProviderImpl {
                     final float alpha = LiteMode.isEnabled(LiteMode.FLAG_LIQUID_GLASS) ? 0.85f : 0.76f;
                     final int colorBg = 0xFF000000;
                     final int colorTarget = 0xFF1A1A1A;
-                    return 0; // solveSrcColor(colorBg, colorTarget, alpha);
+                    return MorokAppearance.opaqueSurfaces() ? colorTarget : 0; // solveSrcColor(colorBg, colorTarget, alpha);
                 })
                 .setStrokeColorTop(0x28FFFFFF, 0x28FFFFFF)
                 .setStrokeColorBottom(0x14FFFFFF, 0x14FFFFFF)

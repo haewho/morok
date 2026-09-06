@@ -16,6 +16,7 @@ import androidx.annotation.RequiresApi;
 
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.MediaDataController;
+import org.morok.appearance.MorokAppearance;
 import org.telegram.messenger.utils.RenderNodeEffects;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.blur3.capture.IBlur3Capture;
@@ -51,6 +52,7 @@ public class DownscaleScrollableNoiseSuppressor {
     public static final int DRAW_FROSTED_GLASS_NO_SATURATION = -4;
 
     public void draw(Canvas canvas, int index) {
+        if (MorokAppearance.opaqueSurfaces()) return;
         if (!canvas.isHardwareAccelerated()) {
             throw new IllegalStateException();
         }
@@ -70,6 +72,7 @@ public class DownscaleScrollableNoiseSuppressor {
     }
 
     public void drawInline(Canvas canvas, int index) {
+        if (MorokAppearance.opaqueSurfaces()) return;
         final int a;
         if (!isLiquidGlassEnabled && simpleMode) {
             a = 0;
@@ -365,6 +368,7 @@ public class DownscaleScrollableNoiseSuppressor {
     private final Blur3HashImpl builder = new Blur3HashImpl();
 
     public boolean invalidateResultRenderNodes(IBlur3Capture capture, int width, int height) {
+        if (MorokAppearance.opaqueSurfaces()) return false;
         int updatedCount = 0;
         for (int a = 0; a < rectRenderNodesCount; a++) {
             final SourcePart sourcePart = rectRenderNodes.get(a);
@@ -462,6 +466,7 @@ public class DownscaleScrollableNoiseSuppressor {
     }
 
     public void setupRenderNodes(List<RectF> positions, int count) {
+        if (MorokAppearance.opaqueSurfaces()) count = 0;
         rectRenderNodesCount = count;
 
         while (rectRenderNodesCount > rectRenderNodes.size()) {

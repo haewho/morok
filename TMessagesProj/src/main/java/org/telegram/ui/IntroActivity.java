@@ -45,6 +45,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -53,6 +54,8 @@ import androidx.core.graphics.ColorUtils;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
+import org.morok.ui.MorokProxyActivity;
+import org.morok.ui.MorokSettingsActivity;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BuildVars;
@@ -104,6 +107,8 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
     private TextView switchLanguageTextView;
     private GradientDrawable startMessagingButtonBackground;
     private TextView startMessagingButton;
+    private TextView morokProxyButton;
+    private TextView morokSettingsButton;
     private FrameLayout frameLayout2;
     private FrameLayout frameContainerView;
 
@@ -112,7 +117,6 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
     private int lastPage = 0;
     private boolean justCreated = false;
     private boolean startPressed = false;
-    private Drawable logoDrawable;
     private CharSequence[] titles;
     private String[] messages;
     private int currentViewPagerPage;
@@ -153,12 +157,7 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
 
     @Override
     public View createView(Context context) {
-        logoDrawable = context.getResources().getDrawable(R.drawable.telegram_logo).mutate();
-        logoDrawable.setBounds(0, dp(8.666f), dp(115), dp(35));
-        SpannableStringBuilder ssb = new SpannableStringBuilder(LocaleController.getString(R.string.Page1Title));
-        ssb.setSpan(new ImageSpan(logoDrawable), 0, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        titles[0] = ssb;
-
+        titles[0] = LocaleController.getString(R.string.morok_brand_name);
 
         actionBar.setAddToContainer(false);
 
@@ -186,9 +185,12 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
                 bottomPages.layout(x, y, x + bottomPages.getMeasuredWidth(), y + bottomPages.getMeasuredHeight());
                 viewPager.layout(0, 0, viewPager.getMeasuredWidth(), viewPager.getMeasuredHeight());
 
-                y = oneFourth * 3 + (oneFourth - startMessagingButton.getMeasuredHeight()) / 2;
+                y = getMeasuredHeight() - dp(144);
                 x = (getMeasuredWidth() - startMessagingButton.getMeasuredWidth()) / 2;
                 startMessagingButton.layout(x, y, x + startMessagingButton.getMeasuredWidth(), y + startMessagingButton.getMeasuredHeight());
+                int proxyY = y + startMessagingButton.getMeasuredHeight() + dp(4);
+                morokProxyButton.layout(dp(16), proxyY, getMeasuredWidth() - dp(16), proxyY + dp(40));
+                morokSettingsButton.layout(dp(16), proxyY + dp(40), getMeasuredWidth() - dp(16), proxyY + dp(80));
                 y -= dp(30);
                 x = (getMeasuredWidth() - switchLanguageTextView.getMeasuredWidth()) / 2;
                 switchLanguageTextView.layout(x, y - switchLanguageTextView.getMeasuredHeight(), x + switchLanguageTextView.getMeasuredWidth(), y);
@@ -201,6 +203,7 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
                 }
             }
         };
+        frameContainerView.setMinimumHeight(dp(620));
         scrollView.addView(frameContainerView, LayoutHelper.createScroll(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP));
 
         darkThemeDrawable = new RLottieDrawable(R.raw.sun, String.valueOf(R.raw.sun), dp(28), dp(28), true, null);
@@ -247,50 +250,11 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
         frameLayout2 = new FrameLayout(context);
         frameContainerView.addView(frameLayout2, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP, 0, 78, 0, 0));
 
-        TextureView textureView = new TextureView(context);
-        frameLayout2.addView(textureView, LayoutHelper.createFrame(ICON_WIDTH_DP, ICON_HEIGHT_DP, Gravity.CENTER));
-        textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
-            @Override
-            public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
-                if (eglThread == null && surface != null) {
-                    eglThread = new EGLThread(surface);
-                    eglThread.setSurfaceTextureSize(width, height);
-                    eglThread.postRunnable(()->{
-                        float time = (System.currentTimeMillis() - currentDate) / 1000.0f;
-                        Intro.setPage(currentViewPagerPage);
-                        Intro.setDate(time);
-                        Intro.onDrawFrame(0);
-                        if (eglThread != null && eglThread.isAlive() && eglThread.eglDisplay != null && eglThread.eglSurface != null) {
-                            try {
-                                eglThread.egl10.eglSwapBuffers(eglThread.eglDisplay, eglThread.eglSurface);
-                            } catch (Exception ignored) {} // If display or surface already destroyed
-                        }
-                    });
-                    eglThread.postRunnable(eglThread.drawRunnable);
-                }
-            }
-
-            @Override
-            public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, final int width, final int height) {
-                if (eglThread != null) {
-                    eglThread.setSurfaceTextureSize(width, height);
-                }
-            }
-
-            @Override
-            public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) {
-                if (eglThread != null) {
-                    eglThread.shutdown();
-                    eglThread = null;
-                }
-                return true;
-            }
-
-            @Override
-            public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {
-
-            }
-        });
+        ImageView morokMark = new ImageView(context);
+        morokMark.setImageResource(R.drawable.morok_launcher_foreground);
+        morokMark.setContentDescription(LocaleController.getString(R.string.morok_brand_name));
+        morokMark.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        frameLayout2.addView(morokMark, LayoutHelper.createFrame(ICON_WIDTH_DP, ICON_HEIGHT_DP, Gravity.CENTER));
 
         viewPager = new ViewPager(context);
         viewPager.setAdapter(new IntroAdapter());
@@ -421,6 +385,19 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
             }, NotificationCenter.reloadInterface);
             LocaleController.getInstance().applyLanguage(localeInfo, true, false, currentAccount);
         });
+
+        morokProxyButton = new TextView(context);
+        morokProxyButton.setText(LocaleController.getString(R.string.MorokProxyTitle));
+        morokProxyButton.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
+        morokProxyButton.setGravity(Gravity.CENTER);
+        morokProxyButton.setOnClickListener(v -> presentFragment(new MorokProxyActivity(currentAccount)));
+        frameContainerView.addView(morokProxyButton, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 40, Gravity.BOTTOM));
+        morokSettingsButton = new TextView(context);
+        morokSettingsButton.setText(LocaleController.getString(R.string.MorokIntroSettings));
+        morokSettingsButton.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
+        morokSettingsButton.setGravity(Gravity.CENTER);
+        morokSettingsButton.setOnClickListener(v -> presentFragment(new MorokSettingsActivity(currentAccount)));
+        frameContainerView.addView(morokSettingsButton, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 40, Gravity.BOTTOM));
 
         frameContainerView.addView(themeFrameLayout, LayoutHelper.createFrame(64, 64, Gravity.TOP | Gravity.RIGHT, 0, themeMargin, themeMargin, 0));
 
@@ -962,7 +939,8 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
 
     private void updateColors(boolean fromTheme) {
         startMessagingButtonBackground.setColors(new int[]{getThemedColor(Theme.key_featuredStickers_addButton), getThemedColor(Theme.key_featuredStickers_addButton2)});
-        logoDrawable.setColorFilter(Theme.multAlpha(getThemedColor(Theme.key_actionBarDefaultTitle), 0.9f), PorterDuff.Mode.MULTIPLY);
+        morokProxyButton.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
+        morokSettingsButton.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
         fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         switchLanguageTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
         startMessagingButton.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText));

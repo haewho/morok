@@ -26,6 +26,7 @@ import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.math.MathUtils;
 
+import org.morok.appearance.MorokAppearance;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
 import org.telegram.ui.Components.blur3.source.BlurredBackgroundSource;
 import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceBitmap;
@@ -97,6 +98,14 @@ public class BlurredBackgroundWithFadeDrawable extends Drawable {
             return;
         }
 
+        if (MorokAppearance.opaqueSurfaces()) {
+            // The fast bitmap/gradient paths below bypass the wrapped drawable.
+            int save = alpha == 255 ? canvas.save() : canvas.saveLayerAlpha(
+                    bounds.left, bounds.top, bounds.right, bounds.bottom, alpha);
+            drawable.draw(canvas);
+            canvas.restoreToCount(save);
+            return;
+        }
         BlurredBackgroundSource source = drawable.getUnwrappedSource();
         if (!ignoreFastWay && source instanceof BlurredBackgroundSourceColor) {
             // fast way - just draw gradient

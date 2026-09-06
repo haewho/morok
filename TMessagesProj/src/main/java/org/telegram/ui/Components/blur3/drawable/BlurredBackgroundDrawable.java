@@ -28,6 +28,7 @@ import androidx.annotation.RequiresApi;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.math.MathUtils;
 
+import org.morok.appearance.MorokAppearance;
 import org.telegram.messenger.utils.RadiiUtils;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.blur3.Blur3HashImpl;
@@ -45,6 +46,7 @@ import java.util.Arrays;
 
 public abstract class BlurredBackgroundDrawable extends Drawable {
     public BlurredBackgroundDrawable() {
+        MorokAppearance.register(this);
         boundProps.strokeWidthTop = dpf2(1);
         boundProps.strokeWidthBottom = dpf2(2 / 3f);
 
@@ -546,6 +548,7 @@ public abstract class BlurredBackgroundDrawable extends Drawable {
     /* Universal */
 
     protected void drawSource(Canvas canvas, BlurredBackgroundSource source) {
+        if (drawMorokOpaqueSurface(canvas)) return;
         if (boundProps.boundsWithPadding.isEmpty()) {
             return;
         }
@@ -566,6 +569,24 @@ public abstract class BlurredBackgroundDrawable extends Drawable {
         } else if (source != null) {
             drawSourceAny(canvas, source);
         }
+    }
+
+    private final Paint morokOpaquePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+    protected boolean drawMorokOpaqueSurface(Canvas canvas) {
+        if (!MorokAppearance.opaqueSurfaces()) return false;
+        int color = colorProvider == null ? backgroundColor : colorProvider.getBackgroundColor();
+        if (Color.alpha(color) == 0) {
+            BlurredBackgroundSource source = getUnwrappedSource();
+            if (source instanceof BlurredBackgroundSourceColor) {
+                color = ((BlurredBackgroundSourceColor) source).getColor();
+            }
+            if (Color.alpha(color) == 0) color = Theme.getColor(Theme.key_windowBackgroundWhite);
+        }
+        // Preserve widget fade-in/out alpha while eliminating surface translucency.
+        morokOpaquePaint.setColor(ColorUtils.setAlphaComponent(color, alpha));
+        boundProps.draw(canvas, morokOpaquePaint);
+        return true;
     }
 
     private final Paint backgroundColorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);

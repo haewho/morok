@@ -627,6 +627,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int notificationRow;
     private int languageRow;
     private int privacyRow;
+    private int morokSettingsRow;
     private int dataRow;
     private int chatRow;
     private int filtersRow;
@@ -4532,6 +4533,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 presentFragment(fragment);
             } else if (position == notificationRow) {
                 presentFragment(new NotificationsSettingsActivity());
+            } else if (position == morokSettingsRow) {
+                presentFragment(new org.morok.ui.MorokSettingsActivity(currentAccount));
             } else if (position == privacyRow) {
                 presentFragment(new PrivacySettingsActivity().setCurrentPassword(currentPassword));
             } else if (position == dataRow) {
@@ -10476,6 +10479,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         premiumGiftingRow = -1;
         premiumSectionsRow = -1;
         privacyRow = -1;
+        morokSettingsRow = -1;
         dataRow = -1;
         chatRow = -1;
         filtersRow = -1;
@@ -10638,6 +10642,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
 
                 settingsSectionRow2 = rowCount++;
+                morokSettingsRow = rowCount++;
                 chatRow = rowCount++;
                 privacyRow = rowCount++;
                 notificationRow = rowCount++;
@@ -13835,6 +13840,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         textCell.setImageLeft(23);
                     } else if (position == notificationRow) {
                         textCell.setTextAndIcon(LocaleController.getString(R.string.NotificationsAndSounds), R.drawable.msg2_notifications, true);
+                    } else if (position == morokSettingsRow) {
+                        textCell.setTextAndIcon(LocaleController.getString(R.string.MorokSettings), R.drawable.msg_settings, true);
                     } else if (position == privacyRow) {
                         textCell.setTextAndIcon(LocaleController.getString(R.string.PrivacySettings), R.drawable.msg2_secret, true);
                     } else if (position == dataRow) {
@@ -14278,7 +14285,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             if (notificationRow != -1) {
                 int position = holder.getAdapterPosition();
-                return position == notificationRow || position == numberRow || position == privacyRow ||
+                return position == morokSettingsRow || position == notificationRow || position == numberRow || position == privacyRow ||
                         position == languageRow || position == setUsernameRow || position == bioRow ||
                         position == versionRow || position == dataRow || position == chatRow ||
                         position == questionRow || position == devicesRow || position == filtersRow || position == stickersRow ||
@@ -14325,7 +14332,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             } else if (position == settingsTimerRow || position == settingsKeyRow || position == reportRow || position == reportReactionRow || position == deleteReactionRow ||
                     position == subscribersRow || position == subscribersRequestsRow || position == administratorsRow || position == settingsRow || position == blockedUsersRow ||
                     position == addMemberRow || position == joinRow || position == unblockRow ||
-                    position == sendMessageRow || position == notificationRow || position == privacyRow ||
+                    position == morokSettingsRow || position == sendMessageRow || position == notificationRow || position == privacyRow ||
                     position == languageRow || position == dataRow || position == chatRow ||
                     position == questionRow || position == devicesRow || position == filtersRow || position == stickersRow ||
                     position == faqRow || position == policyRow || position == sendLogsRow || position == sendLastLogsRow ||
@@ -14641,6 +14648,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     new SearchResult(224, getString(R.string.SaveToGalleryGroups), "saveToGalleryGroupsRow", getString(R.string.DataSettings), getString(R.string.SaveToGallery), R.drawable.msg2_data, () -> f.presentFragment(new DataSettingsActivity())).withLink("tg://settings/data/save-to-photos/groups"),
                     new SearchResult(225, getString(R.string.SaveToGalleryChannels), "saveToGalleryChannelsRow", getString(R.string.DataSettings), getString(R.string.SaveToGallery), R.drawable.msg2_data, () -> f.presentFragment(new DataSettingsActivity())).withLink("tg://settings/data/save-to-photos/channels"),
 
+                    new SearchResult(9100, getString(R.string.MorokSettings), R.drawable.msg_settings, () -> f.presentFragment(new org.morok.ui.MorokSettingsActivity(f.getCurrentAccount()))),
                     new SearchResult(300, getString(R.string.ChatSettings), R.drawable.msg2_discussion, () -> f.presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC))).withLink("tg://settings/appearance/themes"),
                     new SearchResult(301, getString(R.string.TextSizeHeader), "textSizeHeaderRow", getString(R.string.ChatSettings), R.drawable.msg2_discussion, () -> f.presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC))).withLink("tg://settings/appearance/text-size"),
                     new SearchResult(302, getString(R.string.ChangeChatBackground), getString(R.string.ChatSettings), R.drawable.msg2_discussion, () -> f.presentFragment(new WallpapersListActivity(WallpapersListActivity.TYPE_ALL))).withLink("tg://settings/appearance/wallpapers"),
@@ -15689,6 +15697,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             put(++pointer, premiumSectionsRow, sparseIntArray);
             put(++pointer, premiumGiftingRow, sparseIntArray);
             put(++pointer, privacyRow, sparseIntArray);
+            put(++pointer, morokSettingsRow, sparseIntArray);
             put(++pointer, dataRow, sparseIntArray);
             put(++pointer, liteModeRow, sparseIntArray);
             put(++pointer, chatRow, sparseIntArray);

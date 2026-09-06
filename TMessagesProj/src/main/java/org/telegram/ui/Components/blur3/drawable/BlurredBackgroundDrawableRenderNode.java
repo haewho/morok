@@ -166,6 +166,7 @@ public class BlurredBackgroundDrawableRenderNode extends BlurredBackgroundDrawab
 
     @Override
     public void draw(@NonNull Canvas canvas) {
+        if (drawMorokOpaqueSurface(canvas)) return;
         if (boundProps.boundsWithPadding.isEmpty()) {
             return;
         }

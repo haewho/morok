@@ -10,6 +10,7 @@ import android.os.Build;
 
 import androidx.annotation.RequiresApi;
 
+import org.morok.appearance.MorokAppearance;
 import org.telegram.ui.Components.blur3.DownscaleScrollableNoiseSuppressor;
 import org.telegram.ui.Components.blur3.RenderNodeWithHash;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
@@ -43,6 +44,7 @@ public class BlurredBackgroundSourceRenderNode implements BlurredBackgroundSourc
     }
 
     public void updateDisplayListIfNeeded() {
+        if (MorokAppearance.opaqueSurfaces()) return;
         renderNodeWithHash.updateDisplayListIfNeeded();
     }
 
@@ -79,6 +81,7 @@ public class BlurredBackgroundSourceRenderNode implements BlurredBackgroundSourc
     private RecordingCanvas recordingCanvas;
 
     public boolean needUpdateDisplayList(int width, int height) {
+        if (MorokAppearance.opaqueSurfaces()) return false;
         return !renderNode.hasDisplayList() || renderNode.getWidth() != width || renderNode.getHeight() != height;
     }
 
@@ -114,6 +117,7 @@ public class BlurredBackgroundSourceRenderNode implements BlurredBackgroundSourc
 
     @Override
     public void draw(Canvas canvas, float left, float top, float right, float bottom) {
+        if (MorokAppearance.opaqueSurfaces()) return;
         if (!canvas.isHardwareAccelerated()) {
             if (fallbackSource != null) {
                 fallbackSource.draw(canvas, left, top, right, bottom);
@@ -146,6 +150,7 @@ public class BlurredBackgroundSourceRenderNode implements BlurredBackgroundSourc
     }
 
     public int getVisiblePositions(List<RectF> positions, int index, int expand) {
+        if (MorokAppearance.opaqueSurfaces()) return 0;
         int count = 0;
 
         for (BlurredBackgroundDrawableRenderNode d : drawables) {
