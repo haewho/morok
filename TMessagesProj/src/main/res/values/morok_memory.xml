@@ -31,7 +31,7 @@
     <string name="MorokMemoryAccountMissing">The original account is no longer signed in.</string>
     <string name="MorokMemoryTopicUnavailable">This topic is not available locally. Open the chat and load its topics before returning here.</string>
     <string name="MorokMemoryStorage">Memory storage</string>
-    <string name="MorokMemoryLimits">First beta limits: 500 cards, 20 received versions per card, 8 MB per downloaded original, 256 MB per account. The newest 20 versions are retained. Cards do not expire automatically. No downloads are started by Memory. Android 6+ and a working Keystore are required.</string>
+    <string name="MorokMemoryLimits">First beta limits: 500 cards, including up to 400 automatic cards retained for 90 days; 20 received versions per card; 8 MB per downloaded original; 256 MB per account. Manual cards do not expire automatically. No downloads are started by Memory. Android 6+ and a working Keystore are required.</string>
     <string name="MorokMemoryClear">Clear Memory</string>
     <string name="MorokMemoryClearConfirm">Remove all local cards and retained files for this account? Other accounts and messages in Telegram are unaffected.</string>
     <string name="MorokMemoryDeleted">Deleted in Telegram, saved on this device</string>
@@ -44,4 +44,5 @@
     <string name="MorokMemoryReminderNotification">Time to return to a saved card.</string>
     <string name="MorokMemoryCaptureGap">Some source updates could not be saved. Cards show only versions this device retained.</string>
     <string name="MorokMemorySignInRequired">Sign in to a Telegram account to create and open its local Memory cards.</string>
+    <string name="MorokMemoryAutomatic">Automatic archive</string>
 </resources>

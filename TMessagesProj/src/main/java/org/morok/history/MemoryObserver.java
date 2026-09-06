@@ -1,6 +1,11 @@
 package org.morok.history;
 
+import androidx.collection.LongSparseArray;
+
+import org.morok.memory.MemoryJournalPolicy;
 import org.morok.memory.MorokMemoryStore;
+import org.morok.settings.ArchiveSettings;
+import org.morok.settings.MorokSettings;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.NotificationCenter;
@@ -8,7 +13,7 @@ import org.telegram.messenger.UserConfig;
 
 import java.util.ArrayList;
 
-/** Durable bounded observation of server effects for messages already saved as Memory cards. */
+/** Durable bounded observation of allowlisted new messages and effects on retained snapshots. */
 public final class MemoryObserver implements NotificationCenter.NotificationCenterDelegate {
     private static final MemoryObserver[] INSTANCES = new MemoryObserver[UserConfig.MAX_ACCOUNT_COUNT];
     private final int account;
@@ -16,9 +21,45 @@ public final class MemoryObserver implements NotificationCenter.NotificationCent
     private MemoryObserver(int account) {
         this.account = account;
         NotificationCenter center = NotificationCenter.getInstance(account);
+        center.addObserver(this, NotificationCenter.didReceiveNewMessages);
         center.addObserver(this, NotificationCenter.replaceMessagesObjects);
         center.addObserver(this, NotificationCenter.messagesDeleted);
         center.addObserver(this, NotificationCenter.historyCleared);
+    }
+
+    /** Persist allowlisted new messages as one bounded journal transaction before Telegram storage. */
+    public static void beforeTelegramStorageNew(int account, LongSparseArray<ArrayList<MessageObject>> messages) {
+        if (messages == null || messages.size() == 0 || !UserConfig.getInstance(account).isClientActivated()) return;
+        try {
+            ArchiveSettings settings = MorokSettings.archive(account);
+            if (!settings.enabled || settings.chats.isEmpty()) return;
+            ArrayList<MemoryCapture> captures = new ArrayList<>();
+            boolean overflow = false;
+            for (int i = 0; i < messages.size(); i++) {
+                long dialogId = messages.keyAt(i);
+                if (!settings.archives(dialogId)) continue;
+                ArrayList<MessageObject> values = messages.valueAt(i);
+                if (values == null) continue;
+                for (MessageObject message : values) {
+                    if (!MemoryCapture.isAllowed(message)) continue;
+                    if (captures.size() >= MemoryJournalPolicy.MAX_EVENTS) { overflow = true; break; }
+                    captures.add(MemoryCapture.take(message));
+                }
+            }
+            if (captures.isEmpty()) return;
+            MorokMemoryStore store = MorokMemoryStore.forAccount(account);
+            if (!store.journalNew(captures) || overflow) store.noteCaptureGap();
+        } catch (Exception error) {
+            try { MorokMemoryStore.forAccount(account).noteCaptureGap(); } catch (RuntimeException ignored) { }
+        }
+    }
+
+    /** NotificationCenter fallback for paths that bypass the main update-array hook. */
+    private static void afterTelegramStorageNew(int account, long dialogId, ArrayList<MessageObject> messages) {
+        if (messages == null || messages.isEmpty()) return;
+        LongSparseArray<ArrayList<MessageObject>> batch = new LongSparseArray<>();
+        batch.put(dialogId, messages);
+        beforeTelegramStorageNew(account, batch);
     }
 
     /** Install once after normal application/account initialization, on the main thread. */
@@ -74,6 +115,13 @@ public final class MemoryObserver implements NotificationCenter.NotificationCent
 
     @Override public void didReceivedNotification(int id, int currentAccount, Object... args) {
         if (!UserConfig.getInstance(account).isClientActivated()) return;
+        if (id == NotificationCenter.didReceiveNewMessages) {
+            if (args.length < 2 || (args.length > 2 && Boolean.TRUE.equals(args[2]))
+                    || (args.length > 3 && args[3] instanceof Integer && (Integer) args[3] != 0)) return;
+            @SuppressWarnings("unchecked") ArrayList<MessageObject> newMessages = (ArrayList<MessageObject>) args[1];
+            afterTelegramStorageNew(account, (Long) args[0], newMessages);
+            return;
+        }
         MorokMemoryStore store = activeStore(account);
         if (store == null) return;
         if (id == NotificationCenter.replaceMessagesObjects) {

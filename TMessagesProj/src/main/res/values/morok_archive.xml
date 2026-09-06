@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokArchiveTitle">Local message archive</string>
+    <string name="MorokArchiveInfo">Encrypted local snapshots of new messages received by this client. Telegram messages and update state remain unchanged.</string>
+    <string name="MorokArchivePolicy">Account and chats</string>
+    <string name="MorokArchiveEnabled">Archive new messages</string>
+    <string name="MorokArchiveEnabledInfo">Off by default. When enabled, only chats listed below are archived. Secret, disappearing, one-time and forwarding-protected content is always excluded.</string>
+    <string name="MorokArchiveAddChat">Add chat</string>
+    <string name="MorokArchivePrivateChat">Private chat</string>
+    <string name="MorokArchiveGroup">Group or supergroup</string>
+    <string name="MorokArchiveChannel">Channel</string>
+    <string name="MorokArchiveNoChats">No chats selected. Enabling the switch alone archives nothing.</string>
+    <string name="MorokArchiveRemoveChat">Stop archiving this chat</string>
+    <string name="MorokArchiveClearChats">Remove all selected chats</string>
+    <string name="MorokArchiveClearChatsInfo">Stop automatic archiving in every chat? Existing local snapshots remain until removed from Memory.</string>
+    <string name="MorokArchiveLimits">Automatic retention: up to 400 messages for 90 days within the 500-card and 256 MB account limits. Manual Memory cards have priority. Already downloaded originals up to 8 MB may be retained; MOROK never starts a media download.</string>
+</resources>

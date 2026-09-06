@@ -5,7 +5,7 @@ import java.security.MessageDigest;
 
 /** Pure bounds and stable identities for the encrypted incoming Memory journal. */
 public final class MemoryJournalPolicy {
-    public static final int MAX_EVENTS = 32;
+    public static final int MAX_EVENTS = 256;
     public static final int MAX_BYTES = 8 * 1024 * 1024;
     public static final int MAX_EVENT_BYTES = MemoryPolicy.MAX_MESSAGE_BYTES * 3;
 

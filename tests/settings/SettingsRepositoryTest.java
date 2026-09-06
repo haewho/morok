@@ -1,6 +1,7 @@
 import java.util.HashMap;
 import java.util.Map;
 import org.morok.settings.AppearanceSettings;
+import org.morok.settings.ArchiveSettings;
 import org.morok.settings.PrivacySettings;
 import org.morok.settings.RoundVideoSettings;
 import org.morok.settings.SettingsRepository;
@@ -37,7 +38,7 @@ public final class SettingsRepositoryTest {
         repo.saveAppearance(new AppearanceSettings(false, true));
         SettingsRepository restarted = new SettingsRepository(device);
         check(!restarted.appearance().liquidGlass && restarted.appearance().reducedEffects, "restart persistence");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 8, "additive schema migration");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 9, "additive schema migration");
         restarted.resetAppearance();
         check(restarted.appearance().liquidGlass && !restarted.appearance().reducedEffects, "category reset defaults");
         check("keep".equals(device.values.get("future.unrelated")), "reset preserves other settings");
@@ -75,6 +76,22 @@ public final class SettingsRepositoryTest {
                 && !defaults.hidesTyping() && !defaults.hidesOnline() && !defaults.hidesContentRead()
                 && !defaults.hidesRead() && !defaults.hidesStoryViews(), "privacy defaults preserve Telegram behavior");
         SettingsRepository firstAccount = new SettingsRepository(accounts.get(first));
+        ArchiveSettings archiveDefaults = firstAccount.archive();
+        check(!archiveDefaults.enabled && archiveDefaults.chats.isEmpty(), "archive defaults to off with an empty allowlist");
+        ArchiveSettings archive = archiveDefaults.withEnabled(true).withChat(99, true).withChat(-1001, true);
+        firstAccount.saveArchive(archive);
+        check(firstAccount.archive().archives(99) && firstAccount.archive().archives(-1001),
+                "archive allowlist survives persistence for both peer namespaces");
+        check(!firstAccount.archive().archives(100), "archive does not capture a chat outside its allowlist");
+        firstAccount.saveArchive(firstAccount.archive().withEnabled(false));
+        check(!firstAccount.archive().archives(99) && firstAccount.archive().chats.contains(99L),
+                "disabling capture preserves the user's chat selection");
+        ArchiveSettings archiveCapped = ArchiveSettings.DEFAULT;
+        for (int i = 1; i <= 300; i++) archiveCapped = archiveCapped.withChat(i, true);
+        check(archiveCapped.chats.size() == ArchiveSettings.MAX_CHATS && !archiveCapped.chats.contains(300L),
+                "archive allowlist remains bounded");
+        check(new SettingsRepository(accounts.get(second)).archive().chats.isEmpty(),
+                "archive selection is isolated by stable account");
         firstAccount.savePrivacy(PrivacySettings.DEFAULT.withGhostPreset(true));
         check(firstAccount.privacy().hidesTyping(), "ghost preset enables its documented typing policy");
         check(firstAccount.privacy().hidesOnline(), "ghost preset enables its documented online policy");
@@ -140,13 +157,13 @@ public final class SettingsRepositoryTest {
             check(rejected, "invalid unauthenticated identity rejected: " + invalid);
         }
 
-        device.values.put(SettingsRepository.SCHEMA_KEY, 9);
+        device.values.put(SettingsRepository.SCHEMA_KEY, 10);
         int oldWrites = device.writes;
         boolean rejected = false;
         try { restarted.resetAppearance(); }
         catch (IllegalStateException expected) { rejected = true; }
         check(rejected && device.writes == oldWrites, "newer schema cannot be downgraded by reset");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 9, "newer schema kept intact");
-        System.out.println("PASS: settings defaults, additive migration, restart, resets, round-video profiles, stable-account privacy isolation, ghost/story/reply/delay/chat policies, invalid IDs, downgrade refusal");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 10, "newer schema kept intact");
+        System.out.println("PASS: settings defaults, additive migration, restart, resets, archive allowlist, round-video profiles, stable-account privacy isolation, ghost/story/reply/delay/chat policies, invalid IDs, downgrade refusal");
     }
 }

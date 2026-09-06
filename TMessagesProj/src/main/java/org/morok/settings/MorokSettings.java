@@ -13,6 +13,7 @@ public final class MorokSettings {
     private static volatile AppearanceSettings appearance;
     private static volatile RoundVideoSettings roundVideo;
     private static final ConcurrentHashMap<Long, PrivacySettings> privacy = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Long, ArchiveSettings> archive = new ConcurrentHashMap<>();
 
     private MorokSettings() {}
 
@@ -102,6 +103,23 @@ public final class MorokSettings {
         long userId = userId(accountSlot);
         forUser(userId).savePrivacy(settings);
         privacy.put(userId, settings);
+    }
+
+    public static ArchiveSettings archive(int accountSlot) {
+        long userId = userId(accountSlot);
+        ArchiveSettings result = archive.get(userId);
+        if (result == null) {
+            ArchiveSettings loaded = forUser(userId).archive();
+            ArchiveSettings existing = archive.putIfAbsent(userId, loaded);
+            result = existing == null ? loaded : existing;
+        }
+        return result;
+    }
+
+    public static void setArchive(int accountSlot, ArchiveSettings settings) {
+        long userId = userId(accountSlot);
+        forUser(userId).saveArchive(settings);
+        archive.put(userId, settings);
     }
 
     /** Resolve a reusable upstream account slot to its authenticated stable identity. */

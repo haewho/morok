@@ -2,7 +2,7 @@ package org.morok.settings;
 
 /** Versioned local-only schema. Unknown newer schemas are readable but never overwritten. */
 public final class SettingsRepository {
-    public static final int SCHEMA_VERSION = 8;
+    public static final int SCHEMA_VERSION = 9;
     public static final String SCHEMA_KEY = "schema_version";
     private final SettingsStore store;
 
@@ -66,6 +66,18 @@ public final class SettingsRepository {
 
     public void resetPrivacy() {
         savePrivacy(PrivacySettings.DEFAULT);
+    }
+
+    public ArchiveSettings archive() {
+        return new ArchiveSettings(store.getBoolean("archive.enabled", false),
+                ArchiveSettings.decodeChats(store.getString("archive.chats", "")));
+    }
+
+    public void saveArchive(ArchiveSettings settings) {
+        checkWritable();
+        store.save(SCHEMA_VERSION,
+                new String[] {"archive.enabled"}, new boolean[] {settings.enabled},
+                new String[] {"archive.chats"}, new String[] {settings.encodeChats()});
     }
 
     public void checkWritable() {

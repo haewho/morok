@@ -31,7 +31,7 @@
     <string name="MorokMemoryAccountMissing">Исходный аккаунт больше не авторизован.</string>
     <string name="MorokMemoryTopicUnavailable">Тема недоступна локально. Откройте чат и загрузите список тем, затем вернитесь к карточке.</string>
     <string name="MorokMemoryStorage">Хранилище Памяти</string>
-    <string name="MorokMemoryLimits">Лимиты первой беты: 500 карточек, 20 полученных версий на карточку, 8 МБ на скачанный оригинал, 256 МБ на аккаунт. Сохраняются последние 20 версий. Карточки не удаляются по возрасту. Память не запускает скачивания. Нужны Android 6+ и рабочий Keystore.</string>
+    <string name="MorokMemoryLimits">Лимиты первой беты: 500 карточек, из них до 400 автоматических на 90 дней; 20 полученных версий на карточку; 8 МБ на скачанный оригинал; 256 МБ на аккаунт. Ручные карточки не удаляются по возрасту. Память не запускает скачивания. Нужны Android 6+ и рабочий Keystore.</string>
     <string name="MorokMemoryClear">Очистить Память</string>
     <string name="MorokMemoryClearConfirm">Удалить все локальные карточки и сохранённые файлы этого аккаунта? Другие аккаунты и сообщения в Telegram сохранятся.</string>
     <string name="MorokMemoryDeleted">Удалено в Telegram, сохранено на устройстве</string>
@@ -44,4 +44,5 @@
     <string name="MorokMemoryReminderNotification">Пора вернуться к сохранённой карточке.</string>
     <string name="MorokMemoryCaptureGap">Некоторые изменения источников не удалось сохранить. В карточках только версии, сохранённые этим устройством.</string>
     <string name="MorokMemorySignInRequired">Войдите в аккаунт Telegram, чтобы создавать и открывать его локальные карточки Памяти.</string>
+    <string name="MorokMemoryAutomatic">Автоархив</string>
 </resources>

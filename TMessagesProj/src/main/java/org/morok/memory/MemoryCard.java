@@ -18,6 +18,7 @@ public final class MemoryCard {
     public boolean needsReply;
     public boolean completed;
     public boolean deletedInTelegram;
+    public boolean automatic;
     public long createdAt;
     public long reminderAt;
     public long reminderDeliveredAt;
@@ -47,7 +48,7 @@ public final class MemoryCard {
         value.put("id", id).put("user", key.userId).put("kind", key.peerKind).put("peer", key.peerId)
                 .put("message", key.messageId).put("topic", key.topicId).put("source", source).put("sender", sender)
                 .put("note", note).put("tags", tags).put("needsReply", needsReply).put("completed", completed)
-                .put("deleted", deletedInTelegram).put("created", createdAt).put("reminder", reminderAt)
+                .put("deleted", deletedInTelegram).put("automatic", automatic).put("created", createdAt).put("reminder", reminderAt)
                 .put("delivered", reminderDeliveredAt);
         JSONArray snapshots = new JSONArray();
         for (Snapshot snapshot : versions) snapshots.put(snapshot.toJson());
@@ -61,6 +62,7 @@ public final class MemoryCard {
         card.note = value.optString("note"); card.tags = value.optString("tags");
         card.needsReply = value.optBoolean("needsReply"); card.completed = value.optBoolean("completed");
         card.deletedInTelegram = value.optBoolean("deleted"); card.createdAt = value.getLong("created");
+        card.automatic = value.optBoolean("automatic");
         card.reminderAt = value.optLong("reminder"); card.reminderDeliveredAt = value.optLong("delivered");
         JSONArray versions = value.getJSONArray("versions");
         for (int i = 0; i < versions.length(); i++) card.versions.add(Snapshot.fromJson(versions.getJSONObject(i)));

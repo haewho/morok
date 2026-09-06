@@ -49,6 +49,15 @@ public final class MemoryDomainTest {
                 "Oversized journal event is refused before disk write");
         expect(!MemoryJournalPolicy.canAppend(0, MemoryJournalPolicy.MAX_BYTES, 1),
                 "Journal byte budget cannot be exceeded");
+        expect(MemoryPolicy.MAX_AUTOMATIC_CARDS < MemoryPolicy.MAX_CARDS,
+                "Automatic retention must leave capacity for manual Memory cards");
+        expect(MemoryPolicy.AUTOMATIC_RETENTION_MILLIS == 90L * 24 * 60 * 60 * 1000,
+                "Automatic archive retention has a deterministic bounded age");
+        long now = 1_000_000_000_000L;
+        expect(!MemoryPolicy.automaticExpired(now - MemoryPolicy.AUTOMATIC_RETENTION_MILLIS, now),
+                "Automatic card remains available through the retention boundary");
+        expect(MemoryPolicy.automaticExpired(now - MemoryPolicy.AUTOMATIC_RETENTION_MILLIS - 1, now),
+                "Automatic card expires immediately after the retention boundary");
         for (long user : new long[]{0, -1}) {
             try { new MemoryKey(user, "user", 1, 1, 0); throw new AssertionError("Invalid account accepted"); }
             catch (IllegalArgumentException expected) { checks++; }

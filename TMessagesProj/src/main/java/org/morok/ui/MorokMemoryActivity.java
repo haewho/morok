@@ -324,7 +324,8 @@ public class MorokMemoryActivity extends BaseFragment {
     }
 
     private static String snapshotStatus(MemoryCard card, MemoryCard.Snapshot snapshot) {
-        String value = card.deletedInTelegram ? t(R.string.MorokMemoryDeleted) : t(R.string.MorokMemoryLocalSnapshot);
+        String value = (card.automatic ? t(R.string.MorokMemoryAutomatic) + " · " : "")
+                + (card.deletedInTelegram ? t(R.string.MorokMemoryDeleted) : t(R.string.MorokMemoryLocalSnapshot));
         int label;
         switch (snapshot.fileState) {
             case "saved": label = R.string.MorokMemoryFileSaved; break;

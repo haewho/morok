@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokArchiveTitle">Локальный архив сообщений</string>
+    <string name="MorokArchiveInfo">Зашифрованные локальные снимки новых сообщений, полученных этим клиентом. Сообщения Telegram и состояние updates не меняются.</string>
+    <string name="MorokArchivePolicy">Аккаунт и чаты</string>
+    <string name="MorokArchiveEnabled">Архивировать новые сообщения</string>
+    <string name="MorokArchiveEnabledInfo">По умолчанию выключено. После включения сохраняются только перечисленные ниже чаты. Секретные, исчезающие, одноразовые и защищённые от пересылки материалы всегда исключены.</string>
+    <string name="MorokArchiveAddChat">Добавить чат</string>
+    <string name="MorokArchivePrivateChat">Личный чат</string>
+    <string name="MorokArchiveGroup">Группа или супергруппа</string>
+    <string name="MorokArchiveChannel">Канал</string>
+    <string name="MorokArchiveNoChats">Чаты не выбраны. Один переключатель без списка ничего не архивирует.</string>
+    <string name="MorokArchiveRemoveChat">Не архивировать этот чат</string>
+    <string name="MorokArchiveClearChats">Удалить все выбранные чаты</string>
+    <string name="MorokArchiveClearChatsInfo">Остановить автоматическое архивирование во всех чатах? Существующие локальные снимки останутся в Памяти до ручного удаления.</string>
+    <string name="MorokArchiveLimits">Автоархив хранит до 400 сообщений за 90 дней в общих лимитах 500 карточек и 256 МБ на аккаунт. Ручные карточки Памяти имеют приоритет. Уже скачанные оригиналы до 8 МБ могут сохраняться; MOROK сам не начинает загрузку медиа.</string>
+</resources>

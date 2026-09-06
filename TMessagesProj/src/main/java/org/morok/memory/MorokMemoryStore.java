@@ -57,6 +57,9 @@ public final class MorokMemoryStore {
     private final ArrayDeque<String> recentJournalOrder = new ArrayDeque<>();
     private final HashSet<String> recentJournal = new HashSet<>();
     private Aead cipher;
+    private static final int SAVE_MANUAL = 1;
+    private static final int SAVE_TRACKED_UPDATE = 2;
+    private static final int SAVE_AUTOMATIC_NEW = 3;
 
     private MorokMemoryStore(int account, long userId) {
         this.account = account; this.userId = userId;
@@ -240,6 +243,24 @@ public final class MorokMemoryStore {
         }
     }
 
+    /** Persist an allowlisted new-message batch before Telegram commits its own rows. */
+    public boolean journalNew(ArrayList<MemoryCapture> captures) {
+        if (captures == null || captures.isEmpty() || captures.size() > MemoryJournalPolicy.MAX_EVENTS) return false;
+        try {
+            ArrayList<JSONObject> events = new ArrayList<>();
+            for (MemoryCapture capture : captures) {
+                if (capture == null || capture.key.userId != userId) throw new IOException("Account mismatch");
+                String identity = capture.key.canonical() + ":" + capture.snapshot.fingerprint;
+                events.add(new JSONObject().put("id", MemoryJournalPolicy.eventId("new", identity))
+                        .put("type", "new").put("capture", capture.toJournalJson()));
+            }
+            return appendJournalAndReplay(events);
+        } catch (Exception error) {
+            noteCaptureGap();
+            return false;
+        }
+    }
+
     /** Persist standard delete IDs before Telegram applies the server deletion. */
     public boolean journalDelete(long channelId, ArrayList<Integer> messageIds) {
         if (channelId < 0 || messageIds == null || messageIds.isEmpty() || messageIds.size() > 10000
@@ -275,9 +296,20 @@ public final class MorokMemoryStore {
     }
 
     private boolean appendJournalAndReplay(JSONObject event) throws Exception {
-        String eventId = event.getString("id");
-        synchronized (this) { if (recentJournal.contains(eventId)) return true; }
-        Future<Boolean> append = JOURNAL_QUEUE.submit(() -> appendJournal(event));
+        ArrayList<JSONObject> events = new ArrayList<>(); events.add(event);
+        return appendJournalAndReplay(events);
+    }
+
+    private boolean appendJournalAndReplay(ArrayList<JSONObject> events) throws Exception {
+        if (events.isEmpty()) return true;
+        boolean allRecent = true;
+        synchronized (this) {
+            for (JSONObject event : events) {
+                if (!recentJournal.contains(event.getString("id"))) { allRecent = false; break; }
+            }
+        }
+        if (allRecent) return true;
+        Future<Boolean> append = JOURNAL_QUEUE.submit(() -> appendJournal(events));
         boolean stored = append.get(5, TimeUnit.SECONDS);
         if (stored) scheduleJournalReplay();
         else noteCaptureGap();
@@ -301,7 +333,7 @@ public final class MorokMemoryStore {
         for (int i = 0; i < source.length(); i++) {
             JSONObject event = source.getJSONObject(i);
             String id = event.getString("id"), type = event.getString("type");
-            if (!MemoryJournalPolicy.safeEventId(id) || !("edit".equals(type) || "delete".equals(type) || "history".equals(type))
+            if (!MemoryJournalPolicy.safeEventId(id) || !("new".equals(type) || "edit".equals(type) || "delete".equals(type) || "history".equals(type))
                     || !identities.add(id) || event.toString().getBytes(StandardCharsets.UTF_8).length > MemoryJournalPolicy.MAX_EVENT_BYTES) {
                 throw new IOException("Invalid Memory journal event");
             }
@@ -332,13 +364,22 @@ public final class MorokMemoryStore {
     }
 
     private boolean appendJournal(JSONObject event) throws Exception {
+        ArrayList<JSONObject> additions = new ArrayList<>(); additions.add(event);
+        return appendJournal(additions);
+    }
+
+    private boolean appendJournal(ArrayList<JSONObject> additions) throws Exception {
         ArrayList<JSONObject> events = readJournal();
-        String id = event.getString("id");
-        for (JSONObject existing : events) if (id.equals(existing.getString("id"))) return true;
-        int currentBytes = journalPlain(events).length;
-        int eventBytes = event.toString().getBytes(StandardCharsets.UTF_8).length;
-        if (!MemoryJournalPolicy.canAppend(events.size(), currentBytes, eventBytes)) return false;
-        events.add(event);
+        HashSet<String> ids = new HashSet<>();
+        for (JSONObject existing : events) ids.add(existing.getString("id"));
+        for (JSONObject addition : additions) {
+            String id = addition.getString("id");
+            if (ids.contains(id)) continue;
+            int currentBytes = journalPlain(events).length;
+            int eventBytes = addition.toString().getBytes(StandardCharsets.UTF_8).length;
+            if (!MemoryJournalPolicy.canAppend(events.size(), currentBytes, eventBytes)) return false;
+            events.add(addition); ids.add(id);
+        }
         writeJournal(events);
         return true;
     }
@@ -375,8 +416,10 @@ public final class MorokMemoryStore {
             for (JSONObject event : events) {
                 requireActive();
                 String type = event.getString("type");
-                if ("edit".equals(type)) {
-                    saveInternal(MemoryCapture.fromJournalJson(event.getJSONObject("capture")), false);
+                if ("new".equals(type)) {
+                    saveInternal(MemoryCapture.fromJournalJson(event.getJSONObject("capture")), SAVE_AUTOMATIC_NEW);
+                } else if ("edit".equals(type)) {
+                    saveInternal(MemoryCapture.fromJournalJson(event.getJSONObject("capture")), SAVE_TRACKED_UPDATE);
                 } else if ("delete".equals(type)) {
                     long channelId = event.getLong("channel");
                     JSONArray source = event.getJSONArray("messages");
@@ -473,7 +516,8 @@ public final class MorokMemoryStore {
 
     public void list(Callback<ArrayList<MemoryCard>> callback) {
         execute(() -> {
-            Database database = read(); cleanup(database);
+            Database database = read();
+            if (pruneExpiredAutomatic(database)) write(database); else cleanup(database);
             MorokMemoryReminderReceiver.scheduleNext(userId, database.cards);
             Collections.sort(database.cards, (a, b) -> Long.compare(b.createdAt, a.createdAt));
             return database.cards;
@@ -481,27 +525,39 @@ public final class MorokMemoryStore {
     }
 
     public void save(MemoryCapture capture, boolean explicitUserAction, Callback<MemoryCard> callback) {
-        execute(() -> saveInternal(capture, explicitUserAction), callback);
+        execute(() -> saveInternal(capture, explicitUserAction ? SAVE_MANUAL : SAVE_TRACKED_UPDATE), callback);
     }
 
-    private MemoryCard saveInternal(MemoryCapture capture, boolean explicitUserAction) throws Exception {
+    private MemoryCard saveInternal(MemoryCapture capture, int mode) throws Exception {
         if (capture.key.userId != userId) throw new IOException("Account mismatch");
         Database database = read();
         MemoryCard existing = null;
         for (MemoryCard card : database.cards) if (card.key.equals(capture.key)) { existing = card; break; }
-        if (!explicitUserAction && (existing == null || database.tombstones.contains(capture.key.canonical()))) return null;
+        if (mode == SAVE_TRACKED_UPDATE && (existing == null || database.tombstones.contains(capture.key.canonical()))) return null;
+        if (mode == SAVE_AUTOMATIC_NEW && database.tombstones.contains(capture.key.canonical())) return null;
         if (existing == null) {
-            if (database.cards.size() >= MemoryPolicy.MAX_CARDS) throw new IOException("Memory card limit reached");
+            try { pruneForInsertion(database, mode == SAVE_AUTOMATIC_NEW); }
+            catch (IOException full) {
+                if (mode == SAVE_AUTOMATIC_NEW) return null;
+                throw full;
+            }
             existing = new MemoryCard(UUID.randomUUID().toString(), capture.key);
             existing.createdAt = System.currentTimeMillis(); existing.source = capture.source; existing.sender = capture.sender;
+            existing.automatic = mode == SAVE_AUTOMATIC_NEW;
             database.cards.add(existing);
         }
-        if (explicitUserAction) database.tombstones.remove(capture.key.canonical());
+        boolean promoted = mode == SAVE_MANUAL && existing.automatic;
+        if (mode == SAVE_MANUAL) {
+            database.tombstones.remove(capture.key.canonical());
+            existing.automatic = false;
+        }
         for (MemoryCard.Snapshot version : existing.versions) {
             if (version.fingerprint.equals(capture.snapshot.fingerprint)) {
                 // Explicit retry may preserve an original that has since completed downloading.
-                if (explicitUserAction && !"saved".equals(version.fileState)) {
+                if (mode == SAVE_MANUAL && !"saved".equals(version.fileState)) {
                     copyAttachment(capture, version); write(database);
+                } else if (promoted) {
+                    write(database);
                 }
                 return existing;
             }
@@ -513,6 +569,45 @@ public final class MorokMemoryStore {
         while (existing.versions.size() > MemoryPolicy.MAX_VERSIONS) existing.versions.remove(0);
         write(database);
         return existing;
+    }
+
+    private void pruneForInsertion(Database database, boolean automatic) throws IOException {
+        pruneExpiredAutomatic(database);
+        if (automatic) {
+            while (automaticCount(database) >= MemoryPolicy.MAX_AUTOMATIC_CARDS) {
+                if (!removeOldestAutomatic(database)) throw new IOException("Automatic archive limit reached");
+            }
+        }
+        while (database.cards.size() >= MemoryPolicy.MAX_CARDS) {
+            if (!removeOldestAutomatic(database)) throw new IOException("Memory card limit reached");
+        }
+    }
+
+    private static boolean pruneExpiredAutomatic(Database database) {
+        long now = System.currentTimeMillis();
+        boolean changed = false;
+        for (int i = database.cards.size() - 1; i >= 0; i--) {
+            MemoryCard card = database.cards.get(i);
+            if (card.automatic && MemoryPolicy.automaticExpired(card.createdAt, now)) { database.cards.remove(i); changed = true; }
+        }
+        return changed;
+    }
+
+    private static int automaticCount(Database database) {
+        int count = 0;
+        for (MemoryCard card : database.cards) if (card.automatic) count++;
+        return count;
+    }
+
+    private static boolean removeOldestAutomatic(Database database) {
+        int oldest = -1;
+        for (int i = 0; i < database.cards.size(); i++) {
+            MemoryCard card = database.cards.get(i);
+            if (card.automatic && (oldest < 0 || card.createdAt < database.cards.get(oldest).createdAt)) oldest = i;
+        }
+        if (oldest < 0) return false;
+        database.cards.remove(oldest);
+        return true;
     }
 
     private void copyAttachment(MemoryCapture capture, MemoryCard.Snapshot snapshot) {
