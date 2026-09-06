@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="morok_brand_name">MOROK</string>
+    <color name="morok_brand_accent">#AE82FD</color>
+    <color name="morok_brand_background">#111111</color>
+    <color name="morok_brand_accent_on_light">#7546BD</color>
+    <color name="morok_brand_background_light">#F6F2FA</color>
+</resources>

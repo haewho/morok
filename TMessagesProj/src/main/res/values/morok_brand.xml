@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokAppName">MOROK</string>
+    <string name="MorokAppNameBeta">MOROK Dev</string>
+    <string name="MorokUnofficial">Unofficial client using the Telegram API</string>
+    <string name="MorokDevelopmentLoginUnavailable">This development build has no application API credentials. The app owner needs to configure them and rebuild before sign-in is available.</string>
+    <color name="morok_accent">@color/morok_brand_accent</color>
+    <color name="morok_graphite">@color/morok_brand_background</color>
+</resources>

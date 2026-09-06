@@ -13,6 +13,8 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0"
     }
 }
+apply from: 'gradle/morok-config.gradle'
+
 repositories {
     google()
 }

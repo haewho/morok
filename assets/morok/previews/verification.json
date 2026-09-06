@@ -1,0 +1,15 @@
+{
+  "source": "morok-master.svg",
+  "androidViewportDp": 108,
+  "markBoundsDp": [
+    32.9599,
+    22.0,
+    75.0401,
+    86.0
+  ],
+  "sampledMaximumRadiusDp": 32.0,
+  "safeCircleRadiusDp": 33,
+  "xmlParsed": true,
+  "androidResourceCompilation": "not run by asset generator",
+  "deviceLauncherTest": "not run by asset generator"
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "name": {"default": "MOROK", "ru": "Морок"},
+  "mark": "Личина",
+  "colors": {
+    "accent": "#AE82FD",
+    "backgroundDark": "#111111",
+    "accentOnLight": "#7546BD",
+    "backgroundLight": "#F6F2FA"
+  },
+  "reference": {
+    "filename": "morok.png",
+    "sha256": "258fb62aa50ad46ddc7fa5488f4d5f6f03615d8f3af1180c391dd610125a366a",
+    "size": [1254, 1254],
+    "providedBy": "project owner"
+  },
+  "adaptive": {"viewport": 108, "markHeight": 64, "safeCircleRadius": 33}
+}

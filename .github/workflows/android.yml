@@ -1,0 +1,31 @@
+name: MOROK Android
+on:
+  workflow_dispatch:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  debug-arm64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install pinned Android packages
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.2.12479018' 'cmake;3.22.1'
+      - name: Verify source and local policies
+        run: ./scripts/check.sh
+      - name: Build development APK without login credentials
+        run: ./scripts/build.sh debug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MOROK-development-arm64
+          path: artifacts/*.apk
+          if-no-files-found: error
+          retention-days: 7

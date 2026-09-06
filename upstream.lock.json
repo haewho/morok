@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "repository": "https://github.com/DrKLO/Telegram.git",
+  "ref": "refs/heads/master",
+  "commit": "62b56a07ca7e30e39f7fd00a6728d6bbd716ca1c",
+  "checkedAt": "2026-09-06",
+  "commitDate": "2026-08-25T15:02:54+04:00",
+  "versionName": "12.10.1",
+  "versionCode": 7038,
+  "selection": "Latest published source commit, explicitly titled update to 12.10.1 (7038); no matching release tag exists. Master is not assumed stable by name alone. Published source is pinned; no binary/source reproducibility claim.",
+  "releaseNotes": "https://telegram.org/blog/welcome-messages-buttons-TG-13",
+  "binaryVersionVerified": false,
+  "submodules": {
+    "TMessagesProj/jni/third_party/dav1d": "54706fc6bc0cdecab7e9593974a4039cc038fca7",
+    "TMessagesProj/jni/third_party/ffmpeg": "45f1910444f34b02621f9f0426ea1a538a613c41",
+    "TMessagesProj/jni/third_party/libvpx": "1024874c5919305883187e2953de8fcb4c3d7fa6",
+    "TMessagesProj/jni/third_party/libyuv": "28ce69c2744a6aafdb58564e7b884aec3f66be5f",
+    "TMessagesProj/jni/third_party/openh264": "652bdb7719f30b52b08e506645a7322ff1b2cc6f",
+    "TMessagesProj/jni/third_party/xiph/ogg": "be05b13e98b048f0b5a0f5fa8ce514d56db5f822",
+    "TMessagesProj/jni/third_party/xiph/opus": "22244de5a79bd1d6d623c32e72bf1954b56235be",
+    "TMessagesProj/jni/third_party/xiph/opusfile": "a55c164e9891a9326188b7d4d216ec9a88373739",
+    "TMessagesProj/jni/tlottie": "3ce946c9ede5ece8beead2edd9beab68718d990e",
+    "TMessagesProj/lib/jlatexmath": "919e50b2f6f64b04b712cdb13d558ff9ecf9c8ed"
+  }
+}

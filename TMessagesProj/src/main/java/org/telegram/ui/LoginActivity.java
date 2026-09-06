@@ -2857,6 +2857,15 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
         @Override
         public void onNextPressed(String code) {
+            if (!org.telegram.messenger.BuildConfig.MOROK_HAS_CREDENTIALS) {
+                if (getParentActivity() != null) {
+                    showDialog(new AlertDialog.Builder(getParentActivity())
+                        .setTitle(LocaleController.getString(R.string.AppName))
+                        .setMessage(LocaleController.getString(R.string.MorokDevelopmentLoginUnavailable))
+                        .setPositiveButton(LocaleController.getString(R.string.OK), null).create());
+                }
+                return;
+            }
             if (getParentActivity() == null || nextPressed || isRequestingFirebaseSms) {
                 return;
             }

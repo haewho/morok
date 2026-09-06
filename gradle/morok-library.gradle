@@ -1,0 +1,13 @@
+android {
+    sourceSets.main.res.srcDirs += [rootProject.file('assets/morok/android')]
+    defaultConfig.resValue 'string', 'morok_account_type', APP_PACKAGE
+    defaultConfig {
+        buildConfigField 'int', 'MOROK_API_ID', rootProject.morokApiId
+        buildConfigField 'String', 'MOROK_API_HASH', rootProject.morokJavaString(rootProject.morokApiHash)
+        buildConfigField 'boolean', 'MOROK_HAS_CREDENTIALS', rootProject.morokHasCredentials.toString()
+        buildConfigField 'boolean', 'MOROK_HAS_FIREBASE', rootProject.morokFirebaseEnabled.toString()
+        buildConfigField 'String', 'MOROK_GOOGLE_CLIENT_ID', rootProject.morokJavaString(rootProject.morokValue('MOROK_GOOGLE_CLIENT_ID'))
+        buildConfigField 'String', 'MOROK_SMS_HASH', rootProject.morokJavaString(rootProject.morokValue('MOROK_SMS_HASH'))
+        ndk { abiFilters.clear(); abiFilters.add('arm64-v8a') }
+    }
+}

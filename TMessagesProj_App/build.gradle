@@ -199,4 +199,7 @@ android {
     }
 }
 
-apply plugin: 'com.google.gms.google-services'
+apply from: rootProject.file('gradle/morok-app.gradle')
+if (rootProject.morokFirebaseEnabled) {
+    apply plugin: 'com.google.gms.google-services'
+}

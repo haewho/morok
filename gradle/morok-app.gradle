@@ -1,0 +1,65 @@
+dependencies {
+    androidTestImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'com.google.crypto.tink:tink-android:1.15.0'
+}
+
+android {
+    defaultConfig {
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        manifestPlaceholders.morokMapsKey = rootProject.morokValue('MOROK_MAPS_KEY')
+    }
+    signingConfigs {
+        debug {
+            // Android's per-machine development key, never Telegram's public key.
+            storeFile file(System.getProperty('user.home') + '/.android/debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        release {
+            def keyPath = rootProject.morokValue('MOROK_KEYSTORE')
+            storeFile keyPath ? rootProject.file(keyPath) : null
+            storePassword rootProject.morokValue('MOROK_STORE_PASSWORD')
+            keyAlias rootProject.morokValue('MOROK_KEY_ALIAS')
+            keyPassword rootProject.morokValue('MOROK_KEY_PASSWORD')
+        }
+    }
+    buildTypes.all { buildType ->
+        def suffix = buildType.name == 'debug' ? '.beta' : ''
+        buildType.applicationIdSuffix = suffix
+        buildType.resValue 'string', 'morok_account_type', APP_PACKAGE + suffix
+    }
+    productFlavors.all { flavor ->
+        flavor.ndk.abiFilters.clear()
+        flavor.ndk.abiFilters.add('arm64-v8a')
+    }
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            output.outputFileName = "MOROK-${APP_VERSION_NAME}-${variant.name}-arm64.apk"
+        }
+    }
+}
+
+tasks.register('validateMorokRelease') {
+    group = 'verification'
+    doLast {
+        if (!rootProject.morokHasCredentials) {
+            throw new GradleException('Release requires your own MOROK_API_ID and MOROK_API_HASH in morok.local.properties or environment.')
+        }
+        def config = android.signingConfigs.release
+        if (config.storeFile == null || !config.storeFile.exists() || !config.storePassword || !config.keyAlias || !config.keyPassword) {
+            throw new GradleException('Release requires a persistent private MOROK signing key. See docs/BUILD.md.')
+        }
+        def fixture = rootProject.file('TMessagesProj/config/release.keystore')
+        if (config.storeFile.canonicalFile == fixture.canonicalFile) {
+            throw new GradleException('The upstream demonstration keystore is forbidden for MOROK releases.')
+        }
+    }
+}
+tasks.configureEach { task ->
+    if (task.name.startsWith('pre') && (task.name.endsWith('ReleaseBuild') || task.name.endsWith('StandaloneBuild'))) {
+        task.dependsOn tasks.named('validateMorokRelease')
+    }
+}

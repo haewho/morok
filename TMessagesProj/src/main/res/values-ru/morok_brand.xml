@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokAppName">Морок</string>
+    <string name="MorokAppNameBeta">Морок Dev</string>
+    <string name="MorokUnofficial">Неофициальный клиент, использующий Telegram API</string>
+    <string name="MorokDevelopmentLoginUnavailable">В этой сборке для разработки не настроены API-данные приложения. Владелец приложения должен добавить их и пересобрать клиент, чтобы стал доступен вход.</string>
+</resources>

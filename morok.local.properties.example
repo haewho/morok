@@ -1,0 +1,13 @@
+# Copy to morok.local.properties (ignored). Do not send these values in chat.
+# Obtain app credentials at https://my.telegram.org/apps
+MOROK_API_ID=0
+MOROK_API_HASH=
+# Optional integrations; their absence is reported, never replaced by upstream keys.
+MOROK_GOOGLE_CLIENT_ID=
+MOROK_MAPS_KEY=
+MOROK_SMS_HASH=
+# Required for release. Keep a private backup: losing this key prevents updates.
+MOROK_KEYSTORE=
+MOROK_STORE_PASSWORD=
+MOROK_KEY_ALIAS=
+MOROK_KEY_PASSWORD=

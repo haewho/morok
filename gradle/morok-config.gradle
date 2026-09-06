@@ -1,0 +1,34 @@
+// MOROK identity is independent of Telegram's public reproducible-build fixtures.
+def localSecrets = new Properties()
+def secretsFile = rootProject.file('morok.local.properties')
+if (secretsFile.exists()) {
+    secretsFile.withInputStream { localSecrets.load(it) }
+}
+ext.morokValue = { String name, String fallback = '' ->
+    System.getenv(name) ?: localSecrets.getProperty(name, fallback)
+}
+ext.morokApiId = morokValue('MOROK_API_ID', '0')
+ext.morokApiHash = morokValue('MOROK_API_HASH')
+if (!(morokApiId ==~ /[0-9]{1,10}/) || morokApiId.toLong() > Integer.MAX_VALUE) {
+    throw new GradleException('MOROK_API_ID must be a positive integer (0 only for an unauthenticated development build).')
+}
+if (!morokApiHash.isEmpty() && !(morokApiHash ==~ /[0-9a-fA-F]{32}/)) {
+    throw new GradleException('MOROK_API_HASH must contain 32 hexadecimal characters.')
+}
+morokApiId = morokApiId.toInteger().toString()
+if (morokApiId == '4') {
+    throw new GradleException('The official Telegram API ID is not allowed; configure your own application identity.')
+}
+ext.morokHasCredentials = morokApiId.toInteger() > 0 && !morokApiHash.isEmpty()
+ext.morokFirebaseEnabled = rootProject.file('TMessagesProj_App/google-services.json').exists()
+ext.morokJavaString = { String value -> groovy.json.JsonOutput.toJson(value) }
+
+tasks.register('morokPreflight') {
+    group = 'verification'
+    description = 'Report configuration readiness without printing credentials.'
+    doLast {
+        logger.lifecycle('MOROK API: ' + (morokHasCredentials ? 'configured; login still requires device verification' : 'missing; development build cannot log in'))
+        logger.lifecycle('MOROK Firebase: ' + (morokFirebaseEnabled ? 'local configuration supplied' : 'not configured; FCM unavailable'))
+        logger.lifecycle('MOROK package: ' + APP_PACKAGE + ' (.beta for debug)')
+    }
+}
