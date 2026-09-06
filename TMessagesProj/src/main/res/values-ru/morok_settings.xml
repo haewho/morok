@@ -86,4 +86,22 @@
     <string name="MorokRoundVideoResetInfo">Выключить улучшенные кружочки и вернуть профиль «Авто»?</string>
     <string name="MorokRoundVideoDowngraded">Выбранный профиль недоступен для этой камеры или AVC-энкодера. MOROK использует совместимый профиль ниже.</string>
     <string name="MorokRoundVideoEnabledStatus">Эксперимент включён</string>
+    <string name="MorokSettingsTransfer">Перенос настроек</string>
+    <string name="MorokSettingsTransferInfo">Экспорт и импорт оформления Морока, параметров кружочков и приватности текущего аккаунта. Перед применением импорта всегда показывается точный список локальных изменений.</string>
+    <string name="MorokSettingsTransferHeader">Профиль настроек</string>
+    <string name="MorokSettingsTransferExport">Экспортировать профиль настроек</string>
+    <string name="MorokSettingsTransferImport">Импортировать и проверить профиль</string>
+    <string name="MorokSettingsTransferExcluded">Файл никогда не содержит сессию Telegram, ID аккаунта и чатов, карточки и файлы Памяти, выбор автоархива, прокси, пароли, ключи подписи, тему Telegram и энергосбережение. При импорте сохраняются существующие исключения чатов.</string>
+    <string name="MorokSettingsTransferLoginRequired">Войдите, чтобы перенести настройки приватности устойчивого Telegram-аккаунта.</string>
+    <string name="MorokSettingsTransferExported">Профиль настроек экспортирован.</string>
+    <string name="MorokSettingsTransferFileError">Не удалось записать выбранный файл.</string>
+    <string name="MorokSettingsTransferInvalid">Это неполный или неподдерживаемый профиль настроек Морока. Файл не применён.</string>
+    <string name="MorokSettingsTransferPreview">Проверка изменений</string>
+    <string name="MorokSettingsTransferApply">Применить локально</string>
+    <string name="MorokSettingsTransferImported">Проверенные настройки применены локально.</string>
+    <string name="MorokSettingsTransferApplyError">Не удалось применить настройки. Обновите Морок, если файл сохранён более новой версией приложения.</string>
+    <string name="MorokSettingsTransferNoChanges">Этот профиль не изменяет текущие переносимые настройки.</string>
+    <string name="MorokSettingsTransferEnabled">Включено</string>
+    <string name="MorokSettingsTransferDisabled">Выключено</string>
+    <string name="MorokSettingsTransferChange">%1$s: %2$s → %3$s</string>
 </resources>

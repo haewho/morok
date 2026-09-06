@@ -86,4 +86,22 @@
     <string name="MorokRoundVideoResetInfo">Disable enhanced round videos and restore the Auto profile?</string>
     <string name="MorokRoundVideoDowngraded">The selected round-video profile is unavailable for this camera or AVC encoder. MOROK will use a compatible lower profile.</string>
     <string name="MorokRoundVideoEnabledStatus">Experimental on</string>
+    <string name="MorokSettingsTransfer">Transfer settings</string>
+    <string name="MorokSettingsTransferInfo">Export or import MOROK appearance, round-video and current-account privacy controls. Import always shows the exact local changes before applying them.</string>
+    <string name="MorokSettingsTransferHeader">Settings profile</string>
+    <string name="MorokSettingsTransferExport">Export settings profile</string>
+    <string name="MorokSettingsTransferImport">Import and preview profile</string>
+    <string name="MorokSettingsTransferExcluded">The file never contains a Telegram session, account ID, chat IDs, Memory cards or files, archive selection, proxy settings, passwords, signing keys, Telegram theme or power settings. Existing chat exceptions are kept when importing.</string>
+    <string name="MorokSettingsTransferLoginRequired">Sign in to transfer privacy settings for a stable Telegram account.</string>
+    <string name="MorokSettingsTransferExported">The settings profile was exported.</string>
+    <string name="MorokSettingsTransferFileError">The selected file could not be written.</string>
+    <string name="MorokSettingsTransferInvalid">This is not a complete supported MOROK settings profile. The file was not applied.</string>
+    <string name="MorokSettingsTransferPreview">Review changes</string>
+    <string name="MorokSettingsTransferApply">Apply locally</string>
+    <string name="MorokSettingsTransferImported">The reviewed settings were applied locally.</string>
+    <string name="MorokSettingsTransferApplyError">The settings could not be applied. Update MOROK if they were saved by a newer app version.</string>
+    <string name="MorokSettingsTransferNoChanges">This profile would not change the current transferable settings.</string>
+    <string name="MorokSettingsTransferEnabled">On</string>
+    <string name="MorokSettingsTransferDisabled">Off</string>
+    <string name="MorokSettingsTransferChange">%1$s: %2$s → %3$s</string>
 </resources>

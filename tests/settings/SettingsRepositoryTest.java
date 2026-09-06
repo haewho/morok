@@ -5,6 +5,8 @@ import org.morok.settings.ArchiveSettings;
 import org.morok.settings.PrivacySettings;
 import org.morok.settings.RoundVideoSettings;
 import org.morok.settings.SettingsRepository;
+import org.morok.settings.SettingsProfile;
+import org.morok.settings.SettingsProfileCodec;
 import org.morok.settings.SettingsStore;
 
 /** Run with plain javac/java; no Android SDK, Gradle, network, account or credentials required. */
@@ -150,6 +152,58 @@ public final class SettingsRepositoryTest {
                 "privacy is isolated by stable account");
         firstAccount.resetPrivacy();
         check(firstAccount.privacy().allowsTypingAction(0), "privacy reset restores normal Telegram behavior");
+
+        PrivacySettings transferablePrivacy = PrivacySettings.DEFAULT.withGhostPreset(true)
+                .withHideTyping(true).withHideOnline(true).withHideContentRead(true).withHideRead(true)
+                .withHideStoryViews(true).withMarkReadOnReply(true).withDelayGhostSends(true)
+                .withNormalBehaviorForChat(123456789, true);
+        SettingsProfile profile = new SettingsProfile(new AppearanceSettings(false, true),
+                new RoundVideoSettings(true, RoundVideoSettings.PROFILE_HIGH), transferablePrivacy);
+        String encodedProfile = SettingsProfileCodec.encode(profile);
+        SettingsProfile decodedProfile = SettingsProfileCodec.decode(encodedProfile);
+        check(!decodedProfile.appearance.liquidGlass && decodedProfile.appearance.reducedEffects,
+                "settings profile round-trips appearance");
+        check(decodedProfile.roundVideo.enhanced && RoundVideoSettings.PROFILE_HIGH.equals(decodedProfile.roundVideo.profile),
+                "settings profile round-trips round-video policy");
+        check(decodedProfile.privacy.ghostPreset && decodedProfile.privacy.hideTyping && decodedProfile.privacy.hideOnline
+                        && decodedProfile.privacy.hideContentRead && decodedProfile.privacy.hideRead
+                        && decodedProfile.privacy.hideStoryViews && decodedProfile.privacy.markReadOnReply
+                        && decodedProfile.privacy.delayGhostSends,
+                "settings profile round-trips privacy policy");
+        check(decodedProfile.privacy.normalBehaviorChats.isEmpty()
+                        && !encodedProfile.contains("123456789") && !encodedProfile.contains("proxy")
+                        && !encodedProfile.contains("archive") && !encodedProfile.contains("secret"),
+                "transfer file omits account-scoped IDs, archives and connection secrets");
+        PrivacySettings destinationPrivacy = PrivacySettings.DEFAULT.withNormalBehaviorForChat(-777, true);
+        PrivacySettings appliedPrivacy = decodedProfile.applyPrivacyTo(destinationPrivacy);
+        check(appliedPrivacy.usesNormalBehavior(-777) && appliedPrivacy.ghostPreset && appliedPrivacy.hideRead,
+                "profile import preserves destination chat exceptions while applying global policy");
+        check(encodedProfile.equals(SettingsProfileCodec.encode(decodedProfile)),
+                "settings transfer format has deterministic canonical output");
+
+        String[] invalidProfiles = {
+                encodedProfile.replace("format=1", "format=2"),
+                encodedProfile.replace("appearance.liquid_glass=false\n", ""),
+                encodedProfile + "privacy.hide_read=true\n",
+                encodedProfile.replace("privacy.hide_read=true", "privacy.hide_read=1"),
+                encodedProfile.replace("camera.round_video_profile=high", "camera.round_video_profile=ultra"),
+                encodedProfile + "account.user_id=42\n",
+                "NOT_MOROK\n" + encodedProfile
+        };
+        for (String invalidProfile : invalidProfiles) {
+            boolean invalidRejected = false;
+            try { SettingsProfileCodec.decode(invalidProfile); }
+            catch (IllegalArgumentException expected) { invalidRejected = true; }
+            check(invalidRejected, "malformed, incomplete, duplicate, unknown and future profiles are rejected");
+        }
+        boolean oversizedRejected = false;
+        try {
+            StringBuilder oversized = new StringBuilder();
+            while (oversized.length() <= SettingsProfileCodec.MAX_CHARACTERS) oversized.append('x');
+            SettingsProfileCodec.decode(oversized.toString());
+        } catch (IllegalArgumentException expected) { oversizedRejected = true; }
+        check(oversizedRejected, "oversized settings transfer is rejected before parsing");
+
         for (long invalid : new long[] {0, -1, Long.MIN_VALUE}) {
             boolean rejected = false;
             try { SettingsRepository.accountNamespace(invalid); }
@@ -164,6 +218,6 @@ public final class SettingsRepositoryTest {
         catch (IllegalStateException expected) { rejected = true; }
         check(rejected && device.writes == oldWrites, "newer schema cannot be downgraded by reset");
         check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 10, "newer schema kept intact");
-        System.out.println("PASS: settings defaults, additive migration, restart, resets, archive allowlist, round-video profiles, stable-account privacy isolation, ghost/story/reply/delay/chat policies, invalid IDs, downgrade refusal");
+        System.out.println("PASS: settings defaults, migration, isolation, archive, round-video, privacy, strict secret-free profile transfer, invalid IDs, downgrade refusal");
     }
 }

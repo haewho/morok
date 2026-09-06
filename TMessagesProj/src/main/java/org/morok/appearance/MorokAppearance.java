@@ -33,8 +33,14 @@ public final class MorokAppearance {
     }
 
     public static void apply(AppearanceSettings settings, Activity activity) {
-        final boolean animationChanged = reducedEffects() != settings.reducedEffects;
+        AppearanceSettings previous = MorokSettings.appearance();
         MorokSettings.setAppearance(settings);
+        refreshAfterImport(previous, settings, activity);
+    }
+
+    /** Refreshes render caches after an already-persisted settings-profile import. Runs on the UI thread. */
+    public static void refreshAfterImport(AppearanceSettings previous, AppearanceSettings settings, Activity activity) {
+        final boolean animationChanged = previous.reducedEffects != settings.reducedEffects;
         // Refresh existing drawables; no Activity/Fragment recreation or draft/scroll reset.
         for (BlurredBackgroundDrawable drawable : drawableSnapshot()) {
             if (drawable != null) {

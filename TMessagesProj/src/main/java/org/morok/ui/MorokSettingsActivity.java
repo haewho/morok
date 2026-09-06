@@ -38,7 +38,7 @@ import java.util.Locale;
 
 /** Native settings entry point. Controls are limited to wired, local behavior. */
 public final class MorokSettingsActivity extends BaseFragment {
-    private static final int GLASS = 1, REDUCED = 2, THEMES = 3, POWER = 4, RESET = 5, MEMORY = 6, PROXY = 7, PRIVACY = 8, ROUND_VIDEO = 9, ARCHIVE = 10;
+    private static final int GLASS = 1, REDUCED = 2, THEMES = 3, POWER = 4, RESET = 5, MEMORY = 6, PROXY = 7, PRIVACY = 8, ROUND_VIDEO = 9, ARCHIVE = 10, TRANSFER = 11;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -113,6 +113,9 @@ public final class MorokSettingsActivity extends BaseFragment {
                 case ROUND_VIDEO:
                     presentFragment(new MorokRoundVideoActivity());
                     break;
+                case TRANSFER:
+                    presentFragment(new MorokSettingsTransferActivity(currentAccount));
+                    break;
                 case RESET:
                     showDialog(new AlertDialog.Builder(context)
                             .setTitle(text(R.string.MorokResetAppearance))
@@ -167,6 +170,7 @@ public final class MorokSettingsActivity extends BaseFragment {
         add(ACTION, PRIVACY, R.string.MorokPrivacyShortcut);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokPrivacyShortcutInfo);
         add(HEADER, 0, R.string.MorokLocalTools);
+        add(ACTION, TRANSFER, R.string.MorokSettingsTransfer);
         add(ACTION, ARCHIVE, R.string.MorokArchiveTitle);
         add(ACTION, MEMORY, R.string.MorokMemoryShortcut);
         add(ACTION, PROXY, R.string.MorokProxyTitle);

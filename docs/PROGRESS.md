@@ -6,7 +6,7 @@
 
 - собственные package ID, название, launcher aliases, ресурсы бренда и отдельная debug-установка;
 - воспроизводимая привязка к upstream и десяти submodule commit, preflight-проверки и CI;
-- локальные MOROK Settings: управление доступным blur, уменьшение эффектов, ссылки на штатные темы и энергосбережение;
+- локальные MOROK Settings: управление доступным blur, уменьшение эффектов, ссылки на штатные темы и энергосбережение; явный SAF export/import переносимых настроек с версией формата, строгой проверкой и preview diff без auth/account/chat/proxy/archive/Memory данных;
 - MOROK Memory: ручные карточки, заметки, теги, поиск, версии и напоминания; выключенный по умолчанию account-scoped автоархив разрешённых live/difference/channel-difference message payload в выбранных чатах; pending bridge для fast new→edit/delete; явный импорт до 100 уже локальных сообщений выбранного чата без сети; Android Keystore/Tink, account isolation, очистка при logout и bounded encrypted WAL/replay;
 - MOROK connection: direct/manual/auto, импорт, проверки, ротация, подписанный пул с anti-rollback и явное отсутствие скрытого direct fallback;
 - экспериментальная privacy-основа: account-local пресет «Призрак», фактическое подавление обычных typing/recording/upload/sticker/emoji activity actions, foreground online-status, обычного server read cursor с сохранением локального read-state, content-read входящих voice/round video и story-view; явный mark-read и opt-in read-on-reply синхронизируют cursor; отдельный opt-in ставит поддержанные Ghost-отправки в видимое серверное расписание на минуту без silent fallback; chat exceptions возвращают штатное поведение в выбранном чате и управляются общим списком;
@@ -15,11 +15,11 @@
 
 ## Проверено
 
-- `./scripts/check.sh`: upstream lock и 10 submodules, 32 Memory domain checks, 7 Memory hook-order checks, 6 proxy transaction cases, 34 proxy core checks, settings migration/isolation/archive-policy checks, совместимость Python/OpenSSL signer с Java verifier;
+- `./scripts/check.sh`: upstream lock и 10 submodules, 32 Memory domain checks, 7 Memory hook-order checks, 6 proxy transaction cases, 34 proxy core checks, settings migration/isolation/archive-policy и strict secret-free profile codec checks, совместимость Python/OpenSSL signer с Java verifier;
 - `:TMessagesProj_App:assembleAfatDebug`: успешная arm64-v8a debug-сборка;
 - `:TMessagesProj_App:connectedAfatDebugAndroidTest`: 1/1 Android instrumentation test на Android 16 API 36, включая отказ при tampering и cross-account replay;
 - APK проверен `aapt2` и `apksigner`: `io.github.haewho.morok.beta`, version 12.10.1/70389, только `arm64-v8a`, debug certificate;
-- на эмуляторе Android 16 APK установлен и холодно запущен; вручную открыты intro, MOROK connection и MOROK Settings, проверена блокировка Memory до входа; падений MOROK в logcat нет.
+- на эмуляторе Android 16 APK установлен и холодно запущен; вручную открыты intro, MOROK connection, MOROK Settings и экран переноса, проверены блокировки Memory и settings transfer до входа; падений MOROK в logcat нет. Авторизованный SAF export/import и preview ещё не проверены на устройстве.
 
 Локальный проверенный APK и машинный отчёт находятся в `artifacts/` и намеренно исключены из Git. Это debug/test-only сборка, не релиз для распространения.
 

@@ -122,6 +122,28 @@ public final class MorokSettings {
         archive.put(userId, settings);
     }
 
+    /** Creates an explicit transfer bundle without account identity, chat IDs, archives, proxy data or secrets. */
+    public static SettingsProfile exportProfile(int accountSlot) {
+        return new SettingsProfile(appearance(), roundVideo(), privacy(accountSlot));
+    }
+
+    /** Applies a reviewed bundle locally. Existing chat exceptions remain scoped to the destination account. */
+    public static synchronized void applyProfile(int accountSlot, SettingsProfile profile) {
+        if (profile == null) throw new IllegalArgumentException("Profile is required");
+        long userId = userId(accountSlot);
+        SettingsRepository deviceRepository = repository("morok_device");
+        SettingsRepository accountRepository = forUser(userId);
+        deviceRepository.checkWritable();
+        accountRepository.checkWritable();
+        PrivacySettings importedPrivacy = profile.applyPrivacyTo(privacy(accountSlot));
+        deviceRepository.saveAppearance(profile.appearance);
+        deviceRepository.saveRoundVideo(profile.roundVideo);
+        accountRepository.savePrivacy(importedPrivacy);
+        appearance = profile.appearance;
+        roundVideo = profile.roundVideo;
+        privacy.put(userId, importedPrivacy);
+    }
+
     /** Resolve a reusable upstream account slot to its authenticated stable identity. */
     public static SettingsRepository forAccount(int accountSlot) {
         return forUser(userId(accountSlot));
