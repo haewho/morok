@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.morok.appearance.MorokAppearance;
+import org.morok.settings.AppearanceMode;
 import org.morok.settings.AppearanceSettings;
 import org.morok.settings.MorokSettings;
 import org.morok.settings.PrivacySettings;
@@ -38,7 +39,9 @@ import java.util.Locale;
 
 /** Native settings entry point. Controls are limited to wired, local behavior. */
 public final class MorokSettingsActivity extends BaseFragment {
-    private static final int GLASS = 1, REDUCED = 2, THEMES = 3, POWER = 4, RESET = 5, MEMORY = 6, PROXY = 7, PRIVACY = 8, ROUND_VIDEO = 9, ARCHIVE = 10, TRANSFER = 11;
+    private static final int GLASS = 1, REDUCED = 2, THEMES = 3, POWER = 4, RESET = 5;
+    private static final int MEMORY = 6, PROXY = 7, PRIVACY = 8, ROUND_VIDEO = 9, ARCHIVE = 10;
+    private static final int TRANSFER = 11, APPEARANCE_MODE = 12;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -86,6 +89,9 @@ public final class MorokSettingsActivity extends BaseFragment {
             if (position < 0 || position >= rows.size()) return;
             AppearanceSettings settings = MorokSettings.appearance();
             switch (rows.get(position).id) {
+                case APPEARANCE_MODE:
+                    showAppearanceModes(context);
+                    break;
                 case GLASS:
                     apply(settings.withLiquidGlass(!settings.liquidGlass));
                     break;
@@ -151,6 +157,8 @@ public final class MorokSettingsActivity extends BaseFragment {
         rows.clear();
         if (query.isEmpty()) add(INFO, 0, R.string.MorokAboutClient);
         add(HEADER, 0, R.string.MorokAppearance);
+        add(ACTION, APPEARANCE_MODE, R.string.MorokAppearanceMode);
+        if (query.isEmpty()) add(INFO, 0, R.string.MorokAppearanceModeInfo);
         add(CHECK, GLASS, R.string.MorokLiquidGlass);
         if (query.isEmpty()) {
             add(INFO, 0, Build.VERSION.SDK_INT < 33 ? R.string.MorokLiquidGlassLegacyInfo :
@@ -181,6 +189,45 @@ public final class MorokSettingsActivity extends BaseFragment {
         String title = text(string);
         if (query.isEmpty() || (id != 0 && title.toLowerCase(Locale.ROOT).contains(query))) {
             rows.add(new Row(type, id, title));
+        }
+    }
+
+    private void showAppearanceModes(Context context) {
+        CharSequence[] labels = {
+                text(R.string.MorokAppearanceModeTelegram),
+                text(R.string.MorokAppearanceModeSolid),
+                text(R.string.MorokAppearanceModeMinimal)
+        };
+        showDialog(new AlertDialog.Builder(context).setTitle(text(R.string.MorokAppearanceMode))
+                .setItems(labels, (dialog, which) -> org.telegram.messenger.AndroidUtilities.runOnUIThread(
+                        () -> showAppearanceModePreview(context, which))).create());
+    }
+
+    private void showAppearanceModePreview(Context context, int mode) {
+        int title;
+        int preview;
+        if (mode == AppearanceMode.TELEGRAM) {
+            title = R.string.MorokAppearanceModeTelegram;
+            preview = R.string.MorokAppearanceModeTelegramPreview;
+        } else if (mode == AppearanceMode.SOLID) {
+            title = R.string.MorokAppearanceModeSolid;
+            preview = R.string.MorokAppearanceModeSolidPreview;
+        } else {
+            title = R.string.MorokAppearanceModeMinimal;
+            preview = R.string.MorokAppearanceModeMinimalPreview;
+        }
+        showDialog(new AlertDialog.Builder(context).setTitle(text(title)).setMessage(text(preview))
+                .setPositiveButton(text(R.string.ApplyTheme),
+                        (dialog, which) -> apply(AppearanceMode.settings(mode)))
+                .setNegativeButton(text(R.string.Cancel), null).create());
+    }
+
+    private static String appearanceModeLabel(AppearanceSettings settings) {
+        switch (AppearanceMode.detect(settings)) {
+            case AppearanceMode.TELEGRAM: return text(R.string.MorokAppearanceModeTelegram);
+            case AppearanceMode.SOLID: return text(R.string.MorokAppearanceModeSolid);
+            case AppearanceMode.MINIMAL: return text(R.string.MorokAppearanceModeMinimal);
+            default: return text(R.string.MorokAppearanceModeCustom);
         }
     }
 
@@ -231,7 +278,9 @@ public final class MorokSettingsActivity extends BaseFragment {
                         row.id == GLASS ? settings.liquidGlass : settings.reducedEffects, false);
             } else {
                 TextSettingsCell cell = (TextSettingsCell) holder.itemView;
-                if (row.id == ROUND_VIDEO) {
+                if (row.id == APPEARANCE_MODE) {
+                    cell.setTextAndValue(row.title, appearanceModeLabel(MorokSettings.appearance()), true);
+                } else if (row.id == ROUND_VIDEO) {
                     cell.setTextAndValue(row.title, text(MorokSettings.roundVideo().enhanced
                             ? R.string.MorokRoundVideoEnabledStatus : R.string.MorokPrivacyOffStatus), true);
                 } else if (row.id == PRIVACY) {

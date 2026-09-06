@@ -2,6 +2,15 @@
 <resources>
     <string name="MorokSettings">Настройки Морока</string>
     <string name="MorokAppearance">Оформление</string>
+    <string name="MorokAppearanceMode">Режим оформления</string>
+    <string name="MorokAppearanceModeInfo">Именованные режимы меняют только два параметра Морока ниже. Перед применением показывается точный список изменений.</string>
+    <string name="MorokAppearanceModeTelegram">Как в Telegram</string>
+    <string name="MorokAppearanceModeSolid">Без прозрачности</string>
+    <string name="MorokAppearanceModeMinimal">Минимум эффектов</string>
+    <string name="MorokAppearanceModeCustom">Свой режим</string>
+    <string name="MorokAppearanceModeTelegramPreview">Liquid Glass: включён\nМинимум анимаций: выключен\n\nТема Telegram, энергосбережение, воспроизведение медиа и настройки аккаунта не меняются.</string>
+    <string name="MorokAppearanceModeSolidPreview">Liquid Glass: выключен\nМинимум анимаций: выключен\n\nОхваченные стеклянные панели становятся сплошными и перестают отрисовывать размытие. Тема и энергосбережение Telegram не меняются.</string>
+    <string name="MorokAppearanceModeMinimalPreview">Liquid Glass: выключен\nМинимум анимаций: включён\n\nОхваченные стеклянные панели становятся сплошными. Уменьшаются управляемые Telegram анимации эмодзи, стикеров, фонов чата, частиц и звонков. Воспроизведение медиа и переходы между экранами настраиваются отдельно.</string>
     <string name="MorokLiquidGlass">Liquid Glass</string>
     <string name="MorokLiquidGlassInfo">Включено — штатные стеклянные эффекты Telegram с учётом устройства и энергосбережения. Выключено — сплошные поверхности новых стеклянных панелей без отрисовки их размытия. Часть прежних эффектов пока не охвачена.</string>
     <string name="MorokLiquidGlassLegacyInfo">Эта версия Android не поддерживает преломление стекла Telegram: нужен Android 13. Включено — доступное штатное размытие, выключено — сплошные поверхности новых стеклянных панелей. Часть прежних эффектов пока не охвачена.</string>

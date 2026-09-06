@@ -11,7 +11,7 @@
 | Текст, voice/video, файлы, реакции, группы/темы, камера, аккаунты | P0 | реализуется | Официальный клиент сохранён; вход/регрессия требуют API-данных и устройства |
 | Звонки audio/video/group | P0 | требование | Стек сохранён, транспортные проверки не проведены |
 | Бренд, identity, providers, контакты | P0 | реализуется | MOROK/Морок, Личина, отдельный пакет; требуется соседняя установка |
-| Liquid Glass on/off, минимум эффектов | P0 | реализуется | Общие blur3 capture/draw paths; старые самостоятельные scrim paths охвачены не полностью |
+| Liquid Glass on/off, минимум эффектов | P0 | реализуется | Три именованных режима с review-before-apply и независимые переключатели управляют общими blur3 capture/draw paths; старые самостоятельные scrim paths охвачены не полностью |
 | Светлая/тёмная/AMOLED, семантические overrides, dynamic colors | P0 | реализуется | Доступ к штатным темам; полная карта override/контраста впереди |
 | Схема настроек и стабильный ID аккаунта | P0 | реализовано | Отдельный слой с JVM-тестами; UI использует настройки устройства |
 | Автоматический архив new/edit/delete/difference | P0 | реализуется | OFF-by-default account policy и allowlist до 256 чатов; live, direct difference/channel-difference message payload и стандартные edit/delete/history updates проходят через bounded encrypted WAL/replay. Есть pending bridge для fast new→edit/delete и явный cache-only импорт последних 100 локальных сообщений; payload-less differenceTooLong, более глубокий импорт и device crash/catch-up тест впереди |

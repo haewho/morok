@@ -2,6 +2,15 @@
 <resources>
     <string name="MorokSettings">MOROK Settings</string>
     <string name="MorokAppearance">Appearance</string>
+    <string name="MorokAppearanceMode">Appearance mode</string>
+    <string name="MorokAppearanceModeInfo">Named modes change only the two MOROK controls shown below. Select a mode to review its exact changes before applying it.</string>
+    <string name="MorokAppearanceModeTelegram">As in Telegram</string>
+    <string name="MorokAppearanceModeSolid">No transparency</string>
+    <string name="MorokAppearanceModeMinimal">Minimum effects</string>
+    <string name="MorokAppearanceModeCustom">Custom</string>
+    <string name="MorokAppearanceModeTelegramPreview">Liquid Glass: on\nReduce animations: off\n\nYour Telegram theme, power settings, media playback and account settings stay unchanged.</string>
+    <string name="MorokAppearanceModeSolidPreview">Liquid Glass: off\nReduce animations: off\n\nCovered glass panels become solid and stop their blur rendering. Your Telegram theme and power settings stay unchanged.</string>
+    <string name="MorokAppearanceModeMinimalPreview">Liquid Glass: off\nReduce animations: on\n\nCovered glass panels become solid. Telegram-controlled animated emoji, stickers, chat backgrounds, particles and call effects are reduced. Media playback and navigation transitions keep their own settings.</string>
     <string name="MorokLiquidGlass">Liquid Glass</string>
     <string name="MorokLiquidGlassInfo">On allows Telegram’s built-in glass effects, subject to your device and power saving settings. Off uses solid surfaces for the new glass panels and disables their blur rendering. Some older effects are not yet covered.</string>
     <string name="MorokLiquidGlassLegacyInfo">This Android version does not support Telegram’s glass refraction shader (Android 13 required). On allows supported native blur; off makes the new glass panels solid. Some older effects are not yet covered.</string>

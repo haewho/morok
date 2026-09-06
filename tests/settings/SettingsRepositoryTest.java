@@ -1,5 +1,6 @@
 import java.util.HashMap;
 import java.util.Map;
+import org.morok.settings.AppearanceMode;
 import org.morok.settings.AppearanceSettings;
 import org.morok.settings.ArchiveSettings;
 import org.morok.settings.PrivacySettings;
@@ -35,6 +36,22 @@ public final class SettingsRepositoryTest {
         SettingsRepository repo = new SettingsRepository(device);
         check(repo.appearance().liquidGlass && !repo.appearance().reducedEffects, "fresh install defaults");
         check(device.writes == 0, "reading cannot rewrite settings");
+        check(AppearanceMode.detect(repo.appearance()) == AppearanceMode.TELEGRAM,
+                "default settings are the named Telegram mode");
+        AppearanceSettings solidMode = AppearanceMode.settings(AppearanceMode.SOLID);
+        check(!solidMode.liquidGlass && !solidMode.reducedEffects
+                        && AppearanceMode.detect(solidMode) == AppearanceMode.SOLID,
+                "solid mode disables glass without changing the animation policy");
+        AppearanceSettings minimalMode = AppearanceMode.settings(AppearanceMode.MINIMAL);
+        check(!minimalMode.liquidGlass && minimalMode.reducedEffects
+                        && AppearanceMode.detect(minimalMode) == AppearanceMode.MINIMAL,
+                "minimum-effects mode disables glass and reduces supported animations");
+        check(AppearanceMode.detect(new AppearanceSettings(true, true)) == AppearanceMode.CUSTOM,
+                "independent switches remain representable as a custom mode");
+        boolean invalidModeRejected = false;
+        try { AppearanceMode.settings(AppearanceMode.CUSTOM); }
+        catch (IllegalArgumentException expected) { invalidModeRejected = true; }
+        check(invalidModeRejected, "custom state cannot be applied as an ambiguous named preset");
 
         device.values.put("future.unrelated", "keep");
         repo.saveAppearance(new AppearanceSettings(false, true));
