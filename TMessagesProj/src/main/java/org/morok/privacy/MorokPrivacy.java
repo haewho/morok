@@ -21,4 +21,12 @@ public final class MorokPrivacy {
             return true;
         }
     }
+
+    public static boolean allowsContentRead(int account) {
+        try {
+            return !MorokSettings.privacy(account).hidesContentRead();
+        } catch (RuntimeException unavailableAccountOrSettings) {
+            return true;
+        }
+    }
 }

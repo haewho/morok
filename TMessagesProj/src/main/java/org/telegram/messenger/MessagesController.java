@@ -14412,6 +14412,14 @@ public class MessagesController extends BaseController implements NotificationCe
         if (messageObject.getId() < 0) {
             markMessageAsRead(messageObject.getDialogId(), messageObject.messageOwner.random_id, Integer.MIN_VALUE);
         } else {
+            // MOROK keeps the local played state above, but can omit the distinct server receipt for
+            // ordinary voice/video messages. Secret chats retain Telegram's read/TTL semantics.
+            if (!DialogObject.isEncryptedDialog(dialogId)
+                    && !messageObject.isSecretMedia()
+                    && (messageObject.isVoice() || messageObject.isRoundVideo())
+                    && !org.morok.privacy.MorokPrivacy.allowsContentRead(currentAccount)) {
+                return;
+            }
             if (messageObject.messageOwner.peer_id.channel_id != 0) {
                 TLRPC.TL_channels_readMessageContents req = new TLRPC.TL_channels_readMessageContents();
                 req.channel = getInputChannel(messageObject.messageOwner.peer_id.channel_id);

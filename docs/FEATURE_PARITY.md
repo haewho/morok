@@ -17,7 +17,7 @@
 | Автоматический архив new/edit/delete/difference | P0 | реализуется | Для явно созданных карточек: ранние live/getDifference edit/delete/history hooks + UI fallback; общий архив и устойчивый входной WAL ещё не готовы |
 | Действительные файлы вне обычного кеша | P0 | реализуется | Для явных карточек; общий архив и reference counting впереди |
 | Шифрование, logout, replay/tombstones, лимиты, поиск | P0 | реализуется | Слой Памяти; device/crash/key-loss проверки впереди |
-| Ghost preset, online/read/content-read/typing, исключения, local cursor | P0 | реализуется | Account-local Ghost preset; semantic suppression typing/recording/upload/sticker/emoji и ordinary foreground online; read/content-read/исключения/cursor впереди; API terms conflict сохраняется |
+| Ghost preset, online/read/content-read/typing, исключения, local cursor | P0 | реализуется | Account-local Ghost preset; semantic suppression typing/recording/upload/sticker/emoji, ordinary foreground online и content-read входящих voice/round video с локальным played-state; обычный read/истории/исключения/cursor впереди; API terms conflict сохраняется |
 | Stories, mark-read, read-on-reply, scheduled ghost send | P0 | требование | Нужны semantic hooks и второй аккаунт; серверные ограничения сохраняются |
 | Прокси до входа, импорт, проверки и ротация | P0 | реализуется | Штатный транспорт; целевая сеть не проверена |
 | Подписанный bootstrap, зеркала, antirollback и 2 независимых узла | P0 | заблокировано зависимостью | Основы/шаблоны; нет серверов, endpoints и ключей владельца |
