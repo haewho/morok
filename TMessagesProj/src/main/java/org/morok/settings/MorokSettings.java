@@ -32,10 +32,20 @@ public final class MorokSettings {
             }
 
             @Override
-            public void saveBooleans(int version, String[] keys, boolean[] values) {
-                if (keys.length != values.length) throw new IllegalArgumentException("Mismatched settings");
+            public String getString(String key, String fallback) {
+                try { return preferences.getString(key, fallback); }
+                catch (ClassCastException e) { return fallback; }
+            }
+
+            @Override
+            public void save(int version, String[] booleanKeys, boolean[] booleanValues,
+                             String[] stringKeys, String[] stringValues) {
+                if (booleanKeys.length != booleanValues.length || stringKeys.length != stringValues.length) {
+                    throw new IllegalArgumentException("Mismatched settings");
+                }
                 SharedPreferences.Editor editor = preferences.edit().putInt(SettingsRepository.SCHEMA_KEY, version);
-                for (int i = 0; i < keys.length; i++) editor.putBoolean(keys[i], values[i]);
+                for (int i = 0; i < booleanKeys.length; i++) editor.putBoolean(booleanKeys[i], booleanValues[i]);
+                for (int i = 0; i < stringKeys.length; i++) editor.putString(stringKeys[i], stringValues[i]);
                 editor.apply();
             }
         });

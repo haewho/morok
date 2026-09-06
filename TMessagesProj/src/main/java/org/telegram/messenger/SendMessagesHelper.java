@@ -7933,6 +7933,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         }
 
         newMsgObj.reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
+            if (error == null) {
+                AndroidUtilities.runOnUIThread(() -> maybeMarkRepliedMessageAsRead(msgObj, req, scheduled));
+            }
             if (error != null && (req instanceof TLRPC.TL_messages_sendMedia || req instanceof TL_ephemeral.TL_sendMessage || req instanceof TLRPC.TL_messages_editMessage || req instanceof TLRPC.TL_messages_addPollAnswer) && FileRefController.isFileRefError(error.text)) {
                 if (FileRefController.isFileRefErrorCover(error.text)) {
                     if (removeCoverFromRequest(req)) {
@@ -8381,6 +8384,26 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         if (parentMessage != null) {
             parentMessage.sendDelayedRequests();
         }
+    }
+
+    /** A successful immediate reply may explicitly synchronize the replied incoming cursor. */
+    private void maybeMarkRepliedMessageAsRead(MessageObject sentMessage, TLObject request, boolean scheduled) {
+        if (scheduled || request instanceof TLRPC.TL_messages_editMessage
+                || DialogObject.isEncryptedDialog(sentMessage.getDialogId())) {
+            return;
+        }
+        MessageObject reply = sentMessage.replyMessageObject;
+        long dialogId = sentMessage.getDialogId();
+        if (reply == null || reply.getId() <= 0 || reply.isOutOwner() || reply.getDialogId() != dialogId
+                || !org.morok.privacy.MorokPrivacy.shouldMarkReadOnReply(currentAccount, dialogId)) {
+            return;
+        }
+        long threadId = 0;
+        if (dialogId < 0 && ChatObject.isForum(getMessagesController().getChat(-dialogId))) {
+            threadId = MessageObject.getTopicId(currentAccount, reply.messageOwner, true);
+        }
+        getMessagesController().markDialogAsReadInTelegram(dialogId, reply.getId(), reply.getId(),
+                reply.messageOwner.date, false, threadId, 0, true, 0);
     }
 
     private boolean removeCoverFromRequest(TLObject req) {

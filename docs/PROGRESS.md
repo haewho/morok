@@ -9,7 +9,7 @@
 - локальные MOROK Settings: управление доступным blur, уменьшение эффектов, ссылки на штатные темы и энергосбережение;
 - MOROK Memory: ручные карточки, заметки, теги, поиск, версии, напоминания, шифрование через Android Keystore/Tink, account isolation и очистка при logout; раннее наблюдение стандартных server edit/delete/history updates для уже созданных карточек;
 - MOROK connection: direct/manual/auto, импорт, проверки, ротация, подписанный пул с anti-rollback и явное отсутствие скрытого direct fallback;
-- экспериментальная privacy-основа: account-local пресет «Призрак», фактическое подавление обычных typing/recording/upload/sticker/emoji activity actions, foreground online-status, обычного server read cursor с сохранением локального read-state и content-read входящих voice/round video; явный mark-read синхронизирует выбранный чат;
+- экспериментальная privacy-основа: account-local пресет «Призрак», фактическое подавление обычных typing/recording/upload/sticker/emoji activity actions, foreground online-status, обычного server read cursor с сохранением локального read-state, content-read входящих voice/round video и story-view; явный mark-read и opt-in read-on-reply синхронизируют cursor; chat exceptions возвращают штатное поведение в выбранном чате;
 - шаблоны собственной прокси-инфраструктуры и документация сборки, архитектуры, обновления и ограничений.
 
 ## Проверено
@@ -30,4 +30,4 @@
 
 ## Следующий этап
 
-Следующий P0-этап — предоставить собственные API/Firebase/release/proxy параметры, провести вход и сетевую матрицу на физическом устройстве, затем расширить автоматический архив Memory и privacy/ghost behavior: read-on-reply, story views и chat exceptions.
+Следующий P0-этап — предоставить собственные API/Firebase/release/proxy параметры, провести вход и сетевую матрицу на физическом устройстве, затем расширить автоматический архив Memory и privacy/ghost behavior: scheduled ghost send, управление/обзор списка исключений и проверка всех server effects вторым аккаунтом.

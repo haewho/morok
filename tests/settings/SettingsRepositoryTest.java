@@ -12,11 +12,13 @@ public final class SettingsRepositoryTest {
         int writes;
         public int getInt(String key, int fallback) { return (int) values.getOrDefault(key, fallback); }
         public boolean getBoolean(String key, boolean fallback) { return (boolean) values.getOrDefault(key, fallback); }
-        public void saveBooleans(int version, String[] keys, boolean[] booleans) {
-            if (keys.length != booleans.length) throw new IllegalArgumentException("Mismatched settings");
+        public String getString(String key, String fallback) { return (String) values.getOrDefault(key, fallback); }
+        public void save(int version, String[] keys, boolean[] booleans, String[] stringKeys, String[] strings) {
+            if (keys.length != booleans.length || stringKeys.length != strings.length) throw new IllegalArgumentException("Mismatched settings");
             writes++;
             values.put(SettingsRepository.SCHEMA_KEY, version);
             for (int i = 0; i < keys.length; i++) values.put(keys[i], booleans[i]);
+            for (int i = 0; i < stringKeys.length; i++) values.put(stringKeys[i], strings[i]);
         }
     }
 
@@ -34,7 +36,7 @@ public final class SettingsRepositoryTest {
         repo.saveAppearance(new AppearanceSettings(false, true));
         SettingsRepository restarted = new SettingsRepository(device);
         check(!restarted.appearance().liquidGlass && restarted.appearance().reducedEffects, "restart persistence");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 5, "additive schema migration");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 6, "additive schema migration");
         restarted.resetAppearance();
         check(restarted.appearance().liquidGlass && !restarted.appearance().reducedEffects, "category reset defaults");
         check("keep".equals(device.values.get("future.unrelated")), "reset preserves other settings");
@@ -51,13 +53,16 @@ public final class SettingsRepositoryTest {
 
         PrivacySettings defaults = new SettingsRepository(accounts.get(second)).privacy();
         check(!defaults.ghostPreset && !defaults.hideTyping && !defaults.hideOnline && !defaults.hideContentRead && !defaults.hideRead
-                && !defaults.hidesTyping() && !defaults.hidesOnline() && !defaults.hidesContentRead() && !defaults.hidesRead(), "privacy defaults preserve Telegram behavior");
+                && !defaults.hideStoryViews && !defaults.markReadOnReply && defaults.normalBehaviorChats.isEmpty()
+                && !defaults.hidesTyping() && !defaults.hidesOnline() && !defaults.hidesContentRead()
+                && !defaults.hidesRead() && !defaults.hidesStoryViews(), "privacy defaults preserve Telegram behavior");
         SettingsRepository firstAccount = new SettingsRepository(accounts.get(first));
-        firstAccount.savePrivacy(new PrivacySettings(true, false, false, false, false));
+        firstAccount.savePrivacy(PrivacySettings.DEFAULT.withGhostPreset(true));
         check(firstAccount.privacy().hidesTyping(), "ghost preset enables its documented typing policy");
         check(firstAccount.privacy().hidesOnline(), "ghost preset enables its documented online policy");
         check(firstAccount.privacy().hidesContentRead(), "ghost preset enables its documented content-read policy");
         check(firstAccount.privacy().hidesRead(), "ghost preset enables its documented message-read policy");
+        check(firstAccount.privacy().hidesStoryViews(), "ghost preset enables its documented story-view policy");
         check(!firstAccount.privacy().allowsTypingAction(0), "typing is suppressed by the preset");
         check(firstAccount.privacy().allowsTypingAction(PrivacySettings.ACTION_CANCEL), "typing cancellation remains allowed");
         firstAccount.savePrivacy(firstAccount.privacy().withGhostPreset(false).withHideTyping(true));
@@ -71,6 +76,20 @@ public final class SettingsRepositoryTest {
         check(firstAccount.privacy().hidesContentRead(), "individual content-read setting is independent of preset");
         firstAccount.savePrivacy(firstAccount.privacy().withHideRead(true));
         check(firstAccount.privacy().hidesRead(), "individual message-read setting is independent of preset");
+        firstAccount.savePrivacy(firstAccount.privacy().withHideStoryViews(true).withMarkReadOnReply(true));
+        check(firstAccount.privacy().hidesStoryViews(), "individual story-view setting is independent of preset");
+        check(firstAccount.privacy().shouldMarkReadOnReply(99), "read-on-reply is active only with hidden reads");
+        firstAccount.savePrivacy(firstAccount.privacy().withNormalBehaviorForChat(99, true).withNormalBehaviorForChat(-1001, true));
+        PrivacySettings withExceptions = firstAccount.privacy();
+        check(withExceptions.usesNormalBehavior(99) && withExceptions.usesNormalBehavior(-1001), "chat exceptions survive persistence");
+        check(withExceptions.allowsTypingAction(99, 0) && withExceptions.allowsReadReceipt(99)
+                && withExceptions.allowsContentRead(99) && withExceptions.allowsStoryViewReceipt(99),
+                "chat exception restores supported normal behavior");
+        check(!withExceptions.shouldMarkReadOnReply(99), "normal-behavior chat does not force a redundant reply read");
+        check(!withExceptions.allowsReadReceipt(100), "privacy remains active outside an exception");
+        firstAccount.savePrivacy(withExceptions.withNormalBehaviorForChat(99, false));
+        check(!firstAccount.privacy().usesNormalBehavior(99) && firstAccount.privacy().usesNormalBehavior(-1001),
+                "one chat exception can be removed independently");
         PrivacySettings secondAccountPrivacy = new SettingsRepository(accounts.get(second)).privacy();
         check(!secondAccountPrivacy.hidesTyping() && !secondAccountPrivacy.hidesContentRead() && !secondAccountPrivacy.hidesRead(),
                 "privacy is isolated by stable account");
@@ -83,13 +102,13 @@ public final class SettingsRepositoryTest {
             check(rejected, "invalid unauthenticated identity rejected: " + invalid);
         }
 
-        device.values.put(SettingsRepository.SCHEMA_KEY, 6);
+        device.values.put(SettingsRepository.SCHEMA_KEY, 7);
         int oldWrites = device.writes;
         boolean rejected = false;
         try { restarted.resetAppearance(); }
         catch (IllegalStateException expected) { rejected = true; }
         check(rejected && device.writes == oldWrites, "newer schema cannot be downgraded by reset");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 6, "newer schema kept intact");
-        System.out.println("PASS: settings defaults, additive migration, restart, resets, stable-account privacy isolation, ghost policy, invalid IDs, downgrade refusal");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 7, "newer schema kept intact");
+        System.out.println("PASS: settings defaults, additive migration, restart, resets, stable-account privacy isolation, ghost/story/reply/chat policies, invalid IDs, downgrade refusal");
     }
 }

@@ -883,7 +883,7 @@ public class EmojiAnimationsOverlay implements NotificationCenter.NotificationCe
         if (lastTappedMsgId == 0) {
             return;
         }
-        if (!org.morok.privacy.MorokPrivacy.allowsTypingAction(currentAccount, 11)) {
+        if (!org.morok.privacy.MorokPrivacy.allowsTypingAction(currentAccount, dialogId, 11)) {
             clearSendingInfo();
             return;
         }

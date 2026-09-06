@@ -11422,7 +11422,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 }
             }
         }
-        if (!org.morok.privacy.MorokPrivacy.allowsTypingAction(currentAccount, action)) {
+        if (!org.morok.privacy.MorokPrivacy.allowsTypingAction(currentAccount, dialogId, action)) {
             return false;
         }
         LongSparseArray<LongSparseArray<Boolean>> dialogs = sendingTypings[action];
@@ -14430,7 +14430,7 @@ public class MessagesController extends BaseController implements NotificationCe
             if (!DialogObject.isEncryptedDialog(dialogId)
                     && !messageObject.isSecretMedia()
                     && (messageObject.isVoice() || messageObject.isRoundVideo())
-                    && !org.morok.privacy.MorokPrivacy.allowsContentRead(currentAccount)) {
+                    && !org.morok.privacy.MorokPrivacy.allowsContentRead(currentAccount, dialogId)) {
                 return;
             }
             if (messageObject.messageOwner.peer_id.channel_id != 0) {
@@ -14585,7 +14585,7 @@ public class MessagesController extends BaseController implements NotificationCe
         // MOROK discards an already queued ordinary receipt if local-read mode was enabled during
         // Telegram's five-second delay. Explicit sync and secret-chat semantics remain available.
         if (!task.forceServerRead && !DialogObject.isEncryptedDialog(task.dialogId)
-                && !org.morok.privacy.MorokPrivacy.allowsReadReceipt(currentAccount)) {
+                && !org.morok.privacy.MorokPrivacy.allowsReadReceipt(currentAccount, task.dialogId)) {
             return;
         }
         if (task.replyId != 0 && task.monoForumPeerId == 0) {
@@ -14837,7 +14837,7 @@ public class MessagesController extends BaseController implements NotificationCe
         // Local DB, dialog counters and notifications were updated above. Do not queue a server
         // cursor for ordinary chats unless this came from the explicit Mark as read action.
         if (createReadTask && !forceServerRead && !DialogObject.isEncryptedDialog(dialogId)
-                && !org.morok.privacy.MorokPrivacy.allowsReadReceipt(currentAccount)) {
+                && !org.morok.privacy.MorokPrivacy.allowsReadReceipt(currentAccount, dialogId)) {
             createReadTask = false;
         }
 

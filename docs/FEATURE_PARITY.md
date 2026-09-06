@@ -17,8 +17,8 @@
 | Автоматический архив new/edit/delete/difference | P0 | реализуется | Для явно созданных карточек: ранние live/getDifference edit/delete/history hooks + UI fallback; общий архив и устойчивый входной WAL ещё не готовы |
 | Действительные файлы вне обычного кеша | P0 | реализуется | Для явных карточек; общий архив и reference counting впереди |
 | Шифрование, logout, replay/tombstones, лимиты, поиск | P0 | реализуется | Слой Памяти; device/crash/key-loss проверки впереди |
-| Ghost preset, online/read/content-read/typing, исключения, local cursor | P0 | реализуется | Account-local Ghost preset; semantic suppression typing/recording/upload/sticker/emoji, ordinary foreground online, ordinary server read с локальным cursor и content-read входящих voice/round video; явный mark-read синхронизирует; read-on-reply/истории/исключения впереди; API terms conflict сохраняется |
-| Stories, mark-read, read-on-reply, scheduled ghost send | P0 | требование | Нужны semantic hooks и второй аккаунт; серверные ограничения сохраняются |
+| Ghost preset, online/read/content-read/typing, исключения, local cursor | P0 | реализуется | Account-local Ghost preset; semantic suppression typing/recording/upload/sticker/emoji, ordinary foreground online, ordinary server read с локальным cursor, content-read входящих voice/round video и story-view; явный mark-read синхронизирует; chat exceptions реализованы для chat-scoped политик; API terms conflict сохраняется |
+| Stories, mark-read, read-on-reply, scheduled ghost send | P0 | реализуется | Story read/view подавляется после локального state; read-on-reply opt-in срабатывает после успешной немедленной отправки; scheduled ghost send ещё не реализован; нужны API credentials и второй аккаунт |
 | Прокси до входа, импорт, проверки и ротация | P0 | реализуется | Штатный транспорт; целевая сеть не проверена |
 | Подписанный bootstrap, зеркала, antirollback и 2 независимых узла | P0 | заблокировано зависимостью | Основы/шаблоны; нет серверов, endpoints и ключей владельца |
 | Память: карточка/цитата/файл/заметка/теги/поиск | P0 | реализуется | Native экран и encrypted private store |

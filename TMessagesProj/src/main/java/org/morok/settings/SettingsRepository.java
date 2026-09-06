@@ -2,7 +2,7 @@ package org.morok.settings;
 
 /** Versioned local-only schema. Unknown newer schemas are readable but never overwritten. */
 public final class SettingsRepository {
-    public static final int SCHEMA_VERSION = 5;
+    public static final int SCHEMA_VERSION = 6;
     public static final String SCHEMA_KEY = "schema_version";
     private final SettingsStore store;
 
@@ -32,14 +32,19 @@ public final class SettingsRepository {
                 store.getBoolean("privacy.hide_typing", false),
                 store.getBoolean("privacy.hide_online", false),
                 store.getBoolean("privacy.hide_content_read", false),
-                store.getBoolean("privacy.hide_read", false));
+                store.getBoolean("privacy.hide_read", false),
+                store.getBoolean("privacy.hide_story_views", false),
+                store.getBoolean("privacy.mark_read_on_reply", false),
+                PrivacySettings.decodeNormalBehaviorChats(store.getString("privacy.normal_behavior_chats", "")));
     }
 
     public void savePrivacy(PrivacySettings settings) {
         checkWritable();
-        store.saveBooleans(SCHEMA_VERSION,
-                new String[] {"privacy.ghost_preset", "privacy.hide_typing", "privacy.hide_online", "privacy.hide_content_read", "privacy.hide_read"},
-                new boolean[] {settings.ghostPreset, settings.hideTyping, settings.hideOnline, settings.hideContentRead, settings.hideRead});
+        store.save(SCHEMA_VERSION,
+                new String[] {"privacy.ghost_preset", "privacy.hide_typing", "privacy.hide_online", "privacy.hide_content_read", "privacy.hide_read", "privacy.hide_story_views", "privacy.mark_read_on_reply"},
+                new boolean[] {settings.ghostPreset, settings.hideTyping, settings.hideOnline, settings.hideContentRead, settings.hideRead, settings.hideStoryViews, settings.markReadOnReply},
+                new String[] {"privacy.normal_behavior_chats"},
+                new String[] {settings.encodeNormalBehaviorChats()});
     }
 
     public void resetPrivacy() {

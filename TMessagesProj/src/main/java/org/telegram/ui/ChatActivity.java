@@ -1249,6 +1249,7 @@ public class ChatActivity extends BaseFragment implements
     public final static int OPTION_VIEW_STATISTICS = 115;
     public final static int OPTION_WELCOME_REVERT = 116;
     public final static int OPTION_MOROK_REMEMBER = 1200;
+    public final static int OPTION_MOROK_PRIVACY_EXCEPTION = 1201;
 
     private final static int[] allowedNotificationsDuringChatListAnimations = new int[]{
             NotificationCenter.messagesRead,
@@ -33303,6 +33304,20 @@ public class ChatActivity extends BaseFragment implements
                 org.morok.ui.MorokMemoryActivity.remember(this, selectedObject);
                 break;
             }
+            case OPTION_MOROK_PRIVACY_EXCEPTION: {
+                try {
+                    org.morok.settings.PrivacySettings privacy = org.morok.settings.MorokSettings.privacy(currentAccount);
+                    boolean enableNormal = !privacy.usesNormalBehavior(dialog_id);
+                    org.morok.settings.MorokSettings.setPrivacy(currentAccount,
+                            privacy.withNormalBehaviorForChat(dialog_id, enableNormal));
+                    BulletinFactory.of(this).createSimpleBulletin(R.raw.chats_infotip,
+                            getString(enableNormal ? R.string.MorokChatPrivacyNormalEnabled : R.string.MorokChatPrivacyGhostEnabled)).show();
+                } catch (RuntimeException unavailableAccountOrSettings) {
+                    BulletinFactory.of(this).createSimpleBulletin(R.raw.error,
+                            getString(R.string.MorokSettingsNewerVersion)).show();
+                }
+                break;
+            }
             case OPTION_RETRY: {
                 final MessageObject object = selectedObject;
                 final MessageObject.GroupedMessages group = selectedObjectGroup;
@@ -46298,6 +46313,17 @@ public class ChatActivity extends BaseFragment implements
             items.add(LocaleController.getString(R.string.MorokMemoryRemember));
             options.add(OPTION_MOROK_REMEMBER);
             icons.add(R.drawable.msg_fave);
+        }
+
+        if (chatMode == MODE_DEFAULT && !isInsideContainer && currentEncryptedChat == null
+                && dialog_id != getUserConfig().getClientUserId()) {
+            boolean normalBehavior = false;
+            try {
+                normalBehavior = org.morok.settings.MorokSettings.privacy(currentAccount).usesNormalBehavior(dialog_id);
+            } catch (RuntimeException ignored) {}
+            items.add(getString(normalBehavior ? R.string.MorokChatPrivacyUseGhost : R.string.MorokChatPrivacyUseNormal));
+            options.add(OPTION_MOROK_PRIVACY_EXCEPTION);
+            icons.add(R.drawable.msg_settings);
         }
 
         if (showWelcomeMessageRevertOption(primaryMessage)) {

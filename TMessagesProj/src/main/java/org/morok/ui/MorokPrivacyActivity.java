@@ -29,7 +29,8 @@ import java.util.ArrayList;
 
 /** Account-local experimental controls; only behavior with semantic hooks is exposed here. */
 public final class MorokPrivacyActivity extends BaseFragment {
-    private static final int GHOST = 1, HIDE_TYPING = 2, HIDE_ONLINE = 3, HIDE_CONTENT_READ = 4, HIDE_READ = 5, RESET = 6;
+    private static final int GHOST = 1, HIDE_TYPING = 2, HIDE_ONLINE = 3, HIDE_CONTENT_READ = 4,
+            HIDE_READ = 5, HIDE_STORY_VIEWS = 6, MARK_READ_ON_REPLY = 7, RESET = 8;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -76,6 +77,12 @@ public final class MorokPrivacyActivity extends BaseFragment {
                     break;
                 case HIDE_READ:
                     apply(settings.withHideRead(!settings.hideRead));
+                    break;
+                case HIDE_STORY_VIEWS:
+                    apply(settings.withHideStoryViews(!settings.hideStoryViews));
+                    break;
+                case MARK_READ_ON_REPLY:
+                    apply(settings.withMarkReadOnReply(!settings.markReadOnReply));
                     break;
                 case RESET:
                     showDialog(new AlertDialog.Builder(context)
@@ -137,6 +144,13 @@ public final class MorokPrivacyActivity extends BaseFragment {
             rows.add(new Row(INFO, 0, text(R.string.MorokHideReadInfo)));
             rows.add(new Row(INFO, 0, text(settings().hidesRead()
                     ? R.string.MorokReadSuppressedStatus : R.string.MorokReadNormalStatus)));
+            rows.add(new Row(CHECK, HIDE_STORY_VIEWS, text(R.string.MorokHideStoryViews)));
+            rows.add(new Row(INFO, 0, text(R.string.MorokHideStoryViewsInfo)));
+            rows.add(new Row(INFO, 0, text(settings().hidesStoryViews()
+                    ? R.string.MorokStoryViewsSuppressedStatus : R.string.MorokStoryViewsNormalStatus)));
+            rows.add(new Row(CHECK, MARK_READ_ON_REPLY, text(R.string.MorokMarkReadOnReply)));
+            rows.add(new Row(INFO, 0, text(R.string.MorokMarkReadOnReplyInfo)));
+            rows.add(new Row(INFO, 0, text(R.string.MorokChatExceptionsInfo)));
             rows.add(new Row(ACTION, RESET, text(R.string.MorokPrivacyReset)));
         } else {
             rows.add(new Row(INFO, 0, text(R.string.MorokPrivacyLoginRequired)));
@@ -184,7 +198,9 @@ public final class MorokPrivacyActivity extends BaseFragment {
                 boolean checked = row.id == GHOST ? settings.ghostPreset
                         : row.id == HIDE_TYPING ? settings.hideTyping
                         : row.id == HIDE_ONLINE ? settings.hideOnline
-                        : row.id == HIDE_CONTENT_READ ? settings.hideContentRead : settings.hideRead;
+                        : row.id == HIDE_CONTENT_READ ? settings.hideContentRead
+                        : row.id == HIDE_READ ? settings.hideRead
+                        : row.id == HIDE_STORY_VIEWS ? settings.hideStoryViews : settings.markReadOnReply;
                 ((TextCheckCell) holder.itemView).setTextAndCheck(row.title, checked, false);
             } else {
                 ((TextSettingsCell) holder.itemView).setText(row.title, false);
