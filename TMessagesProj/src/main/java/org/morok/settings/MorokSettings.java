@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /** Own preference files; never writes Telegram auth, LiteMode masks, theme or proxy settings. */
 public final class MorokSettings {
     private static volatile AppearanceSettings appearance;
+    private static volatile RoundVideoSettings roundVideo;
     private static final ConcurrentHashMap<Long, PrivacySettings> privacy = new ConcurrentHashMap<>();
 
     private MorokSettings() {}
@@ -67,6 +68,23 @@ public final class MorokSettings {
     public static synchronized void setAppearance(AppearanceSettings settings) {
         repository("morok_device").saveAppearance(settings);
         appearance = settings;
+    }
+
+    public static RoundVideoSettings roundVideo() {
+        RoundVideoSettings result = roundVideo;
+        if (result == null) {
+            if (ApplicationLoader.applicationContext == null) return RoundVideoSettings.DEFAULT;
+            synchronized (MorokSettings.class) {
+                result = roundVideo;
+                if (result == null) roundVideo = result = repository("morok_device").roundVideo();
+            }
+        }
+        return result;
+    }
+
+    public static synchronized void setRoundVideo(RoundVideoSettings settings) {
+        repository("morok_device").saveRoundVideo(settings);
+        roundVideo = settings;
     }
 
     public static PrivacySettings privacy(int accountSlot) {

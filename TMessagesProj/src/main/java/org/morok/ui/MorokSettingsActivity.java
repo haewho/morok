@@ -38,7 +38,7 @@ import java.util.Locale;
 
 /** Native settings entry point. Controls are limited to wired, local behavior. */
 public final class MorokSettingsActivity extends BaseFragment {
-    private static final int GLASS = 1, REDUCED = 2, THEMES = 3, POWER = 4, RESET = 5, MEMORY = 6, PROXY = 7, PRIVACY = 8;
+    private static final int GLASS = 1, REDUCED = 2, THEMES = 3, POWER = 4, RESET = 5, MEMORY = 6, PROXY = 7, PRIVACY = 8, ROUND_VIDEO = 9;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -107,6 +107,9 @@ public final class MorokSettingsActivity extends BaseFragment {
                 case PRIVACY:
                     presentFragment(new MorokPrivacyActivity(currentAccount));
                     break;
+                case ROUND_VIDEO:
+                    presentFragment(new MorokRoundVideoActivity());
+                    break;
                 case RESET:
                     showDialog(new AlertDialog.Builder(context)
                             .setTitle(text(R.string.MorokResetAppearance))
@@ -154,6 +157,9 @@ public final class MorokSettingsActivity extends BaseFragment {
         add(ACTION, POWER, R.string.MorokPowerSettings);
         add(ACTION, RESET, R.string.MorokResetAppearance);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokDeviceSettingsInfo);
+        add(HEADER, 0, R.string.MorokRoundVideoCameraHeader);
+        add(ACTION, ROUND_VIDEO, R.string.MorokRoundVideoTitle);
+        if (query.isEmpty()) add(INFO, 0, R.string.MorokRoundVideoShortcutInfo);
         add(HEADER, 0, R.string.MorokPrivacyTitle);
         add(ACTION, PRIVACY, R.string.MorokPrivacyShortcut);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokPrivacyShortcutInfo);
@@ -217,7 +223,10 @@ public final class MorokSettingsActivity extends BaseFragment {
                         row.id == GLASS ? settings.liquidGlass : settings.reducedEffects, false);
             } else {
                 TextSettingsCell cell = (TextSettingsCell) holder.itemView;
-                if (row.id == PRIVACY) {
+                if (row.id == ROUND_VIDEO) {
+                    cell.setTextAndValue(row.title, text(MorokSettings.roundVideo().enhanced
+                            ? R.string.MorokRoundVideoEnabledStatus : R.string.MorokPrivacyOffStatus), true);
+                } else if (row.id == PRIVACY) {
                     String value = text(R.string.MorokPrivacyLoginStatus);
                     if (UserConfig.getInstance(currentAccount).isClientActivated()) {
                         try {

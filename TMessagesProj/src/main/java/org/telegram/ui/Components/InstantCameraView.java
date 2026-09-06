@@ -62,6 +62,7 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -69,6 +70,7 @@ import androidx.core.graphics.ColorUtils;
 
 import com.google.android.exoplayer2.ExoPlayer;
 
+import org.morok.camera.RoundVideoQuality;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.AutoDeleteMediaTask;
@@ -188,6 +190,14 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
     private Camera2Session[] camera2Sessions = new Camera2Session[2];
     private Camera2Session camera2SessionCurrent;
     private boolean needDrawFlickerStub;
+
+    private int morokRoundVideoCaptureSize() {
+        return RoundVideoQuality.desiredCaptureSize(MessagesController.getInstance(currentAccount).roundVideoSize);
+    }
+
+    private void configureMorokRoundVideo(Camera2Session session) {
+        if (session != null) session.setMorokRoundVideoTuning(RoundVideoQuality.enhanced());
+    }
 
     private boolean isCameraSessionInitiated() {
         if (useCamera2) {
@@ -779,8 +789,10 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
             if (bothCameras) {
                 for (int a = 0; a < 2; ++a) {
                     if (camera2Sessions[a] == null) {
-                        camera2Sessions[a] = Camera2Session.create(a == 0, MessagesController.getInstance(UserConfig.selectedAccount).roundVideoSize, MessagesController.getInstance(UserConfig.selectedAccount).roundVideoSize);
+                        int captureSize = morokRoundVideoCaptureSize();
+                        camera2Sessions[a] = Camera2Session.create(a == 0, captureSize, captureSize);
                         if (camera2Sessions[a] != null) {
+                            configureMorokRoundVideo(camera2Sessions[a]);
                             camera2Sessions[a].setRecordingVideo(true);
                             previewSize[a] = new Size(camera2Sessions[a].getPreviewWidth(), camera2Sessions[a].getPreviewHeight());
                         }
@@ -793,8 +805,10 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                 }
                 if (camera2SessionCurrent == null) return;
             } else {
-                camera2SessionCurrent = camera2Sessions[isFrontface ? 0 : 1] = Camera2Session.create(isFrontface, MessagesController.getInstance(UserConfig.selectedAccount).roundVideoSize, MessagesController.getInstance(UserConfig.selectedAccount).roundVideoSize);
+                int captureSize = morokRoundVideoCaptureSize();
+                camera2SessionCurrent = camera2Sessions[isFrontface ? 0 : 1] = Camera2Session.create(isFrontface, captureSize, captureSize);
                 if (camera2SessionCurrent == null) return;
+                configureMorokRoundVideo(camera2SessionCurrent);
                 camera2SessionCurrent.setRecordingVideo(true);
                 previewSize[0] = new Size(camera2SessionCurrent.getPreviewWidth(), camera2SessionCurrent.getPreviewHeight());
             }
@@ -986,7 +1000,8 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                 long endTime = videoEditedInfo.endTime >= 0 ? videoEditedInfo.endTime : videoEditedInfo.estimatedDuration;
                 videoEditedInfo.estimatedDuration = endTime - startTime;
                 videoEditedInfo.estimatedSize = Math.max(1, (long) (size * (videoEditedInfo.estimatedDuration / totalDuration)));
-                videoEditedInfo.bitrate = 1000000;
+                videoEditedInfo.bitrate = videoEncoder != null && videoEncoder.morokEnhancedMetadata
+                        ? videoEncoder.videoBitrate : 1000000;
                 if (videoEditedInfo.startTime > 0) {
                     videoEditedInfo.startTime *= 1000;
                 }
@@ -1146,8 +1161,10 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                     camera2SessionCurrent = null;
                     camera2Sessions[isFrontface ? 1 : 0] = null;
                 }
-                camera2SessionCurrent = camera2Sessions[isFrontface ? 0 : 1] = Camera2Session.create(isFrontface, MessagesController.getInstance(UserConfig.selectedAccount).roundVideoSize, MessagesController.getInstance(UserConfig.selectedAccount).roundVideoSize);
+                int captureSize = morokRoundVideoCaptureSize();
+                camera2SessionCurrent = camera2Sessions[isFrontface ? 0 : 1] = Camera2Session.create(isFrontface, captureSize, captureSize);
                 if (camera2SessionCurrent == null) return;
+                configureMorokRoundVideo(camera2SessionCurrent);
                 camera2SessionCurrent.setRecordingVideo(true);
                 previewSize[0] = new Size(camera2SessionCurrent.getPreviewWidth(), camera2SessionCurrent.getPreviewHeight());
                 cameraThread.setCurrentSession(camera2SessionCurrent);
@@ -2119,6 +2136,10 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
         private int videoWidth;
         private int videoHeight;
         private int videoBitrate;
+        private int upstreamVideoResolution;
+        private int upstreamVideoBitrate;
+        private String videoEncoderName;
+        private boolean morokEnhancedMetadata;
         private boolean videoConvertFirstWrite = true;
         private boolean blendEnabled;
 
@@ -2314,8 +2335,23 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
             }
 
             started = true;
-            int resolution = MessagesController.getInstance(currentAccount).roundVideoSize;
-            int bitrate = MessagesController.getInstance(currentAccount).roundVideoBitrate * 1024;
+            int upstreamResolution = MessagesController.getInstance(currentAccount).roundVideoSize;
+            int upstreamBitrateKbps = MessagesController.getInstance(currentAccount).roundVideoBitrate;
+            upstreamVideoResolution = upstreamResolution;
+            upstreamVideoBitrate = upstreamBitrateKbps * 1024;
+            Size activePreview = bothCameras ? previewSize[isFrontface ? 0 : 1] : previewSize[0];
+            int previewWidth = activePreview == null ? upstreamResolution : activePreview.getWidth();
+            int previewHeight = activePreview == null ? upstreamResolution : activePreview.getHeight();
+            RoundVideoQuality.Plan plan = RoundVideoQuality.resolve(upstreamResolution, upstreamBitrateKbps,
+                    previewWidth, previewHeight);
+            int resolution = plan.resolution;
+            int bitrate = plan.bitrateKbps * 1024;
+            videoEncoderName = plan.encoderName;
+            morokEnhancedMetadata = RoundVideoQuality.enhanced();
+            if (plan.downgraded) {
+                AndroidUtilities.runOnUIThread(() -> Toast.makeText(ApplicationLoader.applicationContext,
+                        LocaleController.getString(R.string.MorokRoundVideoDowngraded), Toast.LENGTH_LONG).show());
+            }
             AndroidUtilities.runOnUIThread(() -> {
                 NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.stopAllHeavyOperations, 512);
             });
@@ -2793,9 +2829,9 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                 videoEditedInfo.key = key;
                 videoEditedInfo.iv = iv;
                 videoEditedInfo.estimatedSize = Math.max(1, size);
-                videoEditedInfo.framerate = 25;
-                videoEditedInfo.resultWidth = videoEditedInfo.originalWidth = 360;
-                videoEditedInfo.resultHeight = videoEditedInfo.originalHeight = 360;
+                videoEditedInfo.framerate = morokEnhancedMetadata ? FRAME_RATE : 25;
+                videoEditedInfo.resultWidth = videoEditedInfo.originalWidth = morokEnhancedMetadata ? videoWidth : 360;
+                videoEditedInfo.resultHeight = videoEditedInfo.originalHeight = morokEnhancedMetadata ? videoHeight : 360;
                 videoEditedInfo.originalPath = previewFile.getAbsolutePath();
                 setupVideoPlayer(previewFile);
                 videoEditedInfo.estimatedDuration = recordedTime;
@@ -2889,9 +2925,9 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                         videoEditedInfo.encryptedFile = encryptedFile;
                         videoEditedInfo.key = key;
                         videoEditedInfo.iv = iv;
-                        videoEditedInfo.framerate = 25;
-                        videoEditedInfo.resultWidth = videoEditedInfo.originalWidth = 360;
-                        videoEditedInfo.resultHeight = videoEditedInfo.originalHeight = 360;
+                        videoEditedInfo.framerate = morokEnhancedMetadata ? FRAME_RATE : 25;
+                        videoEditedInfo.resultWidth = videoEditedInfo.originalWidth = morokEnhancedMetadata ? videoWidth : 360;
+                        videoEditedInfo.resultHeight = videoEditedInfo.originalHeight = morokEnhancedMetadata ? videoHeight : 360;
                         videoEditedInfo.originalPath = videoFile.getAbsolutePath();
                         videoEditedInfo.notReadyYet = true;
                         videoEditedInfo.thumb = firstFrameThumb;
@@ -3025,7 +3061,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                             long endTime = videoEditedInfo.endTime >= 0 ? videoEditedInfo.endTime : videoEditedInfo.estimatedDuration;
                             videoEditedInfo.estimatedDuration = endTime - startTime;
                             videoEditedInfo.estimatedSize = Math.max(1, (long) (size * (videoEditedInfo.estimatedDuration / totalDuration)));
-                            videoEditedInfo.bitrate = 1000000;
+                            videoEditedInfo.bitrate = morokEnhancedMetadata ? videoBitrate : 1000000;
                             if (videoEditedInfo.startTime > 0) {
                                 videoEditedInfo.startTime *= 1000;
                             }
@@ -3041,9 +3077,9 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                         videoEditedInfo.encryptedFile = encryptedFile;
                         videoEditedInfo.key = key;
                         videoEditedInfo.iv = iv;
-                        videoEditedInfo.framerate = 25;
-                        videoEditedInfo.resultWidth = videoEditedInfo.originalWidth = 360;
-                        videoEditedInfo.resultHeight = videoEditedInfo.originalHeight = 360;
+                        videoEditedInfo.framerate = morokEnhancedMetadata ? FRAME_RATE : 25;
+                        videoEditedInfo.resultWidth = videoEditedInfo.originalWidth = morokEnhancedMetadata ? videoWidth : 360;
+                        videoEditedInfo.resultHeight = videoEditedInfo.originalHeight = morokEnhancedMetadata ? videoHeight : 360;
                         videoEditedInfo.originalPath = videoFile.getAbsolutePath();
                         final VideoEditedInfo info = videoEditedInfo;
                         if (send == ENCODER_SEND_SEND) {
@@ -3200,19 +3236,21 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                 audioEncoder.configure(audioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
                 audioEncoder.start();
 
-                videoEncoder = MediaCodec.createEncoderByType(VIDEO_MIME_TYPE);
                 firstEncode = true;
-
-                MediaFormat format = MediaFormat.createVideoFormat(VIDEO_MIME_TYPE, videoWidth, videoHeight);
-
-                format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
-                format.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate);
-                format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
-                format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL);
-
-                videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-                surface = videoEncoder.createInputSurface();
-                videoEncoder.start();
+                try {
+                    configureVideoEncoder();
+                } catch (Exception enhancedCodecFailure) {
+                    if (fromPause || videoEncoderName == null) throw enhancedCodecFailure;
+                    FileLog.e("MOROK enhanced round video encoder failed; retrying upstream before recording",
+                            enhancedCodecFailure);
+                    releaseFailedVideoEncoder();
+                    videoEncoderName = null;
+                    videoWidth = videoHeight = upstreamVideoResolution;
+                    videoBitrate = upstreamVideoBitrate;
+                    configureVideoEncoder();
+                    AndroidUtilities.runOnUIThread(() -> Toast.makeText(ApplicationLoader.applicationContext,
+                            LocaleController.getString(R.string.MorokRoundVideoDowngraded), Toast.LENGTH_LONG).show());
+                }
 
                 if (!fromPause) {
                     boolean isSdCard = ImageLoader.isSdCardPath(videoFile);
@@ -3359,6 +3397,30 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                     textureMatrixHandle = GLES20.glGetUniformLocation(drawProgram, "uSTMatrix");
                     texelSizeHandle = GLES20.glGetUniformLocation(drawProgram, "texelSize");
                 }
+            }
+        }
+
+        private void configureVideoEncoder() throws Exception {
+            videoEncoder = videoEncoderName == null ? MediaCodec.createEncoderByType(VIDEO_MIME_TYPE)
+                    : MediaCodec.createByCodecName(videoEncoderName);
+            MediaFormat format = MediaFormat.createVideoFormat(VIDEO_MIME_TYPE, videoWidth, videoHeight);
+            format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
+            format.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate);
+            format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
+            format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL);
+            videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            surface = videoEncoder.createInputSurface();
+            videoEncoder.start();
+        }
+
+        private void releaseFailedVideoEncoder() {
+            if (surface != null) {
+                try { surface.release(); } catch (Exception e) { FileLog.e(e); }
+                surface = null;
+            }
+            if (videoEncoder != null) {
+                try { videoEncoder.release(); } catch (Exception e) { FileLog.e(e); }
+                videoEncoder = null;
             }
         }
 

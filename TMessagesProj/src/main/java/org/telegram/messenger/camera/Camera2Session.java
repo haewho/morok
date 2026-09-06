@@ -452,6 +452,16 @@ public class Camera2Session {
         }
     }
 
+    private boolean morokRoundVideoTuning;
+
+    /** Called only by the round-video integration before opening the capture session. */
+    public void setMorokRoundVideoTuning(boolean enabled) {
+        if (morokRoundVideoTuning != enabled) {
+            morokRoundVideoTuning = enabled;
+            updateCaptureRequest();
+        }
+    }
+
     private boolean scanningBarcode;
     public void setScanningBarcode(boolean scanning) {
         if (scanningBarcode != scanning) {
@@ -490,7 +500,37 @@ public class Camera2Session {
             captureRequestBuilder.set(CaptureRequest.FLASH_MODE, flashing ? (recordingVideo ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_SINGLE) : CaptureRequest.FLASH_MODE_OFF);
 
             if (recordingVideo) {
-                captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<Integer>(30, 60));
+                if (morokRoundVideoTuning) {
+                    Range<Integer> stableFps = chooseStableThirtyFps(
+                            cameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES));
+                    if (stableFps != null) {
+                        captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, stableFps);
+                    }
+                    int[] afModes = cameraCharacteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+                    if (contains(afModes, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)) {
+                        captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
+                                CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+                    }
+                    int[] stabilizationModes = cameraCharacteristics.get(
+                            CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES);
+                    if (contains(stabilizationModes, CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON)) {
+                        captureRequestBuilder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+                                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON);
+                        int[] opticalModes = cameraCharacteristics.get(
+                                CameraCharacteristics.LENS_INFO_AVAILABLE_OPTICAL_STABILIZATION);
+                        if (contains(opticalModes, CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_OFF)) {
+                            captureRequestBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE,
+                                    CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_OFF);
+                        }
+                    }
+                    FileLog.d("MOROK Camera2 round tuning camera=" + cameraId + " preview="
+                            + previewSize.getWidth() + "x" + previewSize.getHeight()
+                            + " fps=" + stableFps
+                            + " continuousAf=" + contains(afModes, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
+                            + " eis=" + contains(stabilizationModes, CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON));
+                } else {
+                    captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<Integer>(30, 60));
+                }
                 captureRequestBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT, CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_RECORD);
             }
 
@@ -512,7 +552,32 @@ public class Camera2Session {
             captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, handler);
         } catch (Exception e) {
             FileLog.e("Camera2Sessions setRepeatingRequest error in updateCaptureRequest", e);
+            if (morokRoundVideoTuning && recordingVideo) {
+                FileLog.e("MOROK Camera2 round tuning rejected; retrying the upstream request");
+                morokRoundVideoTuning = false;
+                updateCaptureRequest();
+            }
         }
+    }
+
+    private static boolean contains(int[] values, int expected) {
+        if (values == null) return false;
+        for (int value : values) if (value == expected) return true;
+        return false;
+    }
+
+    private static Range<Integer> chooseStableThirtyFps(Range<Integer>[] ranges) {
+        if (ranges == null) return null;
+        Range<Integer> best = null;
+        for (Range<Integer> range : ranges) {
+            if (range == null || !range.contains(30)) continue;
+            if (best == null || range.getUpper() - range.getLower() < best.getUpper() - best.getLower()
+                    || range.getUpper() - range.getLower() == best.getUpper() - best.getLower()
+                    && range.getUpper() < best.getUpper()) {
+                best = range;
+            }
+        }
+        return best;
     }
 
     public boolean takePicture(final File file, Utilities.Callback<Integer> whenDone) {

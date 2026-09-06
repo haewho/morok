@@ -62,4 +62,20 @@
     <string name="MorokPrivacyCustomStatus">Своя настройка</string>
     <string name="MorokPrivacyOffStatus">Выключено</string>
     <string name="MorokPrivacyLoginStatus">Нужен вход</string>
+    <string name="MorokRoundVideoTitle">Качество кружочков</string>
+    <string name="MorokRoundVideoCameraHeader">Камера и кружочки</string>
+    <string name="MorokRoundVideoShortcutInfo">Экспериментальные локальные профили захвата и кодирования. Выключение сохраняет текущее поведение Telegram.</string>
+    <string name="MorokRoundVideoExperimentalInfo">Экспериментальная функция, по умолчанию выключена. Результат зависит от камеры, AVC-энкодера и совместимости Telegram. Качество у получателя ещё не подтверждено.</string>
+    <string name="MorokRoundVideoEnhanced">Улучшенное качество кружочков</string>
+    <string name="MorokRoundVideoEnhancedInfo">Применяется к следующей записи. Использует существующий однопроходный GPU/H.264-путь, проверяет исходный кадр и энкодер и до начала записи возвращается к совместимому профилю, если выбранный недоступен.</string>
+    <string name="MorokRoundVideoQuality">Качество</string>
+    <string name="MorokRoundVideoAuto">Авто</string>
+    <string name="MorokRoundVideoSaver">Экономия</string>
+    <string name="MorokRoundVideoHigh">Высокое</string>
+    <string name="MorokRoundVideoProfileInfo">Авто выбирает до 640×640 и 2,5 Мбит/с. Экономия сохраняет совместимую базу. Высокое проверяет до 720×720 и 4 Мбит/с. Большее число само по себе не доказывает улучшение у получателя.</string>
+    <string name="MorokRoundVideoStabilizationInfo">На Camera2 улучшенный режим запрашивает самый узкий поддержанный диапазон, включающий 30 FPS, continuous-video автофокус и электронную стабилизацию. Неподдержанные параметры остаются штатными для камеры.</string>
+    <string name="MorokRoundVideoReset">Сбросить параметры камеры</string>
+    <string name="MorokRoundVideoResetInfo">Выключить улучшенные кружочки и вернуть профиль «Авто»?</string>
+    <string name="MorokRoundVideoDowngraded">Выбранный профиль недоступен для этой камеры или AVC-энкодера. MOROK использует совместимый профиль ниже.</string>
+    <string name="MorokRoundVideoEnabledStatus">Эксперимент включён</string>
 </resources>

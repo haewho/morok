@@ -2,6 +2,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.morok.settings.AppearanceSettings;
 import org.morok.settings.PrivacySettings;
+import org.morok.settings.RoundVideoSettings;
 import org.morok.settings.SettingsRepository;
 import org.morok.settings.SettingsStore;
 
@@ -36,10 +37,26 @@ public final class SettingsRepositoryTest {
         repo.saveAppearance(new AppearanceSettings(false, true));
         SettingsRepository restarted = new SettingsRepository(device);
         check(!restarted.appearance().liquidGlass && restarted.appearance().reducedEffects, "restart persistence");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 7, "additive schema migration");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 8, "additive schema migration");
         restarted.resetAppearance();
         check(restarted.appearance().liquidGlass && !restarted.appearance().reducedEffects, "category reset defaults");
         check("keep".equals(device.values.get("future.unrelated")), "reset preserves other settings");
+
+        RoundVideoSettings roundDefaults = restarted.roundVideo();
+        check(!roundDefaults.enhanced && RoundVideoSettings.PROFILE_AUTO.equals(roundDefaults.profile),
+                "round-video defaults preserve upstream behavior");
+        RoundVideoSettings high = roundDefaults.withEnhanced(true).withProfile(RoundVideoSettings.PROFILE_HIGH);
+        check(high.desiredResolution(384) == 720 && high.desiredBitrateKbps(1000, 720) == 4000,
+                "high round-video profile requests its bounded experiment");
+        restarted.saveRoundVideo(high);
+        check(new SettingsRepository(device).roundVideo().enhanced
+                        && RoundVideoSettings.PROFILE_HIGH.equals(new SettingsRepository(device).roundVideo().profile),
+                "round-video profile survives restart");
+        restarted.saveRoundVideo(new RoundVideoSettings(true, "future-invalid"));
+        check(RoundVideoSettings.PROFILE_AUTO.equals(restarted.roundVideo().profile),
+                "invalid round-video profile safely maps to auto");
+        restarted.resetRoundVideo();
+        check(!restarted.roundVideo().enhanced, "round-video reset restores upstream behavior");
 
         Map<String, Store> accounts = new HashMap<>();
         String first = SettingsRepository.accountNamespace(9223372036854775806L);
@@ -115,13 +132,13 @@ public final class SettingsRepositoryTest {
             check(rejected, "invalid unauthenticated identity rejected: " + invalid);
         }
 
-        device.values.put(SettingsRepository.SCHEMA_KEY, 8);
+        device.values.put(SettingsRepository.SCHEMA_KEY, 9);
         int oldWrites = device.writes;
         boolean rejected = false;
         try { restarted.resetAppearance(); }
         catch (IllegalStateException expected) { rejected = true; }
         check(rejected && device.writes == oldWrites, "newer schema cannot be downgraded by reset");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 8, "newer schema kept intact");
-        System.out.println("PASS: settings defaults, additive migration, restart, resets, stable-account privacy isolation, ghost/story/reply/delay/chat policies, invalid IDs, downgrade refusal");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 9, "newer schema kept intact");
+        System.out.println("PASS: settings defaults, additive migration, restart, resets, round-video profiles, stable-account privacy isolation, ghost/story/reply/delay/chat policies, invalid IDs, downgrade refusal");
     }
 }

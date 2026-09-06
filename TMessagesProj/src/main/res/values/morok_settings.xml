@@ -62,4 +62,20 @@
     <string name="MorokPrivacyCustomStatus">Custom</string>
     <string name="MorokPrivacyOffStatus">Off</string>
     <string name="MorokPrivacyLoginStatus">Sign in</string>
+    <string name="MorokRoundVideoTitle">Round video quality</string>
+    <string name="MorokRoundVideoCameraHeader">Camera and round videos</string>
+    <string name="MorokRoundVideoShortcutInfo">Experimental local capture and encoding profiles. Disabled preserves Telegram’s current behavior.</string>
+    <string name="MorokRoundVideoExperimentalInfo">Experimental and disabled by default. Actual quality depends on the camera, AVC encoder and Telegram compatibility. Receiver-side quality has not yet been confirmed.</string>
+    <string name="MorokRoundVideoEnhanced">Enhanced round video quality</string>
+    <string name="MorokRoundVideoEnhancedInfo">Applies to the next recording. Uses the existing one-pass GPU and H.264 path, validates the source frame and encoder, and falls back before recording if the requested profile is unavailable.</string>
+    <string name="MorokRoundVideoQuality">Quality</string>
+    <string name="MorokRoundVideoAuto">Auto</string>
+    <string name="MorokRoundVideoSaver">Data saver</string>
+    <string name="MorokRoundVideoHigh">High</string>
+    <string name="MorokRoundVideoProfileInfo">Auto targets up to 640×640 at 2.5 Mbit/s. Data saver keeps the compatible baseline. High tests up to 720×720 at 4 Mbit/s. A larger number is not proof of better receiver-side quality.</string>
+    <string name="MorokRoundVideoStabilizationInfo">On Camera2, enhanced mode requests the narrowest supported FPS range containing 30, continuous-video autofocus and electronic stabilization. Unsupported controls remain at the camera template defaults.</string>
+    <string name="MorokRoundVideoReset">Reset camera parameters</string>
+    <string name="MorokRoundVideoResetInfo">Disable enhanced round videos and restore the Auto profile?</string>
+    <string name="MorokRoundVideoDowngraded">The selected round-video profile is unavailable for this camera or AVC encoder. MOROK will use a compatible lower profile.</string>
+    <string name="MorokRoundVideoEnabledStatus">Experimental on</string>
 </resources>

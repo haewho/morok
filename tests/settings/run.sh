@@ -13,6 +13,7 @@ fi
 "$settings_javac" --release 8 -d "$settings_test_dir" \
     "$project_dir/TMessagesProj/src/main/java/org/morok/settings/AppearanceSettings.java" \
     "$project_dir/TMessagesProj/src/main/java/org/morok/settings/PrivacySettings.java" \
+    "$project_dir/TMessagesProj/src/main/java/org/morok/settings/RoundVideoSettings.java" \
     "$project_dir/TMessagesProj/src/main/java/org/morok/settings/SettingsStore.java" \
     "$project_dir/TMessagesProj/src/main/java/org/morok/settings/SettingsRepository.java" \
     "$project_dir/tests/settings/SettingsRepositoryTest.java"

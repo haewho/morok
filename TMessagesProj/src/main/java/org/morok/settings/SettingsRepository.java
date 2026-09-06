@@ -2,7 +2,7 @@ package org.morok.settings;
 
 /** Versioned local-only schema. Unknown newer schemas are readable but never overwritten. */
 public final class SettingsRepository {
-    public static final int SCHEMA_VERSION = 7;
+    public static final int SCHEMA_VERSION = 8;
     public static final String SCHEMA_KEY = "schema_version";
     private final SettingsStore store;
 
@@ -25,6 +25,22 @@ public final class SettingsRepository {
 
     public void resetAppearance() {
         saveAppearance(AppearanceSettings.DEFAULT);
+    }
+
+    public RoundVideoSettings roundVideo() {
+        return new RoundVideoSettings(store.getBoolean("camera.round_video_enhanced", false),
+                store.getString("camera.round_video_profile", RoundVideoSettings.PROFILE_AUTO));
+    }
+
+    public void saveRoundVideo(RoundVideoSettings settings) {
+        checkWritable();
+        store.save(SCHEMA_VERSION,
+                new String[] {"camera.round_video_enhanced"}, new boolean[] {settings.enhanced},
+                new String[] {"camera.round_video_profile"}, new String[] {settings.profile});
+    }
+
+    public void resetRoundVideo() {
+        saveRoundVideo(RoundVideoSettings.DEFAULT);
     }
 
     public PrivacySettings privacy() {
