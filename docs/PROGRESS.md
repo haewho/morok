@@ -7,7 +7,7 @@
 - собственные package ID, название, launcher aliases, ресурсы бренда и отдельная debug-установка;
 - воспроизводимая привязка к upstream и десяти submodule commit, preflight-проверки и CI;
 - локальные MOROK Settings: управление доступным blur, уменьшение эффектов, ссылки на штатные темы и энергосбережение;
-- MOROK Memory: ручные карточки, заметки, теги, поиск, версии, напоминания, шифрование через Android Keystore/Tink, account isolation и очистка при logout;
+- MOROK Memory: ручные карточки, заметки, теги, поиск, версии, напоминания, шифрование через Android Keystore/Tink, account isolation и очистка при logout; раннее наблюдение стандартных server edit/delete/history updates для уже созданных карточек;
 - MOROK connection: direct/manual/auto, импорт, проверки, ротация, подписанный пул с anti-rollback и явное отсутствие скрытого direct fallback;
 - шаблоны собственной прокси-инфраструктуры и документация сборки, архитектуры, обновления и ограничений.
 

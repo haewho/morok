@@ -32,14 +32,76 @@ public final class MemoryObserver implements NotificationCenter.NotificationCent
     /** Install once after normal application/account initialization, on the main thread. */
     public static void start() {
         AndroidUtilities.runOnUIThread(() -> {
-            for (int i = 0; i < INSTANCES.length; i++) if (INSTANCES[i] == null) INSTANCES[i] = new MemoryObserver(i);
+            for (int i = 0; i < INSTANCES.length; i++) instance(i);
         });
+    }
+
+    private static MemoryObserver instance(int account) {
+        if (account < 0 || account >= INSTANCES.length) return null;
+        if (INSTANCES[account] == null) INSTANCES[account] = new MemoryObserver(account);
+        return INSTANCES[account];
+    }
+
+    /**
+     * Called while a server edit is still owned by MessagesController and before its database write.
+     * The bounded immutable snapshot is taken on that processing thread; persistence remains ordered
+     * on the Memory queue so Telegram update acknowledgements are never blocked on Android Keystore.
+     */
+    public static void beforeTelegramStorageEdit(MessageObject message) {
+        if (message == null) return;
+        final int account = message.currentAccount;
+        MorokMemoryStore store = null;
+        try {
+            store = MorokMemoryStore.forAccount(account);
+            if (!store.hasCards() || !MemoryCapture.isAllowed(message)
+                    || !store.tracks(MemoryCapture.keyOf(message))) return;
+            MemoryCapture capture = MemoryCapture.take(message);
+            MorokMemoryStore target = store;
+            AndroidUtilities.runOnUIThread(() -> {
+                MemoryObserver observer = instance(account);
+                if (observer != null) observer.enqueueCapture(target, capture);
+            });
+        } catch (Exception error) {
+            if (store != null) store.noteCaptureGap();
+        }
+    }
+
+    /** Queue raw difference/live-update deletion before MessagesController mutates Telegram storage. */
+    public static void beforeTelegramStorageDelete(int account, long channelId, ArrayList<Integer> sourceIds) {
+        MorokMemoryStore store = activeStore(account);
+        if (store == null || sourceIds == null || sourceIds.isEmpty()) return;
+        if (sourceIds.size() > 10000) { store.noteCaptureGap(); return; }
+        ArrayList<Integer> ids = new ArrayList<>(sourceIds);
+        AndroidUtilities.runOnUIThread(() -> {
+            MemoryObserver observer = instance(account);
+            if (observer != null) observer.enqueueDelete(store, channelId, ids);
+        });
+    }
+
+    /** Queue server history truncation before the corresponding Telegram database cleanup. */
+    public static void beforeTelegramStorageHistoryClear(int account, long dialogId, int maxId) {
+        MorokMemoryStore store = activeStore(account);
+        if (store == null) return;
+        AndroidUtilities.runOnUIThread(() -> {
+            MemoryObserver observer = instance(account);
+            if (observer != null) observer.enqueueHistoryClear(store, dialogId, maxId);
+        });
+    }
+
+    private static MorokMemoryStore activeStore(int account) {
+        if (account < 0 || account >= INSTANCES.length || !UserConfig.getInstance(account).isClientActivated()) return null;
+        try {
+            MorokMemoryStore store = MorokMemoryStore.forAccount(account);
+            return store.hasCards() ? store : null;
+        } catch (RuntimeException error) {
+            return null;
+        }
     }
 
     @Override public void didReceivedNotification(int id, int currentAccount, Object... args) {
         if (!UserConfig.getInstance(account).isClientActivated()) return;
         MorokMemoryStore store = MorokMemoryStore.forAccount(account);
-        if (session != store) { session = store; running = false; pending.clear(); queuedRevisions.clear(); }
+        bind(store);
         if (!store.hasCards()) return;
         if (id == NotificationCenter.replaceMessagesObjects) {
             @SuppressWarnings("unchecked") ArrayList<MessageObject> messages = (ArrayList<MessageObject>) args[1];
@@ -47,34 +109,59 @@ public final class MemoryObserver implements NotificationCenter.NotificationCent
                 try {
                     // Membership is checked before bounded TL serialization or any file/crypto work.
                     if (!MemoryCapture.isAllowed(message) || !store.tracks(MemoryCapture.keyOf(message))) continue;
-                    if (pending.size() >= MAX_PENDING) { store.noteCaptureGap(); break; }
                     MemoryCapture capture = MemoryCapture.take(message);
-                    String revision = capture.key.canonical() + ":" + capture.snapshot.fingerprint;
-                    if (!queuedRevisions.add(revision)) continue;
-                    enqueue((target, done) -> target.save(capture, false, (card, error) -> {
-                        queuedRevisions.remove(revision);
-                        if (error != null) target.noteCaptureGap(); done.run();
-                    }));
+                    enqueueCapture(store, capture);
                 } catch (Exception error) { store.noteCaptureGap(); }
             }
         } else if (id == NotificationCenter.messagesDeleted) {
             if (args.length > 2 && Boolean.TRUE.equals(args[2])) return; // scheduled-message namespace
-            if (pending.size() >= MAX_PENDING) { store.noteCaptureGap(); return; }
             @SuppressWarnings("unchecked") ArrayList<Integer> sourceIds = (ArrayList<Integer>) args[0];
             // IDs have a fixed 32-bit representation; a giant event is split by a bounded ceiling.
             if (sourceIds.size() > 10000) { store.noteCaptureGap(); return; }
             ArrayList<Integer> ids = new ArrayList<>(sourceIds);
-            long channelId = (Long) args[1];
-            enqueue((target, done) -> target.markDeleted(channelId, ids, (changed, error) -> {
-                if (error != null) target.noteCaptureGap(); done.run();
-            }));
+            enqueueDelete(store, (Long) args[1], ids);
         } else if (id == NotificationCenter.historyCleared) {
-            if (pending.size() >= MAX_PENDING) { store.noteCaptureGap(); return; }
             long dialogId = (Long) args[0]; int maxId = (Integer) args[1];
-            enqueue((target, done) -> target.markDialogDeleted(dialogId, maxId, (changed, error) -> {
-                if (error != null) target.noteCaptureGap(); done.run();
-            }));
+            enqueueHistoryClear(store, dialogId, maxId);
         }
+    }
+
+    private void bind(MorokMemoryStore store) {
+        if (session != store) { session = store; running = false; pending.clear(); queuedRevisions.clear(); }
+    }
+
+    private void enqueueCapture(MorokMemoryStore store, MemoryCapture capture) {
+        bind(store);
+        if (!store.isActive() || !store.tracks(capture.key)) return;
+        String revision = capture.key.canonical() + ":" + capture.snapshot.fingerprint;
+        if (queuedRevisions.contains(revision)) return;
+        if (pending.size() >= MAX_PENDING) { store.noteCaptureGap(); return; }
+        queuedRevisions.add(revision);
+        enqueue((target, done) -> target.save(capture, false, (card, error) -> {
+            queuedRevisions.remove(revision);
+            if (error != null) target.noteCaptureGap();
+            done.run();
+        }));
+    }
+
+    private void enqueueDelete(MorokMemoryStore store, long channelId, ArrayList<Integer> ids) {
+        bind(store);
+        if (!store.hasCards()) return;
+        if (pending.size() >= MAX_PENDING) { store.noteCaptureGap(); return; }
+        enqueue((target, done) -> target.markDeleted(channelId, ids, (changed, error) -> {
+            if (error != null) target.noteCaptureGap();
+            done.run();
+        }));
+    }
+
+    private void enqueueHistoryClear(MorokMemoryStore store, long dialogId, int maxId) {
+        bind(store);
+        if (!store.hasCards()) return;
+        if (pending.size() >= MAX_PENDING) { store.noteCaptureGap(); return; }
+        enqueue((target, done) -> target.markDialogDeleted(dialogId, maxId, (changed, error) -> {
+            if (error != null) target.noteCaptureGap();
+            done.run();
+        }));
     }
 
     private void enqueue(Job job) { pending.add(job); drain(); }

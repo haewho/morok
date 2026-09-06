@@ -389,9 +389,14 @@ public final class MorokMemoryStore {
     public void markDialogDeleted(long dialogId) { markDialogDeleted(dialogId, Integer.MAX_VALUE, null); }
     public void markDialogDeleted(long dialogId, int maxMessageId, Callback<Boolean> callback) {
         execute(() -> {
-            Database database = read();
-            for (MemoryCard card : database.cards) if (card.key.dialogId() == dialogId && card.key.messageId <= maxMessageId) card.deletedInTelegram = true;
-            write(database); return true;
+            Database database = read(); boolean changed = false;
+            for (MemoryCard card : database.cards) {
+                if (card.key.dialogId() == dialogId && card.key.messageId <= maxMessageId && !card.deletedInTelegram) {
+                    card.deletedInTelegram = true; changed = true;
+                }
+            }
+            if (changed) write(database);
+            return changed;
         }, callback);
     }
 

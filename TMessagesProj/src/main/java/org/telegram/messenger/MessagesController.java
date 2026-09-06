@@ -18814,6 +18814,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 dialogs_read_outbox_max.put(dialogId, Math.max(value, update.max_id));
             } else if (baseUpdate instanceof TL_update.TL_updateDeleteMessages) {
                 TL_update.TL_updateDeleteMessages update = (TL_update.TL_updateDeleteMessages) baseUpdate;
+                org.morok.history.MemoryObserver.beforeTelegramStorageDelete(currentAccount, 0, update.messages);
                 if (deletedMessages == null) {
                     deletedMessages = new LongSparseArray<>();
                 }
@@ -19336,6 +19337,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 dialogs_read_outbox_max.put(dialogId, Math.max(value, update.max_id));
             } else if (baseUpdate instanceof TL_update.TL_updateDeleteChannelMessages) {
                 TL_update.TL_updateDeleteChannelMessages update = (TL_update.TL_updateDeleteChannelMessages) baseUpdate;
+                org.morok.history.MemoryObserver.beforeTelegramStorageDelete(currentAccount, update.channel_id, update.messages);
                 if (BuildVars.LOGS_ENABLED) {
                     FileLog.d(baseUpdate + " channelId = " + update.channel_id);
                 }
@@ -19492,6 +19494,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
                 boolean isDialogCreated = createdDialogIds.contains(message.dialog_id);
                 MessageObject obj = new MessageObject(currentAccount, message, usersDict, chatsDict, isDialogCreated, isDialogCreated);
+                org.morok.history.MemoryObserver.beforeTelegramStorageEdit(obj);
                 getTranslateController().invalidateTranslation(obj);
 
                 LongSparseArray<ArrayList<MessageObject>> array;
@@ -19524,6 +19527,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 LocaleController.getInstance().reloadCurrentRemoteLocale(currentAccount, update.lang_code, false, null);
             } else if (baseUpdate instanceof TL_update.TL_updateChannelAvailableMessages) {
                 TL_update.TL_updateChannelAvailableMessages update = (TL_update.TL_updateChannelAvailableMessages) baseUpdate;
+                org.morok.history.MemoryObserver.beforeTelegramStorageHistoryClear(currentAccount, -update.channel_id, update.available_min_id);
                 if (clearHistoryMessages == null) {
                     clearHistoryMessages = new LongSparseIntArray();
                 }
