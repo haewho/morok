@@ -14,7 +14,7 @@
 | Liquid Glass on/off, минимум эффектов | P0 | реализуется | Общие blur3 capture/draw paths; старые самостоятельные scrim paths охвачены не полностью |
 | Светлая/тёмная/AMOLED, семантические overrides, dynamic colors | P0 | реализуется | Доступ к штатным темам; полная карта override/контраста впереди |
 | Схема настроек и стабильный ID аккаунта | P0 | реализовано | Отдельный слой с JVM-тестами; UI использует настройки устройства |
-| Автоматический архив new/edit/delete/difference | P0 | реализуется | Для явно созданных карточек: ранние live/getDifference edit/delete/history hooks + UI fallback; общий архив и устойчивый входной WAL ещё не готовы |
+| Автоматический архив new/edit/delete/difference | P0 | реализуется | Для явно созданных карточек: ранние live/getDifference edit/delete/history hooks, encrypted bounded WAL + replay и UI fallback; общий архив новых сообщений/политики по чатам впереди |
 | Действительные файлы вне обычного кеша | P0 | реализуется | Для явных карточек; общий архив и reference counting впереди |
 | Шифрование, logout, replay/tombstones, лимиты, поиск | P0 | реализуется | Слой Памяти; device/crash/key-loss проверки впереди |
 | Ghost preset, online/read/content-read/typing, исключения, local cursor | P0 | реализуется | Account-local Ghost preset; semantic suppression typing/recording/upload/sticker/emoji, ordinary foreground online, ordinary server read с локальным cursor, content-read входящих voice/round video и story-view; явный mark-read синхронизирует; chat exceptions имеют централизованный список/удаление; API terms conflict сохраняется |

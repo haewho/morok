@@ -1,4 +1,5 @@
 import org.morok.memory.MemoryKey;
+import org.morok.memory.MemoryJournalPolicy;
 import org.morok.memory.MemoryPolicy;
 
 import java.util.HashSet;
@@ -34,6 +35,20 @@ public final class MemoryDomainTest {
         expect(!MemoryPolicy.canCopy(0, 0, 100 * 1024 * 1024), "Empty/truncated original is not retained as a valid file");
         expect(!MemoryPolicy.canCopy(1024, MemoryPolicy.MAX_ACCOUNT_BYTES, 100 * 1024 * 1024), "Account quota prevents disk filling");
         expect(!MemoryPolicy.canCopy(1024, 0, MemoryPolicy.MIN_FREE_BYTES + 1024), "Encryption overhead must preserve free-space reserve");
+        String editEvent = MemoryJournalPolicy.eventId("edit", first.canonical() + ":revision");
+        expect(editEvent.equals(MemoryJournalPolicy.eventId("edit", first.canonical() + ":revision")),
+                "Journal replay identity must be deterministic");
+        expect(!editEvent.equals(MemoryJournalPolicy.eventId("delete", first.canonical() + ":revision")),
+                "Different journal event types cannot collide by construction");
+        expect(MemoryJournalPolicy.safeEventId(editEvent), "Journal event identity must have a bounded validated form");
+        expect(MemoryJournalPolicy.canAppend(MemoryJournalPolicy.MAX_EVENTS - 1, 128, 256),
+                "Last bounded journal slot is accepted");
+        expect(!MemoryJournalPolicy.canAppend(MemoryJournalPolicy.MAX_EVENTS, 128, 256),
+                "Journal event count cannot grow without a ceiling");
+        expect(!MemoryJournalPolicy.canAppend(0, 0, MemoryJournalPolicy.MAX_EVENT_BYTES + 1),
+                "Oversized journal event is refused before disk write");
+        expect(!MemoryJournalPolicy.canAppend(0, MemoryJournalPolicy.MAX_BYTES, 1),
+                "Journal byte budget cannot be exceeded");
         for (long user : new long[]{0, -1}) {
             try { new MemoryKey(user, "user", 1, 1, 0); throw new AssertionError("Invalid account accepted"); }
             catch (IllegalArgumentException expected) { checks++; }

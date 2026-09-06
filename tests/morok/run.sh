@@ -12,6 +12,7 @@ else
 fi
 "${MOROK_JAVA_BIN}javac" -d "$MOROK_TEST_OUTPUT" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryKey.java" \
+  "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryJournalPolicy.java" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryPolicy.java" \
   "$MOROK_ROOT/tests/morok/MemoryDomainTest.java"
 "${MOROK_JAVA_BIN}java" -cp "$MOROK_TEST_OUTPUT" MemoryDomainTest

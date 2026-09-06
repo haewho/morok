@@ -81,13 +81,13 @@ public final class MemoryCard {
         public String sha256 = "";
         public long fileSize;
 
-        JSONObject toJson() throws JSONException {
+        public JSONObject toJson() throws JSONException {
             return new JSONObject().put("text", text).put("tl", serializedMessage).put("fingerprint", fingerprint)
                     .put("received", receivedAt).put("edited", editedAt).put("fileState", fileState)
                     .put("blob", blob).put("fileName", fileName).put("mime", mime).put("sha256", sha256).put("size", fileSize);
         }
 
-        static Snapshot fromJson(JSONObject value) throws JSONException {
+        public static Snapshot fromJson(JSONObject value) throws JSONException {
             Snapshot snapshot = new Snapshot();
             snapshot.text = value.getString("text"); snapshot.serializedMessage = value.getString("tl");
             snapshot.fingerprint = value.getString("fingerprint"); snapshot.receivedAt = value.getLong("received");

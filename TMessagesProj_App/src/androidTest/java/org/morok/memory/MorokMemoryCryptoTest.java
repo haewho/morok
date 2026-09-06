@@ -28,11 +28,18 @@ public final class MorokMemoryCryptoTest {
             Aead cipher = new AndroidKeystoreKmsClient().getAead(uri);
             byte[] plain = "a private retained quote".getBytes(StandardCharsets.UTF_8);
             byte[] owner = "morok-memory/v1/100/index".getBytes(StandardCharsets.UTF_8);
+            byte[] ownerJournal = "morok-memory/v1/100/journal".getBytes(StandardCharsets.UTF_8);
             byte[] other = "morok-memory/v1/200/index".getBytes(StandardCharsets.UTF_8);
             byte[] ciphertext = cipher.encrypt(plain, owner);
             assertFalse(Arrays.equals(plain, ciphertext));
             assertArrayEquals(plain, cipher.decrypt(ciphertext, owner));
             try { cipher.decrypt(ciphertext, other); fail("Cross-account substitution accepted"); }
+            catch (java.security.GeneralSecurityException expected) { }
+            try { cipher.decrypt(ciphertext, ownerJournal); fail("Index ciphertext accepted as journal"); }
+            catch (java.security.GeneralSecurityException expected) { }
+            byte[] journalCiphertext = cipher.encrypt(plain, ownerJournal);
+            assertArrayEquals(plain, cipher.decrypt(journalCiphertext, ownerJournal));
+            try { cipher.decrypt(journalCiphertext, owner); fail("Journal ciphertext accepted as index"); }
             catch (java.security.GeneralSecurityException expected) { }
             ciphertext[ciphertext.length - 1] ^= 1;
             try { cipher.decrypt(ciphertext, owner); fail("Tampered ciphertext accepted"); }

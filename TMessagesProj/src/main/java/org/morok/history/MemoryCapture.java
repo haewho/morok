@@ -3,6 +3,7 @@ package org.morok.history;
 import android.os.Build;
 import android.util.Base64;
 
+import org.json.JSONObject;
 import org.morok.memory.MemoryCard;
 import org.morok.memory.MemoryKey;
 import org.morok.memory.MemoryPolicy;
@@ -83,6 +84,41 @@ public final class MemoryCapture {
         content.cleanup();
         return new MemoryCapture(key, snapshot, copy, peerName(object.currentAccount, object.getDialogId()),
                 peerName(object.currentAccount, object.getFromChatId()));
+    }
+
+    /** Journal form contains the bounded server TL snapshot, never a local cache path or file bytes. */
+    public JSONObject toJournalJson() throws Exception {
+        return new JSONObject()
+                .put("user", key.userId).put("kind", key.peerKind).put("peer", key.peerId)
+                .put("message", key.messageId).put("topic", key.topicId)
+                .put("snapshot", snapshot.toJson()).put("source", source).put("sender", sender);
+    }
+
+    public static MemoryCapture fromJournalJson(JSONObject value) throws Exception {
+        MemoryKey key = new MemoryKey(value.getLong("user"), value.getString("kind"), value.getLong("peer"),
+                value.getInt("message"), value.getLong("topic"));
+        MemoryCard.Snapshot snapshot = MemoryCard.Snapshot.fromJson(value.getJSONObject("snapshot"));
+        if (!snapshot.fingerprint.matches("[a-f0-9]{64}")
+                || snapshot.serializedMessage.length() > ((MemoryPolicy.MAX_MESSAGE_BYTES + 2) / 3) * 4 + 8) {
+            throw new IllegalArgumentException("Invalid journal snapshot");
+        }
+        byte[] raw = Base64.decode(snapshot.serializedMessage, Base64.NO_WRAP);
+        if (raw.length == 0 || raw.length > MemoryPolicy.MAX_MESSAGE_BYTES) {
+            throw new IllegalArgumentException("Invalid journal message size");
+        }
+        SerializedData input = new SerializedData(raw);
+        TLRPC.Message message;
+        try { message = TLRPC.Message.TLdeserialize(input, input.readInt32(true), true); }
+        finally { input.cleanup(); }
+        if (message == null || message.id != key.messageId || MessageObject.getDialogId(message) != key.dialogId()) {
+            throw new IllegalArgumentException("Journal message identity mismatch");
+        }
+        message.attachPath = "";
+        message.dialog_id = key.dialogId();
+        String source = value.optString("source");
+        String sender = value.optString("sender");
+        if (source.length() > 512 || sender.length() > 512) throw new IllegalArgumentException("Journal label too long");
+        return new MemoryCapture(key, snapshot, message, source, sender);
     }
 
     private static String peerName(int account, long dialogId) {
