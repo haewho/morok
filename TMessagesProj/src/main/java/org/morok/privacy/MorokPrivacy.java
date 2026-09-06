@@ -13,4 +13,12 @@ public final class MorokPrivacy {
             return true;
         }
     }
+
+    public static boolean allowsOnlineStatus(int account) {
+        try {
+            return !MorokSettings.privacy(account).hidesOnline();
+        } catch (RuntimeException unavailableAccountOrSettings) {
+            return true;
+        }
+    }
 }

@@ -2,7 +2,7 @@ package org.morok.settings;
 
 /** Versioned local-only schema. Unknown newer schemas are readable but never overwritten. */
 public final class SettingsRepository {
-    public static final int SCHEMA_VERSION = 2;
+    public static final int SCHEMA_VERSION = 3;
     public static final String SCHEMA_KEY = "schema_version";
     private final SettingsStore store;
 
@@ -29,14 +29,15 @@ public final class SettingsRepository {
 
     public PrivacySettings privacy() {
         return new PrivacySettings(store.getBoolean("privacy.ghost_preset", false),
-                store.getBoolean("privacy.hide_typing", false));
+                store.getBoolean("privacy.hide_typing", false),
+                store.getBoolean("privacy.hide_online", false));
     }
 
     public void savePrivacy(PrivacySettings settings) {
         checkWritable();
         store.saveBooleans(SCHEMA_VERSION,
-                new String[] {"privacy.ghost_preset", "privacy.hide_typing"},
-                new boolean[] {settings.ghostPreset, settings.hideTyping});
+                new String[] {"privacy.ghost_preset", "privacy.hide_typing", "privacy.hide_online"},
+                new boolean[] {settings.ghostPreset, settings.hideTyping, settings.hideOnline});
     }
 
     public void resetPrivacy() {
