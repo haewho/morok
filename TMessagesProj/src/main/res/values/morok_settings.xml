@@ -16,4 +16,5 @@
     <string name="MorokMemoryShortcut">MOROK Memory</string>
     <string name="MorokSettingsNewerVersion">These settings were saved by a newer MOROK version. Update the app before changing them.</string>
     <string name="MorokLiquidGlassUnavailableInfo">Native refraction is currently disabled by Telegram’s effect or power settings. On allows available native blur; off makes the new glass panels solid and stops their blur rendering. Some older effects are not yet covered.</string>
+    <string name="MorokAboutClient">MOROK is an unofficial client using the Telegram API. Based on Telegram for Android; upstream copyright notices and GPL licensing are preserved. Source code: github.com/haewho/morok.</string>
 </resources>

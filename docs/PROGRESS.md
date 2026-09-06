@@ -1,0 +1,32 @@
+# Прогресс реализации
+
+Состояние на 2026-09-06: создана и проверена первая исполняемая основа MOROK на базе официального Telegram Android 12.10.1 (7038), commit `62b56a07ca7e30e39f7fd00a6728d6bbd716ca1c`. Полное ТЗ ещё не выполнено; фактическое покрытие требований отражено в `FEATURE_PARITY.md`.
+
+## Готово в текущей ветке
+
+- собственные package ID, название, launcher aliases, ресурсы бренда и отдельная debug-установка;
+- воспроизводимая привязка к upstream и десяти submodule commit, preflight-проверки и CI;
+- локальные MOROK Settings: управление доступным blur, уменьшение эффектов, ссылки на штатные темы и энергосбережение;
+- MOROK Memory: ручные карточки, заметки, теги, поиск, версии, напоминания, шифрование через Android Keystore/Tink, account isolation и очистка при logout;
+- MOROK connection: direct/manual/auto, импорт, проверки, ротация, подписанный пул с anti-rollback и явное отсутствие скрытого direct fallback;
+- шаблоны собственной прокси-инфраструктуры и документация сборки, архитектуры, обновления и ограничений.
+
+## Проверено
+
+- `./scripts/check.sh`: upstream lock и 10 submodules, 16 Memory domain checks, 6 proxy transaction cases, 34 proxy core checks, settings migration/isolation checks, совместимость Python/OpenSSL signer с Java verifier;
+- `:TMessagesProj_App:assembleAfatDebug`: успешная arm64-v8a debug-сборка;
+- `:TMessagesProj_App:connectedAfatDebugAndroidTest`: 1/1 Android instrumentation test на Android 16 API 36, включая отказ при tampering и cross-account replay;
+- APK проверен `aapt2` и `apksigner`: `io.github.haewho.morok.beta`, version 12.10.1/70389, только `arm64-v8a`, debug certificate;
+- на эмуляторе Android 16 APK установлен и холодно запущен; вручную открыты intro, MOROK connection и MOROK Settings, проверена блокировка Memory до входа; падений MOROK в logcat нет.
+
+Локальный проверенный APK и машинный отчёт находятся в `artifacts/` и намеренно исключены из Git. Это debug/test-only сборка, не релиз для распространения.
+
+## Внешние зависимости
+
+Для проверки входа и реальной эксплуатации нужны собственные Telegram `api_id`/`api_hash`. Для push-уведомлений нужен собственный Firebase project. Для release APK нужен постоянный release keystore. Автоматическому режиму соединения нужны минимум два независимо размещённых прокси, HTTPS primary/backup endpoints и ключ подписи владельца.
+
+Проверки на физическом устройстве, в российских сетях, с реальным аккаунтом, звонками, FCM, двумя аккаунтами, Doze и обновлением между двумя подписанными версиями ещё не выполнялись.
+
+## Следующий этап
+
+Следующий P0-этап — предоставить собственные API/Firebase/release/proxy параметры, провести вход и сетевую матрицу на физическом устройстве, затем расширить автоматический архив Memory и реализовать согласованный privacy/ghost behavior с учётом ограничений Telegram API.

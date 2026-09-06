@@ -135,6 +135,7 @@ public final class MorokSettingsActivity extends BaseFragment {
 
     private void rebuildRows() {
         rows.clear();
+        if (query.isEmpty()) add(INFO, 0, R.string.MorokAboutClient);
         add(HEADER, 0, R.string.MorokAppearance);
         add(CHECK, GLASS, R.string.MorokLiquidGlass);
         if (query.isEmpty()) {

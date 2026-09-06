@@ -16,4 +16,5 @@
     <string name="MorokMemoryShortcut">Память Морока</string>
     <string name="MorokSettingsNewerVersion">Настройки сохранены более новой версией Морока. Обновите приложение, чтобы изменить их.</string>
     <string name="MorokLiquidGlassUnavailableInfo">Штатное преломление сейчас отключено настройками эффектов или энергосбережения Telegram. Включено — доступное штатное размытие, выключено — сплошные поверхности новых стеклянных панелей без отрисовки их размытия. Часть прежних эффектов пока не охвачена.</string>
+    <string name="MorokAboutClient">Морок — неофициальный клиент, использующий Telegram API. Создан на базе Telegram для Android; авторство исходного проекта и лицензия GPL сохранены. Исходники: github.com/haewho/morok.</string>
 </resources>
