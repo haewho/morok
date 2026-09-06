@@ -11408,6 +11408,9 @@ public class MessagesController extends BaseController implements NotificationCe
                 }
             }
         }
+        if (!org.morok.privacy.MorokPrivacy.allowsTypingAction(currentAccount, action)) {
+            return false;
+        }
         LongSparseArray<LongSparseArray<Boolean>> dialogs = sendingTypings[action];
         if (dialogs == null) {
             dialogs = sendingTypings[action] = new LongSparseArray<>();

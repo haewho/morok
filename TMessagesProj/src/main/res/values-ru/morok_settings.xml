@@ -17,4 +17,22 @@
     <string name="MorokSettingsNewerVersion">Настройки сохранены более новой версией Морока. Обновите приложение, чтобы изменить их.</string>
     <string name="MorokLiquidGlassUnavailableInfo">Штатное преломление сейчас отключено настройками эффектов или энергосбережения Telegram. Включено — доступное штатное размытие, выключено — сплошные поверхности новых стеклянных панелей без отрисовки их размытия. Часть прежних эффектов пока не охвачена.</string>
     <string name="MorokAboutClient">Морок — неофициальный клиент, использующий Telegram API. Создан на базе Telegram для Android; авторство исходного проекта и лицензия GPL сохранены. Исходники: github.com/haewho/morok.</string>
+    <string name="MorokPrivacyTitle">Экспериментальная приватность</string>
+    <string name="MorokPrivacyShortcut">Призрак и индикаторы активности</string>
+    <string name="MorokPrivacyShortcutInfo">Настройки аккаунта, для которых уже подключены смысловые точки протокола. По умолчанию выключены.</string>
+    <string name="MorokPrivacyExperimentalInfo">Экспериментальная функция. Правила Telegram API конфликтуют с подавлением online, чтения и набора. Отправка сообщения, звонок и другая активная сессия всё равно могут раскрыть присутствие.</string>
+    <string name="MorokPrivacyActivityHeader">Исходящая активность в чатах</string>
+    <string name="MorokGhostPreset">Пресет «Призрак»</string>
+    <string name="MorokGhostPresetInfo">Сейчас пресет включает реализованную политику набора. Отметки чтения и просмотра содержимого или историй, а также online пока работают штатно, как в Telegram.</string>
+    <string name="MorokHideTyping">Не показывать набор и запись</string>
+    <string name="MorokHideTypingInfo">Подавляет набор, запись, загрузку, выбор стикера и emoji interaction в обычных путях чата MOROK. Отмена индикатора разрешена; сигнализация звонков и обязательная очистка черновика бота не меняются.</string>
+    <string name="MorokPrivacyReset">Сбросить экспериментальную приватность</string>
+    <string name="MorokPrivacyResetInfo">Выключить пресет «Призрак» и вернуть штатную отправку индикаторов набора Telegram для этого аккаунта?</string>
+    <string name="MorokPrivacyLoginRequired">Войдите, чтобы настроить приватность для устойчивого Telegram-аккаунта. Оформление устройства и соединение доступны до входа.</string>
+    <string name="MorokTypingSuppressedStatus">Фактически: поддержанные индикаторы активности в чатах подавляются.</string>
+    <string name="MorokTypingNormalStatus">Фактически: штатная отправка индикаторов набора Telegram.</string>
+    <string name="MorokGhostActiveStatus">Призрак активен</string>
+    <string name="MorokPrivacyCustomStatus">Своя настройка</string>
+    <string name="MorokPrivacyOffStatus">Выключено</string>
+    <string name="MorokPrivacyLoginStatus">Нужен вход</string>
 </resources>

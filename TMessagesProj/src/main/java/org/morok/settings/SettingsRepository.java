@@ -2,7 +2,7 @@ package org.morok.settings;
 
 /** Versioned local-only schema. Unknown newer schemas are readable but never overwritten. */
 public final class SettingsRepository {
-    public static final int SCHEMA_VERSION = 1;
+    public static final int SCHEMA_VERSION = 2;
     public static final String SCHEMA_KEY = "schema_version";
     private final SettingsStore store;
 
@@ -17,13 +17,30 @@ public final class SettingsRepository {
 
     public void saveAppearance(AppearanceSettings settings) {
         checkWritable();
-        // v0 -> v1 is additive: defaults are read without rewriting unrelated preferences.
-        store.save(SCHEMA_VERSION, "appearance.liquid_glass", settings.liquidGlass,
-                "appearance.reduced_effects", settings.reducedEffects);
+        // Migrations are additive: defaults are read without rewriting unrelated preferences.
+        store.saveBooleans(SCHEMA_VERSION,
+                new String[] {"appearance.liquid_glass", "appearance.reduced_effects"},
+                new boolean[] {settings.liquidGlass, settings.reducedEffects});
     }
 
     public void resetAppearance() {
         saveAppearance(AppearanceSettings.DEFAULT);
+    }
+
+    public PrivacySettings privacy() {
+        return new PrivacySettings(store.getBoolean("privacy.ghost_preset", false),
+                store.getBoolean("privacy.hide_typing", false));
+    }
+
+    public void savePrivacy(PrivacySettings settings) {
+        checkWritable();
+        store.saveBooleans(SCHEMA_VERSION,
+                new String[] {"privacy.ghost_preset", "privacy.hide_typing"},
+                new boolean[] {settings.ghostPreset, settings.hideTyping});
+    }
+
+    public void resetPrivacy() {
+        savePrivacy(PrivacySettings.DEFAULT);
     }
 
     public void checkWritable() {

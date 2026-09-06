@@ -9,6 +9,7 @@
 - локальные MOROK Settings: управление доступным blur, уменьшение эффектов, ссылки на штатные темы и энергосбережение;
 - MOROK Memory: ручные карточки, заметки, теги, поиск, версии, напоминания, шифрование через Android Keystore/Tink, account isolation и очистка при logout; раннее наблюдение стандартных server edit/delete/history updates для уже созданных карточек;
 - MOROK connection: direct/manual/auto, импорт, проверки, ротация, подписанный пул с anti-rollback и явное отсутствие скрытого direct fallback;
+- экспериментальная privacy-основа: account-local пресет «Призрак» и фактическое подавление обычных typing/recording/upload/sticker/emoji activity actions; online/read/content-read пока штатные;
 - шаблоны собственной прокси-инфраструктуры и документация сборки, архитектуры, обновления и ограничений.
 
 ## Проверено
@@ -29,4 +30,4 @@
 
 ## Следующий этап
 
-Следующий P0-этап — предоставить собственные API/Firebase/release/proxy параметры, провести вход и сетевую матрицу на физическом устройстве, затем расширить автоматический архив Memory и реализовать согласованный privacy/ghost behavior с учётом ограничений Telegram API.
+Следующий P0-этап — предоставить собственные API/Firebase/release/proxy параметры, провести вход и сетевую матрицу на физическом устройстве, затем расширить автоматический архив Memory и privacy/ghost behavior: local/server read cursor, content-read, online и chat exceptions.

@@ -14,9 +14,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.morok.appearance.MorokAppearance;
 import org.morok.settings.AppearanceSettings;
 import org.morok.settings.MorokSettings;
+import org.morok.settings.PrivacySettings;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -36,7 +38,7 @@ import java.util.Locale;
 
 /** Native settings entry point. Controls are limited to wired, local behavior. */
 public final class MorokSettingsActivity extends BaseFragment {
-    private static final int GLASS = 1, REDUCED = 2, THEMES = 3, POWER = 4, RESET = 5, MEMORY = 6, PROXY = 7;
+    private static final int GLASS = 1, REDUCED = 2, THEMES = 3, POWER = 4, RESET = 5, MEMORY = 6, PROXY = 7, PRIVACY = 8;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -102,6 +104,9 @@ public final class MorokSettingsActivity extends BaseFragment {
                 case MEMORY:
                     presentFragment(new MorokMemoryActivity(currentAccount));
                     break;
+                case PRIVACY:
+                    presentFragment(new MorokPrivacyActivity(currentAccount));
+                    break;
                 case RESET:
                     showDialog(new AlertDialog.Builder(context)
                             .setTitle(text(R.string.MorokResetAppearance))
@@ -149,6 +154,9 @@ public final class MorokSettingsActivity extends BaseFragment {
         add(ACTION, POWER, R.string.MorokPowerSettings);
         add(ACTION, RESET, R.string.MorokResetAppearance);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokDeviceSettingsInfo);
+        add(HEADER, 0, R.string.MorokPrivacyTitle);
+        add(ACTION, PRIVACY, R.string.MorokPrivacyShortcut);
+        if (query.isEmpty()) add(INFO, 0, R.string.MorokPrivacyShortcutInfo);
         add(HEADER, 0, R.string.MorokLocalTools);
         add(ACTION, MEMORY, R.string.MorokMemoryShortcut);
         add(ACTION, PROXY, R.string.MorokProxyTitle);
@@ -208,8 +216,21 @@ public final class MorokSettingsActivity extends BaseFragment {
                 ((TextCheckCell) holder.itemView).setTextAndCheck(row.title,
                         row.id == GLASS ? settings.liquidGlass : settings.reducedEffects, false);
             } else {
-                ((TextSettingsCell) holder.itemView).setText(row.title, true);
-                ((TextSettingsCell) holder.itemView).setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+                TextSettingsCell cell = (TextSettingsCell) holder.itemView;
+                if (row.id == PRIVACY) {
+                    String value = text(R.string.MorokPrivacyLoginStatus);
+                    if (UserConfig.getInstance(currentAccount).isClientActivated()) {
+                        try {
+                            PrivacySettings privacy = MorokSettings.privacy(currentAccount);
+                            value = text(privacy.ghostPreset ? R.string.MorokGhostActiveStatus
+                                    : privacy.hidesTyping() ? R.string.MorokPrivacyCustomStatus : R.string.MorokPrivacyOffStatus);
+                        } catch (RuntimeException ignored) {}
+                    }
+                    cell.setTextAndValue(row.title, value, true);
+                } else {
+                    cell.setText(row.title, true);
+                }
+                cell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
             }
         }
     }

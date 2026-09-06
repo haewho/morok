@@ -883,6 +883,10 @@ public class EmojiAnimationsOverlay implements NotificationCenter.NotificationCe
         if (lastTappedMsgId == 0) {
             return;
         }
+        if (!org.morok.privacy.MorokPrivacy.allowsTypingAction(currentAccount, 11)) {
+            clearSendingInfo();
+            return;
+        }
         TLRPC.TL_sendMessageEmojiInteraction interaction = new TLRPC.TL_sendMessageEmojiInteraction();
         interaction.msg_id = lastTappedMsgId;
         interaction.emoticon = lastTappedEmoji;

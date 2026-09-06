@@ -6,9 +6,12 @@ import android.content.SharedPreferences;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.UserConfig;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 /** Own preference files; never writes Telegram auth, LiteMode masks, theme or proxy settings. */
 public final class MorokSettings {
     private static volatile AppearanceSettings appearance;
+    private static final ConcurrentHashMap<Long, PrivacySettings> privacy = new ConcurrentHashMap<>();
 
     private MorokSettings() {}
 
@@ -29,9 +32,11 @@ public final class MorokSettings {
             }
 
             @Override
-            public void save(int version, String firstKey, boolean firstValue, String secondKey, boolean secondValue) {
-                preferences.edit().putInt(SettingsRepository.SCHEMA_KEY, version)
-                        .putBoolean(firstKey, firstValue).putBoolean(secondKey, secondValue).apply();
+            public void saveBooleans(int version, String[] keys, boolean[] values) {
+                if (keys.length != values.length) throw new IllegalArgumentException("Mismatched settings");
+                SharedPreferences.Editor editor = preferences.edit().putInt(SettingsRepository.SCHEMA_KEY, version);
+                for (int i = 0; i < keys.length; i++) editor.putBoolean(keys[i], values[i]);
+                editor.apply();
             }
         });
     }
@@ -54,8 +59,29 @@ public final class MorokSettings {
         appearance = settings;
     }
 
+    public static PrivacySettings privacy(int accountSlot) {
+        long userId = userId(accountSlot);
+        PrivacySettings result = privacy.get(userId);
+        if (result == null) {
+            PrivacySettings loaded = forUser(userId).privacy();
+            PrivacySettings existing = privacy.putIfAbsent(userId, loaded);
+            result = existing == null ? loaded : existing;
+        }
+        return result;
+    }
+
+    public static void setPrivacy(int accountSlot, PrivacySettings settings) {
+        long userId = userId(accountSlot);
+        forUser(userId).savePrivacy(settings);
+        privacy.put(userId, settings);
+    }
+
     /** Resolve a reusable upstream account slot to its authenticated stable identity. */
     public static SettingsRepository forAccount(int accountSlot) {
+        return forUser(userId(accountSlot));
+    }
+
+    private static long userId(int accountSlot) {
         if (accountSlot < 0 || accountSlot >= UserConfig.MAX_ACCOUNT_COUNT) {
             throw new IllegalArgumentException("Invalid Telegram account slot");
         }
@@ -63,7 +89,7 @@ public final class MorokSettings {
         if (!config.isClientActivated()) {
             throw new IllegalStateException("MOROK account settings require an authenticated account");
         }
-        return forUser(config.getClientUserId());
+        return config.getClientUserId();
     }
 
     /** Foundation for account-local settings. Callers must resolve a stable user ID first. */

@@ -4,5 +4,5 @@ package org.morok.settings;
 public interface SettingsStore {
     int getInt(String key, int fallback);
     boolean getBoolean(String key, boolean fallback);
-    void save(int schemaVersion, String firstKey, boolean firstValue, String secondKey, boolean secondValue);
+    void saveBooleans(int schemaVersion, String[] keys, boolean[] values);
 }
