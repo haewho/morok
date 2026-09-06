@@ -4353,6 +4353,38 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             return;
         }
 
+        int morokDelaySeconds = org.morok.privacy.MorokPrivacy.ghostSendDelaySeconds(currentAccount, peer);
+        if (scheduleDate == 0 && morokDelaySeconds > 0) {
+            boolean diceMessage = message != null && message.length() < 30 && webPage == null
+                    && (entities == null || entities.isEmpty())
+                    && getMessagesController().diceEmojies.contains(message.replace("\ufe0f", ""));
+            boolean canUseServerSchedule = retryMessageObject == null
+                    && !DialogObject.isEncryptedDialog(peer)
+                    && !isWelcomeMessageTemplate
+                    && quick_reply_shortcut == null && quick_reply_shortcut_id == 0
+                    && ttl == 0 && ephemeralReceiverBotId == 0 && payStars == 0
+                    && replyToStoryItem == null && sendingStory == null
+                    && sendMessageParams.suggestionParams == null
+                    && !(location instanceof TLRPC.TL_messageMediaGeoLive)
+                    && !diceMessage
+                    && !getMessagesController().isMonoForum(peer)
+                    && (!getMessagesController().isForum(peer) || replyToTopMsg != null);
+            if (!canUseServerSchedule) {
+                AndroidUtilities.runOnUIThread(() -> Toast.makeText(ApplicationLoader.applicationContext,
+                        LocaleController.getString(R.string.MorokGhostSendUnsupported), Toast.LENGTH_LONG).show());
+                return;
+            }
+            sendMessageParams.scheduleDate = getConnectionsManager().getCurrentTime() + morokDelaySeconds;
+            if (!isGroup || params != null && params.containsKey("final")) {
+                AndroidUtilities.runOnUIThread(() -> Toast.makeText(ApplicationLoader.applicationContext,
+                        LocaleController.getString(R.string.MorokGhostSendQueued), Toast.LENGTH_LONG).show());
+            }
+            // Re-enter with an explicit date so every existing Telegram media/text branch uses
+            // its normal scheduled-message storage, UI and cancellation behavior.
+            sendMessage(sendMessageParams);
+            return;
+        }
+
         if (replyQuote != null && replyQuote.message != null && replyToMsg != null) {
             replyToMsg = replyQuote.message;
         }

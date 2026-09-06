@@ -54,4 +54,13 @@ public final class MorokPrivacy {
             return false;
         }
     }
+
+    /** Returns zero unless the explicit delayed-send option is active for this dialog. */
+    public static int ghostSendDelaySeconds(int account, long dialogId) {
+        try {
+            return MorokSettings.privacy(account).ghostSendDelaySeconds(dialogId);
+        } catch (RuntimeException unavailableAccountOrSettings) {
+            return 0;
+        }
+    }
 }

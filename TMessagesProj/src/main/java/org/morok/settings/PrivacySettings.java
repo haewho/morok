@@ -9,7 +9,8 @@ import java.util.Set;
 /** Immutable account-local experimental privacy policy. All controls default to normal Telegram behavior. */
 public final class PrivacySettings {
     private static final int MAX_CHAT_EXCEPTIONS = 256;
-    public static final PrivacySettings DEFAULT = new PrivacySettings(false, false, false, false, false, false, false, Collections.emptySet());
+    public static final int GHOST_SEND_DELAY_SECONDS = 60;
+    public static final PrivacySettings DEFAULT = new PrivacySettings(false, false, false, false, false, false, false, false, Collections.emptySet());
     public static final int ACTION_CANCEL = 2;
 
     public final boolean ghostPreset;
@@ -19,10 +20,11 @@ public final class PrivacySettings {
     public final boolean hideRead;
     public final boolean hideStoryViews;
     public final boolean markReadOnReply;
+    public final boolean delayGhostSends;
     public final Set<Long> normalBehaviorChats;
 
     public PrivacySettings(boolean ghostPreset, boolean hideTyping, boolean hideOnline, boolean hideContentRead,
-                           boolean hideRead, boolean hideStoryViews, boolean markReadOnReply,
+                           boolean hideRead, boolean hideStoryViews, boolean markReadOnReply, boolean delayGhostSends,
                            Set<Long> normalBehaviorChats) {
         this.ghostPreset = ghostPreset;
         this.hideTyping = hideTyping;
@@ -31,35 +33,40 @@ public final class PrivacySettings {
         this.hideRead = hideRead;
         this.hideStoryViews = hideStoryViews;
         this.markReadOnReply = markReadOnReply;
+        this.delayGhostSends = delayGhostSends;
         this.normalBehaviorChats = immutableValidChats(normalBehaviorChats);
     }
 
     public PrivacySettings withGhostPreset(boolean enabled) {
-        return copy(enabled, hideTyping, hideOnline, hideContentRead, hideRead, hideStoryViews, markReadOnReply, normalBehaviorChats);
+        return copy(enabled, hideTyping, hideOnline, hideContentRead, hideRead, hideStoryViews, markReadOnReply, delayGhostSends, normalBehaviorChats);
     }
 
     public PrivacySettings withHideTyping(boolean enabled) {
-        return copy(ghostPreset, enabled, hideOnline, hideContentRead, hideRead, hideStoryViews, markReadOnReply, normalBehaviorChats);
+        return copy(ghostPreset, enabled, hideOnline, hideContentRead, hideRead, hideStoryViews, markReadOnReply, delayGhostSends, normalBehaviorChats);
     }
 
     public PrivacySettings withHideOnline(boolean enabled) {
-        return copy(ghostPreset, hideTyping, enabled, hideContentRead, hideRead, hideStoryViews, markReadOnReply, normalBehaviorChats);
+        return copy(ghostPreset, hideTyping, enabled, hideContentRead, hideRead, hideStoryViews, markReadOnReply, delayGhostSends, normalBehaviorChats);
     }
 
     public PrivacySettings withHideContentRead(boolean enabled) {
-        return copy(ghostPreset, hideTyping, hideOnline, enabled, hideRead, hideStoryViews, markReadOnReply, normalBehaviorChats);
+        return copy(ghostPreset, hideTyping, hideOnline, enabled, hideRead, hideStoryViews, markReadOnReply, delayGhostSends, normalBehaviorChats);
     }
 
     public PrivacySettings withHideRead(boolean enabled) {
-        return copy(ghostPreset, hideTyping, hideOnline, hideContentRead, enabled, hideStoryViews, markReadOnReply, normalBehaviorChats);
+        return copy(ghostPreset, hideTyping, hideOnline, hideContentRead, enabled, hideStoryViews, markReadOnReply, delayGhostSends, normalBehaviorChats);
     }
 
     public PrivacySettings withHideStoryViews(boolean enabled) {
-        return copy(ghostPreset, hideTyping, hideOnline, hideContentRead, hideRead, enabled, markReadOnReply, normalBehaviorChats);
+        return copy(ghostPreset, hideTyping, hideOnline, hideContentRead, hideRead, enabled, markReadOnReply, delayGhostSends, normalBehaviorChats);
     }
 
     public PrivacySettings withMarkReadOnReply(boolean enabled) {
-        return copy(ghostPreset, hideTyping, hideOnline, hideContentRead, hideRead, hideStoryViews, enabled, normalBehaviorChats);
+        return copy(ghostPreset, hideTyping, hideOnline, hideContentRead, hideRead, hideStoryViews, enabled, delayGhostSends, normalBehaviorChats);
+    }
+
+    public PrivacySettings withDelayGhostSends(boolean enabled) {
+        return copy(ghostPreset, hideTyping, hideOnline, hideContentRead, hideRead, hideStoryViews, markReadOnReply, enabled, normalBehaviorChats);
     }
 
     public PrivacySettings withNormalBehaviorForChat(long dialogId, boolean enabled) {
@@ -71,7 +78,7 @@ public final class PrivacySettings {
         } else {
             chats.remove(dialogId);
         }
-        return copy(ghostPreset, hideTyping, hideOnline, hideContentRead, hideRead, hideStoryViews, markReadOnReply, chats);
+        return copy(ghostPreset, hideTyping, hideOnline, hideContentRead, hideRead, hideStoryViews, markReadOnReply, delayGhostSends, chats);
     }
 
     public boolean hidesTyping() {
@@ -123,6 +130,10 @@ public final class PrivacySettings {
         return !usesNormalBehavior(dialogId) && hidesRead() && markReadOnReply;
     }
 
+    public int ghostSendDelaySeconds(long dialogId) {
+        return ghostPreset && delayGhostSends && !usesNormalBehavior(dialogId) ? GHOST_SEND_DELAY_SECONDS : 0;
+    }
+
     public String encodeNormalBehaviorChats() {
         List<Long> chats = new ArrayList<>(normalBehaviorChats);
         Collections.sort(chats);
@@ -149,9 +160,9 @@ public final class PrivacySettings {
 
     private static PrivacySettings copy(boolean ghostPreset, boolean hideTyping, boolean hideOnline,
                                         boolean hideContentRead, boolean hideRead, boolean hideStoryViews,
-                                        boolean markReadOnReply, Set<Long> normalBehaviorChats) {
+                                        boolean markReadOnReply, boolean delayGhostSends, Set<Long> normalBehaviorChats) {
         return new PrivacySettings(ghostPreset, hideTyping, hideOnline, hideContentRead, hideRead,
-                hideStoryViews, markReadOnReply, normalBehaviorChats);
+                hideStoryViews, markReadOnReply, delayGhostSends, normalBehaviorChats);
     }
 
     private static Set<Long> immutableValidChats(Set<Long> chats) {

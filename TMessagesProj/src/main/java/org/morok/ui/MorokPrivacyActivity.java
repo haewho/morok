@@ -30,7 +30,7 @@ import java.util.ArrayList;
 /** Account-local experimental controls; only behavior with semantic hooks is exposed here. */
 public final class MorokPrivacyActivity extends BaseFragment {
     private static final int GHOST = 1, HIDE_TYPING = 2, HIDE_ONLINE = 3, HIDE_CONTENT_READ = 4,
-            HIDE_READ = 5, HIDE_STORY_VIEWS = 6, MARK_READ_ON_REPLY = 7, RESET = 8;
+            HIDE_READ = 5, HIDE_STORY_VIEWS = 6, MARK_READ_ON_REPLY = 7, DELAY_GHOST_SENDS = 8, RESET = 9;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -83,6 +83,9 @@ public final class MorokPrivacyActivity extends BaseFragment {
                     break;
                 case MARK_READ_ON_REPLY:
                     apply(settings.withMarkReadOnReply(!settings.markReadOnReply));
+                    break;
+                case DELAY_GHOST_SENDS:
+                    apply(settings.withDelayGhostSends(!settings.delayGhostSends));
                     break;
                 case RESET:
                     showDialog(new AlertDialog.Builder(context)
@@ -150,6 +153,8 @@ public final class MorokPrivacyActivity extends BaseFragment {
                     ? R.string.MorokStoryViewsSuppressedStatus : R.string.MorokStoryViewsNormalStatus)));
             rows.add(new Row(CHECK, MARK_READ_ON_REPLY, text(R.string.MorokMarkReadOnReply)));
             rows.add(new Row(INFO, 0, text(R.string.MorokMarkReadOnReplyInfo)));
+            rows.add(new Row(CHECK, DELAY_GHOST_SENDS, text(R.string.MorokDelayGhostSends)));
+            rows.add(new Row(INFO, 0, text(R.string.MorokDelayGhostSendsInfo)));
             rows.add(new Row(INFO, 0, text(R.string.MorokChatExceptionsInfo)));
             rows.add(new Row(ACTION, RESET, text(R.string.MorokPrivacyReset)));
         } else {
@@ -200,7 +205,8 @@ public final class MorokPrivacyActivity extends BaseFragment {
                         : row.id == HIDE_ONLINE ? settings.hideOnline
                         : row.id == HIDE_CONTENT_READ ? settings.hideContentRead
                         : row.id == HIDE_READ ? settings.hideRead
-                        : row.id == HIDE_STORY_VIEWS ? settings.hideStoryViews : settings.markReadOnReply;
+                        : row.id == HIDE_STORY_VIEWS ? settings.hideStoryViews
+                        : row.id == MARK_READ_ON_REPLY ? settings.markReadOnReply : settings.delayGhostSends;
                 ((TextCheckCell) holder.itemView).setTextAndCheck(row.title, checked, false);
             } else {
                 ((TextSettingsCell) holder.itemView).setText(row.title, false);

@@ -49,6 +49,10 @@
     <string name="MorokStoryViewsNormalStatus">Effective state: normal Telegram story view receipts.</string>
     <string name="MorokMarkReadOnReply">Mark read after replying</string>
     <string name="MorokMarkReadOnReplyInfo">When local-read mode is active, a successfully sent immediate reply synchronizes the replied incoming message with Telegram. Failed, edited, scheduled and secret-chat messages do not trigger it.</string>
+    <string name="MorokDelayGhostSends">Delay sends by one minute in Ghost mode</string>
+    <string name="MorokDelayGhostSendsInfo">Opt-in. While the Ghost preset is active, supported messages use Telegram’s server schedule. The scheduled queue opens in a chat and allows cancellation. This may reduce immediate presence disclosure, but does not guarantee invisibility. Unsupported sends are stopped with an explanation.</string>
+    <string name="MorokGhostSendQueued">Queued by MOROK for one minute. You can cancel it in Scheduled Messages.</string>
+    <string name="MorokGhostSendUnsupported">This message cannot use MOROK’s delayed Ghost send. It was not sent.</string>
     <string name="MorokChatExceptionsInfo">Per-chat exceptions are available in a message’s context menu. An exception restores normal typing, message/content-read and story-view behavior for that chat; online-status remains account-wide.</string>
     <string name="MorokChatPrivacyUseNormal">Use normal privacy behavior in this chat</string>
     <string name="MorokChatPrivacyUseGhost">Use MOROK privacy behavior in this chat</string>

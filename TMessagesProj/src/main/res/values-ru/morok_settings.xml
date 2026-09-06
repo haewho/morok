@@ -49,6 +49,10 @@
     <string name="MorokStoryViewsNormalStatus">Фактически: штатные отметки просмотра историй Telegram.</string>
     <string name="MorokMarkReadOnReply">Отмечать прочитанным после ответа</string>
     <string name="MorokMarkReadOnReplyInfo">Когда активно локальное чтение, успешно отправленный немедленный ответ синхронизирует с Telegram входящее сообщение, на которое ответили. Ошибка, редактирование, расписание и секретный чат не запускают действие.</string>
+    <string name="MorokDelayGhostSends">Задерживать отправку на минуту в режиме «Призрак»</string>
+    <string name="MorokDelayGhostSendsInfo">Включается отдельно. При активном пресете «Призрак» поддержанные сообщения используют серверное расписание Telegram. В чате открывается очередь с возможностью отмены. Это может уменьшить немедленное раскрытие присутствия, но не гарантирует невидимость. Неподдержанная отправка останавливается с объяснением.</string>
+    <string name="MorokGhostSendQueued">MOROK поставил сообщение в очередь на одну минуту. Его можно отменить в запланированных сообщениях.</string>
+    <string name="MorokGhostSendUnsupported">Это сообщение не поддерживает отложенную отправку MOROK. Оно не было отправлено.</string>
     <string name="MorokChatExceptionsInfo">Исключение для чата доступно в контекстном меню сообщения. Оно возвращает штатные typing, чтение сообщений и контента и просмотры историй; online-status остаётся общим для аккаунта.</string>
     <string name="MorokChatPrivacyUseNormal">Штатная приватность Telegram в этом чате</string>
     <string name="MorokChatPrivacyUseGhost">Приватность MOROK в этом чате</string>
