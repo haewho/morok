@@ -11,9 +11,13 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.morok.settings.MorokSettings;
 import org.morok.settings.PrivacySettings;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.UserObject;
+import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -26,11 +30,13 @@ import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 /** Account-local experimental controls; only behavior with semantic hooks is exposed here. */
 public final class MorokPrivacyActivity extends BaseFragment {
     private static final int GHOST = 1, HIDE_TYPING = 2, HIDE_ONLINE = 3, HIDE_CONTENT_READ = 4,
-            HIDE_READ = 5, HIDE_STORY_VIEWS = 6, MARK_READ_ON_REPLY = 7, DELAY_GHOST_SENDS = 8, RESET = 9;
+            HIDE_READ = 5, HIDE_STORY_VIEWS = 6, MARK_READ_ON_REPLY = 7, DELAY_GHOST_SENDS = 8,
+            RESET = 9, EXCEPTION_CHAT = 10, CLEAR_EXCEPTIONS = 11;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -86,6 +92,24 @@ public final class MorokPrivacyActivity extends BaseFragment {
                     break;
                 case DELAY_GHOST_SENDS:
                     apply(settings.withDelayGhostSends(!settings.delayGhostSends));
+                    break;
+                case EXCEPTION_CHAT: {
+                    Row row = rows.get(position);
+                    showDialog(new AlertDialog.Builder(context)
+                            .setTitle(text(R.string.MorokChatExceptionRemove))
+                            .setMessage(LocaleController.formatString(R.string.MorokChatExceptionRemoveInfo, row.title))
+                            .setPositiveButton(text(R.string.Remove), (dialog, which) -> apply(
+                                    settings.withNormalBehaviorForChat(row.dialogId, false)))
+                            .setNegativeButton(text(R.string.Cancel), null).create());
+                    break;
+                }
+                case CLEAR_EXCEPTIONS:
+                    showDialog(new AlertDialog.Builder(context)
+                            .setTitle(text(R.string.MorokChatExceptionsClear))
+                            .setMessage(text(R.string.MorokChatExceptionsClearInfo))
+                            .setPositiveButton(text(R.string.Remove), (dialog, which) -> apply(
+                                    settings.withoutNormalBehaviorChats()))
+                            .setNegativeButton(text(R.string.Cancel), null).create());
                     break;
                 case RESET:
                     showDialog(new AlertDialog.Builder(context)
@@ -155,6 +179,18 @@ public final class MorokPrivacyActivity extends BaseFragment {
             rows.add(new Row(INFO, 0, text(R.string.MorokMarkReadOnReplyInfo)));
             rows.add(new Row(CHECK, DELAY_GHOST_SENDS, text(R.string.MorokDelayGhostSends)));
             rows.add(new Row(INFO, 0, text(R.string.MorokDelayGhostSendsInfo)));
+            rows.add(new Row(HEADER, 0, text(R.string.MorokChatExceptionsHeader)));
+            ArrayList<Long> exceptions = new ArrayList<>(settings().normalBehaviorChats);
+            Collections.sort(exceptions);
+            if (exceptions.isEmpty()) {
+                rows.add(new Row(INFO, 0, text(R.string.MorokChatExceptionsEmpty)));
+            } else {
+                for (long dialogId : exceptions) {
+                    rows.add(new Row(ACTION, EXCEPTION_CHAT, dialogTitle(dialogId),
+                            text(R.string.MorokChatExceptionNormalStatus), dialogId));
+                }
+                rows.add(new Row(ACTION, CLEAR_EXCEPTIONS, text(R.string.MorokChatExceptionsClear)));
+            }
             rows.add(new Row(INFO, 0, text(R.string.MorokChatExceptionsInfo)));
             rows.add(new Row(ACTION, RESET, text(R.string.MorokPrivacyReset)));
         } else {
@@ -165,10 +201,30 @@ public final class MorokPrivacyActivity extends BaseFragment {
 
     private static String text(int id) { return LocaleController.getString(id); }
 
+    private String dialogTitle(long dialogId) {
+        MessagesController controller = MessagesController.getInstance(currentAccount);
+        if (DialogObject.isUserDialog(dialogId)) {
+            TLRPC.User user = controller.getUser(dialogId);
+            if (user != null) return UserObject.getUserName(user);
+        } else if (DialogObject.isChatDialog(dialogId)) {
+            TLRPC.Chat chat = controller.getChat(-dialogId);
+            if (chat != null && chat.title != null && !chat.title.isEmpty()) return chat.title;
+        }
+        return LocaleController.formatString(R.string.MorokChatExceptionUnknown, dialogId);
+    }
+
     private static final class Row {
         final int type, id;
-        final String title;
-        Row(int type, int id, String title) { this.type = type; this.id = id; this.title = title; }
+        final String title, value;
+        final long dialogId;
+        Row(int type, int id, String title) { this(type, id, title, null, 0); }
+        Row(int type, int id, String title, String value, long dialogId) {
+            this.type = type;
+            this.id = id;
+            this.title = title;
+            this.value = value;
+            this.dialogId = dialogId;
+        }
     }
 
     private final class Adapter extends RecyclerListView.SelectionAdapter {
@@ -209,8 +265,10 @@ public final class MorokPrivacyActivity extends BaseFragment {
                         : row.id == MARK_READ_ON_REPLY ? settings.markReadOnReply : settings.delayGhostSends;
                 ((TextCheckCell) holder.itemView).setTextAndCheck(row.title, checked, false);
             } else {
-                ((TextSettingsCell) holder.itemView).setText(row.title, false);
-                ((TextSettingsCell) holder.itemView).setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+                TextSettingsCell cell = (TextSettingsCell) holder.itemView;
+                if (row.value != null) cell.setTextAndValue(row.title, row.value, true);
+                else cell.setText(row.title, false);
+                cell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
             }
         }
     }

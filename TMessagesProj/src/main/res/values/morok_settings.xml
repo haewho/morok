@@ -53,7 +53,15 @@
     <string name="MorokDelayGhostSendsInfo">Opt-in. While the Ghost preset is active, supported messages use Telegram’s server schedule. The scheduled queue opens in a chat and allows cancellation. This may reduce immediate presence disclosure, but does not guarantee invisibility. Unsupported sends are stopped with an explanation.</string>
     <string name="MorokGhostSendQueued">Queued by MOROK for one minute. You can cancel it in Scheduled Messages.</string>
     <string name="MorokGhostSendUnsupported">This message cannot use MOROK’s delayed Ghost send. It was not sent.</string>
-    <string name="MorokChatExceptionsInfo">Per-chat exceptions are available in a message’s context menu. An exception restores normal typing, message/content-read and story-view behavior for that chat; online-status remains account-wide.</string>
+    <string name="MorokChatExceptionsHeader">Normal-behavior exceptions</string>
+    <string name="MorokChatExceptionsEmpty">No exceptions. Add one from a message’s context menu in the required chat.</string>
+    <string name="MorokChatExceptionsInfo">An exception restores normal typing, message/content-read and story-view behavior for that chat; online-status remains account-wide. Tap an exception to remove it.</string>
+    <string name="MorokChatExceptionNormalStatus">Normal Telegram activity</string>
+    <string name="MorokChatExceptionUnknown">Dialog %1$d</string>
+    <string name="MorokChatExceptionRemove">Remove exception</string>
+    <string name="MorokChatExceptionRemoveInfo">Return MOROK privacy behavior in “%1$s”?</string>
+    <string name="MorokChatExceptionsClear">Remove all exceptions</string>
+    <string name="MorokChatExceptionsClearInfo">Return MOROK privacy behavior in every excluded chat? Other privacy settings will be kept.</string>
     <string name="MorokChatPrivacyUseNormal">Use normal privacy behavior in this chat</string>
     <string name="MorokChatPrivacyUseGhost">Use MOROK privacy behavior in this chat</string>
     <string name="MorokChatPrivacyNormalEnabled">Normal Telegram activity restored for this chat</string>

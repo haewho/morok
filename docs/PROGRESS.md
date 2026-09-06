@@ -9,7 +9,7 @@
 - локальные MOROK Settings: управление доступным blur, уменьшение эффектов, ссылки на штатные темы и энергосбережение;
 - MOROK Memory: ручные карточки, заметки, теги, поиск, версии, напоминания, шифрование через Android Keystore/Tink, account isolation и очистка при logout; раннее наблюдение стандартных server edit/delete/history updates для уже созданных карточек;
 - MOROK connection: direct/manual/auto, импорт, проверки, ротация, подписанный пул с anti-rollback и явное отсутствие скрытого direct fallback;
-- экспериментальная privacy-основа: account-local пресет «Призрак», фактическое подавление обычных typing/recording/upload/sticker/emoji activity actions, foreground online-status, обычного server read cursor с сохранением локального read-state, content-read входящих voice/round video и story-view; явный mark-read и opt-in read-on-reply синхронизируют cursor; отдельный opt-in ставит поддержанные Ghost-отправки в видимое серверное расписание на минуту без silent fallback; chat exceptions возвращают штатное поведение в выбранном чате;
+- экспериментальная privacy-основа: account-local пресет «Призрак», фактическое подавление обычных typing/recording/upload/sticker/emoji activity actions, foreground online-status, обычного server read cursor с сохранением локального read-state, content-read входящих voice/round video и story-view; явный mark-read и opt-in read-on-reply синхронизируют cursor; отдельный opt-in ставит поддержанные Ghost-отправки в видимое серверное расписание на минуту без silent fallback; chat exceptions возвращают штатное поведение в выбранном чате и управляются общим списком;
 - экспериментальное улучшение кружочков, выключенное по умолчанию: Auto / Economy / High, проверка Camera2 source и AVC surface encoder, поддержанные AF/EIS/FPS requests, корректные enhanced metadata и откат к штатному профилю до начала записи; физическое качество и доставка получателю ещё не подтверждены;
 - шаблоны собственной прокси-инфраструктуры и документация сборки, архитектуры, обновления и ограничений.
 
@@ -31,4 +31,4 @@
 
 ## Следующий этап
 
-Следующий P0-этап — предоставить собственные API/Firebase/release/proxy параметры, провести вход и сетевую матрицу на физическом устройстве, затем расширить автоматический архив Memory, добавить управление/обзор списка privacy-исключений и проверить все server effects, включая scheduled Ghost send, вторым аккаунтом.
+Следующий P0-этап — предоставить собственные API/Firebase/release/proxy параметры, провести вход и сетевую матрицу на физическом устройстве, затем расширить автоматический архив Memory и проверить все server effects, включая scheduled Ghost send, вторым аккаунтом.

@@ -81,6 +81,12 @@ public final class PrivacySettings {
         return copy(ghostPreset, hideTyping, hideOnline, hideContentRead, hideRead, hideStoryViews, markReadOnReply, delayGhostSends, chats);
     }
 
+    public PrivacySettings withoutNormalBehaviorChats() {
+        if (normalBehaviorChats.isEmpty()) return this;
+        return copy(ghostPreset, hideTyping, hideOnline, hideContentRead, hideRead, hideStoryViews,
+                markReadOnReply, delayGhostSends, Collections.emptySet());
+    }
+
     public boolean hidesTyping() {
         return ghostPreset || hideTyping;
     }

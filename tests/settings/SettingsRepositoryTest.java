@@ -117,6 +117,14 @@ public final class SettingsRepositoryTest {
         firstAccount.savePrivacy(withExceptions.withNormalBehaviorForChat(99, false));
         check(!firstAccount.privacy().usesNormalBehavior(99) && firstAccount.privacy().usesNormalBehavior(-1001),
                 "one chat exception can be removed independently");
+        firstAccount.savePrivacy(firstAccount.privacy().withoutNormalBehaviorChats());
+        check(firstAccount.privacy().normalBehaviorChats.isEmpty()
+                        && firstAccount.privacy().ghostPreset && firstAccount.privacy().hideTyping,
+                "all chat exceptions can be cleared without changing privacy controls");
+        PrivacySettings capped = PrivacySettings.DEFAULT;
+        for (int i = 1; i <= 300; i++) capped = capped.withNormalBehaviorForChat(i, true);
+        check(capped.normalBehaviorChats.size() == 256 && !capped.usesNormalBehavior(300),
+                "chat exception list remains bounded");
         firstAccount.savePrivacy(firstAccount.privacy().withGhostPreset(false));
         check(firstAccount.privacy().ghostSendDelaySeconds(100) == 0,
                 "delayed send cannot activate while the Ghost preset is off");
