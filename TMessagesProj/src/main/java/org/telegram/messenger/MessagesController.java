@@ -16816,6 +16816,8 @@ public class MessagesController extends BaseController implements NotificationCe
                                     arr.add(obj);
                                 }
 
+                                org.morok.history.MemoryObserver.beforeTelegramStorageNew(currentAccount, messages);
+
                                 AndroidUtilities.runOnUIThread(() -> {
                                     for (int a = 0; a < messages.size(); a++) {
                                         long key = messages.keyAt(a);
@@ -16857,6 +16859,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                 message.dialog_id = -channelId;
                                 message.unread = !(message.action instanceof TLRPC.TL_messageActionChannelCreate || channelFinal != null && channelFinal.left || (message.out ? outboxValue : inboxValue) >= message.id);
                             }
+                            org.morok.history.MemoryObserver.beforeTelegramStorageRawNew(currentAccount, res.messages);
                             getMessagesStorage().overwriteChannel(channelId, (TLRPC.TL_updates_channelDifferenceTooLong) res, newDialogType, () -> AndroidUtilities.runOnUIThread(() -> {
                                 NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.onReceivedChannelDifference, channelId);
                             }));
@@ -17094,6 +17097,8 @@ public class MessagesController extends BaseController implements NotificationCe
                                     }
                                     arr.add(obj);
                                 }
+
+                                org.morok.history.MemoryObserver.beforeTelegramStorageNew(currentAccount, messages);
 
                                 getMessagesStorage().getStorageQueue().postRunnable(() -> {
                                     if (!pushMessages.isEmpty()) {

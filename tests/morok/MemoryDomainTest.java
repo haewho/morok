@@ -1,6 +1,7 @@
 import org.morok.memory.MemoryKey;
 import org.morok.memory.MemoryJournalPolicy;
 import org.morok.memory.MemoryPolicy;
+import org.morok.memory.MemoryTrackingIndex;
 
 import java.util.HashSet;
 
@@ -54,6 +55,16 @@ public final class MemoryDomainTest {
         expect(MemoryPolicy.MAX_LOCAL_HISTORY_IMPORT > 0
                         && MemoryPolicy.MAX_LOCAL_HISTORY_IMPORT <= MemoryPolicy.MAX_AUTOMATIC_CARDS,
                 "One local-history import is positive and bounded by automatic retention");
+        MemoryTrackingIndex tracking = new MemoryTrackingIndex();
+        expect(!tracking.hasAny(), "An empty Memory index does not claim tracked cards");
+        tracking.addPending(java.util.Collections.singleton(first.canonical()));
+        expect(tracking.hasAny() && tracking.tracks(first.canonical()),
+                "A durably journaled new card is visible to an immediate edit/delete");
+        tracking.replacePersisted(java.util.Collections.emptySet());
+        expect(tracking.tracks(first.canonical()), "An index read cannot hide a pending journal card");
+        tracking.replacePersisted(java.util.Collections.singleton(first.canonical()));
+        tracking.completePending(first.canonical());
+        expect(tracking.tracks(first.canonical()), "Completed replay remains visible through the persisted index");
         expect(MemoryPolicy.AUTOMATIC_RETENTION_MILLIS == 90L * 24 * 60 * 60 * 1000,
                 "Automatic archive retention has a deterministic bounded age");
         long now = 1_000_000_000_000L;

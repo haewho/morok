@@ -51,7 +51,7 @@ public final class MorokMemoryStore {
     private final AtomicFile index;
     private final AtomicFile journal;
     private volatile boolean revoked;
-    private volatile java.util.Set<String> tracked = Collections.emptySet();
+    private final MemoryTrackingIndex tracking = new MemoryTrackingIndex();
     private volatile boolean trackingLoaded;
     private boolean replayScheduled;
     private final ArrayDeque<String> recentJournalOrder = new ArrayDeque<>();
@@ -205,12 +205,16 @@ public final class MorokMemoryStore {
     private void updateTracked(Database database) {
         HashSet<String> keys = new HashSet<>();
         for (MemoryCard card : database.cards) keys.add(card.key.canonical());
-        tracked = Collections.unmodifiableSet(keys);
+        tracking.replacePersisted(keys);
         trackingLoaded = true;
     }
 
-    public boolean tracks(MemoryKey key) { return isActive() && tracked.contains(key.canonical()); }
-    public boolean hasCards() { return isActive() && !tracked.isEmpty(); }
+    public boolean tracks(MemoryKey key) {
+        if (!isActive()) return false;
+        String canonical = key.canonical();
+        return tracking.tracks(canonical);
+    }
+    public boolean hasCards() { return isActive() && tracking.hasAny(); }
     public boolean hasTrackedCardsReady() { return ensureTrackingLoaded() && hasCards(); }
 
     public void noteCaptureGap() {
@@ -248,13 +252,15 @@ public final class MorokMemoryStore {
         if (captures == null || captures.isEmpty() || captures.size() > MemoryJournalPolicy.MAX_EVENTS) return false;
         try {
             ArrayList<JSONObject> events = new ArrayList<>();
+            ArrayList<String> pending = new ArrayList<>();
             for (MemoryCapture capture : captures) {
                 if (capture == null || capture.key.userId != userId) throw new IOException("Account mismatch");
                 String identity = capture.key.canonical() + ":" + capture.snapshot.fingerprint;
                 events.add(new JSONObject().put("id", MemoryJournalPolicy.eventId("new", identity))
                         .put("type", "new").put("capture", capture.toJournalJson()));
+                pending.add(capture.key.canonical());
             }
-            return appendJournalAndReplay(events);
+            return appendJournalAndReplay(events, pending);
         } catch (Exception error) {
             noteCaptureGap();
             return false;
@@ -301,6 +307,10 @@ public final class MorokMemoryStore {
     }
 
     private boolean appendJournalAndReplay(ArrayList<JSONObject> events) throws Exception {
+        return appendJournalAndReplay(events, null);
+    }
+
+    private boolean appendJournalAndReplay(ArrayList<JSONObject> events, ArrayList<String> pending) throws Exception {
         if (events.isEmpty()) return true;
         boolean allRecent = true;
         synchronized (this) {
@@ -311,7 +321,10 @@ public final class MorokMemoryStore {
         if (allRecent) return true;
         Future<Boolean> append = JOURNAL_QUEUE.submit(() -> appendJournal(events));
         boolean stored = append.get(5, TimeUnit.SECONDS);
-        if (stored) scheduleJournalReplay();
+        if (stored) {
+            if (pending != null) tracking.addPending(pending);
+            scheduleJournalReplay();
+        }
         else noteCaptureGap();
         return stored;
     }
@@ -416,8 +429,11 @@ public final class MorokMemoryStore {
             for (JSONObject event : events) {
                 requireActive();
                 String type = event.getString("type");
+                String completedPendingKey = null;
                 if ("new".equals(type)) {
-                    saveInternal(MemoryCapture.fromJournalJson(event.getJSONObject("capture")), SAVE_AUTOMATIC_NEW);
+                    MemoryCapture capture = MemoryCapture.fromJournalJson(event.getJSONObject("capture"));
+                    completedPendingKey = capture.key.canonical();
+                    saveInternal(capture, SAVE_AUTOMATIC_NEW);
                 } else if ("edit".equals(type)) {
                     saveInternal(MemoryCapture.fromJournalJson(event.getJSONObject("capture")), SAVE_TRACKED_UPDATE);
                 } else if ("delete".equals(type)) {
@@ -438,6 +454,7 @@ public final class MorokMemoryStore {
                 }
                 JOURNAL_QUEUE.submit(() -> { removeJournal(event.getString("id")); return true; })
                         .get(5, TimeUnit.SECONDS);
+                if (completedPendingKey != null) tracking.completePending(completedPendingKey);
                 rememberJournalEvent(event.getString("id"));
             }
             return true;

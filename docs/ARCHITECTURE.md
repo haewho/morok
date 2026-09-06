@@ -4,7 +4,7 @@
 
 - `org.morok.settings` — версия схемы, настройки устройства и пространство настроек по устойчивому ID пользователя.
 - `org.morok.appearance` — политика эффектов поверх существующих render paths; перечень покрытия указан отдельно.
-- `org.morok.memory` / `history` — ручные карточки, allowlisted автоархив новых сообщений, явный ограниченный импорт из локальной Telegram SQLite, приватное хранение, encrypted journal/replay для new/edit/delete событий и напоминания. Автоархив выключен по умолчанию и использует настройки устойчивого ID аккаунта; импорт не запускает Telegram history/media loader.
+- `org.morok.memory` / `history` — ручные карточки, allowlisted автоархив live и catch-up message payload, явный ограниченный импорт из локальной Telegram SQLite, приватное хранение, encrypted journal/replay для new/edit/delete событий и напоминания. Автоархив выключен по умолчанию и использует настройки устойчивого ID аккаунта; импорт не запускает Telegram history/media loader.
 - `org.morok.proxy` — проверка и выбор узлов через штатный `ConnectionsManager`; никакого второго сетевого стека.
 - `org.morok.integration` — собственное имя, сохраняемое при загрузке облачных language packs.
 - `org.morok.ui` — обычные Telegram `BaseFragment`, встроенные в навигацию приложения.

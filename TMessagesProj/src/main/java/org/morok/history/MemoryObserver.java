@@ -10,6 +10,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.UserConfig;
+import org.telegram.tgnet.TLRPC;
 
 import java.util.ArrayList;
 
@@ -52,6 +53,22 @@ public final class MemoryObserver implements NotificationCenter.NotificationCent
         } catch (Exception error) {
             try { MorokMemoryStore.forAccount(account).noteCaptureGap(); } catch (RuntimeException ignored) { }
         }
+    }
+
+    /** Catch-up snapshots that bypass processUpdateArray are still journaled before direct storage writes. */
+    public static void beforeTelegramStorageRawNew(int account, ArrayList<TLRPC.Message> rawMessages) {
+        if (rawMessages == null || rawMessages.isEmpty()) return;
+        LongSparseArray<ArrayList<MessageObject>> messages = new LongSparseArray<>();
+        for (TLRPC.Message message : rawMessages) {
+            if (message == null || message instanceof TLRPC.TL_messageEmpty) continue;
+            long dialogId = MessageObject.getDialogId(message);
+            if (dialogId == 0) continue;
+            message.dialog_id = dialogId;
+            ArrayList<MessageObject> values = messages.get(dialogId);
+            if (values == null) { values = new ArrayList<>(); messages.put(dialogId, values); }
+            values.add(new MessageObject(account, message, false, false));
+        }
+        beforeTelegramStorageNew(account, messages);
     }
 
     /** NotificationCenter fallback for paths that bypass the main update-array hook. */
