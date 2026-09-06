@@ -45,4 +45,5 @@
     <string name="MorokMemoryCaptureGap">Some source updates could not be saved. Cards show only versions this device retained.</string>
     <string name="MorokMemorySignInRequired">Sign in to a Telegram account to create and open its local Memory cards.</string>
     <string name="MorokMemoryAutomatic">Automatic archive</string>
+    <string name="MorokMemoryImported">Local history import</string>
 </resources>

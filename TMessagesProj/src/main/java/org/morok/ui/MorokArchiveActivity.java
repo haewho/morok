@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.morok.settings.ArchiveSettings;
+import org.morok.history.LocalHistoryImporter;
 import org.morok.settings.MorokSettings;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
@@ -36,10 +37,11 @@ import java.util.Collections;
 
 /** Account-local allowlist for automatic encrypted snapshots of newly received messages. */
 public final class MorokArchiveActivity extends BaseFragment {
-    private static final int ENABLED = 1, ADD_CHAT = 2, CHAT = 3, CLEAR = 4;
+    private static final int ENABLED = 1, ADD_CHAT = 2, CHAT = 3, CLEAR = 4, IMPORT_HISTORY = 5;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
+    private boolean importing;
 
     public MorokArchiveActivity(int account) { currentAccount = account; }
 
@@ -59,7 +61,8 @@ public final class MorokArchiveActivity extends BaseFragment {
             if (!available() || position < 0 || position >= rows.size()) return;
             ArchiveSettings settings = settings(); Row row = rows.get(position);
             if (row.id == ENABLED) apply(settings.withEnabled(!settings.enabled));
-            else if (row.id == ADD_CHAT) chooseChatKind();
+            else if (row.id == ADD_CHAT) chooseChatKind(false);
+            else if (row.id == IMPORT_HISTORY) chooseChatKind(true);
             else if (row.id == CHAT) showDialog(new AlertDialog.Builder(context)
                     .setTitle(text(R.string.MorokArchiveRemoveChat)).setMessage(row.title)
                     .setPositiveButton(text(R.string.Remove), (d, w) -> apply(settings.withChat(row.dialogId, false)))
@@ -90,25 +93,60 @@ public final class MorokArchiveActivity extends BaseFragment {
         }
     }
 
-    private void chooseChatKind() {
+    private void chooseChatKind(boolean forImport) {
         CharSequence[] kinds = {text(R.string.MorokArchivePrivateChat), text(R.string.MorokArchiveGroup),
                 text(R.string.MorokArchiveChannel)};
-        showDialog(new AlertDialog.Builder(getContext()).setTitle(text(R.string.MorokArchiveAddChat))
+        showDialog(new AlertDialog.Builder(getContext()).setTitle(text(forImport
+                        ? R.string.MorokArchiveImportChooseChat : R.string.MorokArchiveAddChat))
                 .setItems(kinds, (dialog, which) -> openPicker(which == 0 ? DialogsActivity.DIALOGS_TYPE_USERS_ONLY
-                        : which == 1 ? DialogsActivity.DIALOGS_TYPE_GROUPS_ONLY : DialogsActivity.DIALOGS_TYPE_CHANNELS_ONLY))
+                        : which == 1 ? DialogsActivity.DIALOGS_TYPE_GROUPS_ONLY : DialogsActivity.DIALOGS_TYPE_CHANNELS_ONLY,
+                        forImport))
                 .setNegativeButton(text(R.string.Cancel), null).create());
     }
 
-    private void openPicker(int type) {
+    private void openPicker(int type, boolean forImport) {
         Bundle args = new Bundle(); args.putBoolean("onlySelect", true); args.putBoolean("checkCanWrite", false);
         args.putBoolean("allowGlobalSearch", false); args.putInt("dialogsType", type);
         DialogsActivity picker = new DialogsActivity(args); picker.setCurrentAccount(currentAccount);
         picker.setDelegate((fragment, dids, message, param, notify, scheduleDate, scheduleRepeatPeriod, topicsFragment) -> {
-            ArchiveSettings updated = settings();
-            for (int i = 0; i < dids.size(); i++) updated = updated.withChat(dids.get(i).dialogId, true);
-            apply(updated); picker.finishFragment(); return true;
+            if (dids.isEmpty()) return false;
+            if (forImport) confirmImport(dids.get(0).dialogId);
+            else {
+                ArchiveSettings updated = settings();
+                for (int i = 0; i < dids.size(); i++) updated = updated.withChat(dids.get(i).dialogId, true);
+                apply(updated);
+            }
+            picker.finishFragment(); return true;
         });
         presentFragment(picker);
+    }
+
+    private void confirmImport(long dialogId) {
+        if (importing || getContext() == null) return;
+        showDialog(new AlertDialog.Builder(getContext()).setTitle(text(R.string.MorokArchiveImportTitle))
+                .setMessage(LocaleController.formatString(R.string.MorokArchiveImportConfirm, dialogTitle(dialogId)))
+                .setPositiveButton(text(R.string.MorokArchiveImportAction), (dialog, which) -> importHistory(dialogId))
+                .setNegativeButton(text(R.string.Cancel), null).create());
+    }
+
+    private void importHistory(long dialogId) {
+        if (importing || getContext() == null) return;
+        importing = true;
+        if (adapter != null) adapter.notifyDataSetChanged();
+        AlertDialog progress = new AlertDialog(getContext(), AlertDialog.ALERT_TYPE_SPINNER);
+        progress.setCanCancel(false);
+        showDialog(progress);
+        LocalHistoryImporter.importRecent(currentAccount, dialogId, (result, error) -> {
+            importing = false;
+            try { progress.dismiss(); } catch (RuntimeException ignored) { }
+            if (adapter != null) adapter.notifyDataSetChanged();
+            if (getContext() == null) return;
+            String message = error != null ? text(R.string.MorokArchiveImportError)
+                    : LocaleController.formatString(R.string.MorokArchiveImportResult,
+                    result.retained, result.eligible, result.scanned);
+            showDialog(new AlertDialog.Builder(getContext()).setTitle(text(R.string.MorokArchiveImportTitle))
+                    .setMessage(message).setPositiveButton(text(R.string.OK), null).create());
+        });
     }
 
     private void rebuildRows() {
@@ -126,6 +164,9 @@ public final class MorokArchiveActivity extends BaseFragment {
                 rows.add(new Row(ACTION, CLEAR, text(R.string.MorokArchiveClearChats), 0));
             }
             rows.add(new Row(INFO, 0, text(R.string.MorokArchiveLimits), 0));
+            rows.add(new Row(HEADER, 0, text(R.string.MorokArchiveImportHeader), 0));
+            rows.add(new Row(ACTION, IMPORT_HISTORY, text(R.string.MorokArchiveImportAction), 0));
+            rows.add(new Row(INFO, 0, text(R.string.MorokArchiveImportInfo), 0));
         }
         if (adapter != null) adapter.notifyDataSetChanged();
     }
@@ -149,7 +190,7 @@ public final class MorokArchiveActivity extends BaseFragment {
         @Override public int getItemCount() { return rows.size(); }
         @Override public int getItemViewType(int position) { return rows.get(position).type; }
         @Override public boolean isEnabled(RecyclerView.ViewHolder holder) {
-            return available() && (holder.getItemViewType() == CHECK || holder.getItemViewType() == ACTION);
+            return available() && !importing && (holder.getItemViewType() == CHECK || holder.getItemViewType() == ACTION);
         }
         @NonNull @Override public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int type) {
             View view = type == HEADER ? new HeaderCell(parent.getContext()) : type == CHECK ? new TextCheckCell(parent.getContext())

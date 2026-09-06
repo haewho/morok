@@ -4,6 +4,7 @@ package org.morok.memory;
 public final class MemoryPolicy {
     public static final int MAX_CARDS = 500;
     public static final int MAX_AUTOMATIC_CARDS = 400;
+    public static final int MAX_LOCAL_HISTORY_IMPORT = 100;
     public static final long AUTOMATIC_RETENTION_MILLIS = 90L * 24 * 60 * 60 * 1000;
     public static final int MAX_VERSIONS = 20;
     public static final int MAX_TOMBSTONES = 20000;

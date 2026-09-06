@@ -45,4 +45,5 @@
     <string name="MorokMemoryCaptureGap">Некоторые изменения источников не удалось сохранить. В карточках только версии, сохранённые этим устройством.</string>
     <string name="MorokMemorySignInRequired">Войдите в аккаунт Telegram, чтобы создавать и открывать его локальные карточки Памяти.</string>
     <string name="MorokMemoryAutomatic">Автоархив</string>
+    <string name="MorokMemoryImported">Импорт локальной истории</string>
 </resources>

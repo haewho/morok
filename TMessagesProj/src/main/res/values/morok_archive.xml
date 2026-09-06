@@ -14,4 +14,12 @@
     <string name="MorokArchiveClearChats">Remove all selected chats</string>
     <string name="MorokArchiveClearChatsInfo">Stop automatic archiving in every chat? Existing local snapshots remain until removed from Memory.</string>
     <string name="MorokArchiveLimits">Automatic retention: up to 400 messages for 90 days within the 500-card and 256 MB account limits. Manual Memory cards have priority. Already downloaded originals up to 8 MB may be retained; MOROK never starts a media download.</string>
+    <string name="MorokArchiveImportHeader">Existing local history</string>
+    <string name="MorokArchiveImportAction">Import recent local messages</string>
+    <string name="MorokArchiveImportChooseChat">Choose a chat to import</string>
+    <string name="MorokArchiveImportTitle">Import local history</string>
+    <string name="MorokArchiveImportInfo">Explicitly copies up to 100 recent messages already present in Telegram’s local cache. It does not request older messages or download media. The same exclusions and 90-day automatic retention apply.</string>
+    <string name="MorokArchiveImportConfirm">Import up to 100 recent locally cached messages from %1$s into encrypted Memory?</string>
+    <string name="MorokArchiveImportResult">Retained %1$d of %2$d eligible messages found among %3$d local records.</string>
+    <string name="MorokArchiveImportError">The local cache could not be imported. Check the active account, free space and the Memory encryption key.</string>
 </resources>

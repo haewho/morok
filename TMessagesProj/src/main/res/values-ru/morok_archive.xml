@@ -14,4 +14,12 @@
     <string name="MorokArchiveClearChats">Удалить все выбранные чаты</string>
     <string name="MorokArchiveClearChatsInfo">Остановить автоматическое архивирование во всех чатах? Существующие локальные снимки останутся в Памяти до ручного удаления.</string>
     <string name="MorokArchiveLimits">Автоархив хранит до 400 сообщений за 90 дней в общих лимитах 500 карточек и 256 МБ на аккаунт. Ручные карточки Памяти имеют приоритет. Уже скачанные оригиналы до 8 МБ могут сохраняться; MOROK сам не начинает загрузку медиа.</string>
+    <string name="MorokArchiveImportHeader">Существующая локальная история</string>
+    <string name="MorokArchiveImportAction">Импортировать недавние сообщения</string>
+    <string name="MorokArchiveImportChooseChat">Выберите чат для импорта</string>
+    <string name="MorokArchiveImportTitle">Импорт локальной истории</string>
+    <string name="MorokArchiveImportInfo">Явно копирует до 100 недавних сообщений, уже находящихся в локальном кеше Telegram. Старые сообщения и медиа из сети не запрашиваются. Действуют те же исключения и 90-дневный срок автоархива.</string>
+    <string name="MorokArchiveImportConfirm">Импортировать до 100 недавних сообщений из локального кеша чата «%1$s» в зашифрованную Память?</string>
+    <string name="MorokArchiveImportResult">Сохранено %1$d из %2$d подходящих сообщений среди %3$d локальных записей.</string>
+    <string name="MorokArchiveImportError">Не удалось импортировать локальный кеш. Проверьте активный аккаунт, свободное место и ключ шифрования Памяти.</string>
 </resources>

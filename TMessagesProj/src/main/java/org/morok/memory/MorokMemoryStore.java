@@ -528,6 +528,57 @@ public final class MorokMemoryStore {
         execute(() -> saveInternal(capture, explicitUserAction ? SAVE_MANUAL : SAVE_TRACKED_UPDATE), callback);
     }
 
+    /** Retain one explicit cache-only import in a single index commit. Existing manual cards stay manual. */
+    public void importLocal(ArrayList<MemoryCapture> captures, Callback<Integer> callback) {
+        execute(() -> {
+            if (captures == null || captures.size() > MemoryPolicy.MAX_LOCAL_HISTORY_IMPORT) {
+                throw new IOException("Invalid local history batch");
+            }
+            Database database = read();
+            int retained = 0;
+            boolean changed = false;
+            for (MemoryCapture capture : captures) {
+                requireActive();
+                if (capture == null || capture.key.userId != userId) throw new IOException("Account mismatch");
+                MemoryCard existing = null;
+                for (MemoryCard card : database.cards) if (card.key.equals(capture.key)) { existing = card; break; }
+                if (existing == null) {
+                    try { pruneForInsertion(database, true); }
+                    catch (IOException full) { continue; }
+                    database.tombstones.remove(capture.key.canonical());
+                    existing = new MemoryCard(UUID.randomUUID().toString(), capture.key);
+                    existing.createdAt = System.currentTimeMillis();
+                    existing.source = capture.source; existing.sender = capture.sender;
+                    existing.automatic = true; existing.imported = true;
+                    database.cards.add(existing); changed = true;
+                }
+                boolean duplicate = false;
+                for (MemoryCard.Snapshot version : existing.versions) {
+                    if (!version.fingerprint.equals(capture.snapshot.fingerprint)) continue;
+                    duplicate = true;
+                    if (!"saved".equals(version.fileState)) {
+                        String previous = version.fileState;
+                        copyAttachment(capture, version);
+                        changed |= !previous.equals(version.fileState);
+                    }
+                    break;
+                }
+                if (!duplicate) {
+                    copyAttachment(capture, capture.snapshot);
+                    int position = existing.versions.size();
+                    while (position > 0 && !MemoryPolicy.becomesLatest(capture.snapshot.editedAt,
+                            existing.versions.get(position - 1).editedAt)) position--;
+                    existing.versions.add(position, capture.snapshot);
+                    while (existing.versions.size() > MemoryPolicy.MAX_VERSIONS) existing.versions.remove(0);
+                    changed = true;
+                }
+                retained++;
+            }
+            if (changed) write(database); else cleanup(database);
+            return retained;
+        }, callback);
+    }
+
     private MemoryCard saveInternal(MemoryCapture capture, int mode) throws Exception {
         if (capture.key.userId != userId) throw new IOException("Account mismatch");
         Database database = read();
@@ -549,7 +600,7 @@ public final class MorokMemoryStore {
         boolean promoted = mode == SAVE_MANUAL && existing.automatic;
         if (mode == SAVE_MANUAL) {
             database.tombstones.remove(capture.key.canonical());
-            existing.automatic = false;
+            existing.automatic = false; existing.imported = false;
         }
         for (MemoryCard.Snapshot version : existing.versions) {
             if (version.fingerprint.equals(capture.snapshot.fingerprint)) {

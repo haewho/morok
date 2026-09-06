@@ -51,6 +51,9 @@ public final class MemoryDomainTest {
                 "Journal byte budget cannot be exceeded");
         expect(MemoryPolicy.MAX_AUTOMATIC_CARDS < MemoryPolicy.MAX_CARDS,
                 "Automatic retention must leave capacity for manual Memory cards");
+        expect(MemoryPolicy.MAX_LOCAL_HISTORY_IMPORT > 0
+                        && MemoryPolicy.MAX_LOCAL_HISTORY_IMPORT <= MemoryPolicy.MAX_AUTOMATIC_CARDS,
+                "One local-history import is positive and bounded by automatic retention");
         expect(MemoryPolicy.AUTOMATIC_RETENTION_MILLIS == 90L * 24 * 60 * 60 * 1000,
                 "Automatic archive retention has a deterministic bounded age");
         long now = 1_000_000_000_000L;
