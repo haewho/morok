@@ -14,6 +14,7 @@ fi
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryKey.java" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryJournalPolicy.java" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryPolicy.java" \
+  "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryStorageStats.java" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryTrackingIndex.java" \
   "$MOROK_ROOT/tests/morok/MemoryDomainTest.java"
 "${MOROK_JAVA_BIN}java" -cp "$MOROK_TEST_OUTPUT" MemoryDomainTest

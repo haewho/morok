@@ -41,6 +41,13 @@
     <string name="MorokMemoryFileTooLarge">Оригинал превышает лимит 8 МБ; не сохранён</string>
     <string name="MorokMemoryFileError">Не удалось сохранить оригинал: ошибка места или ключа</string>
     <string name="MorokMemoryFileUnavailable">Сохранённый оригинал недоступен</string>
+    <string name="MorokMemoryRetryFile">Повторить из локального кеша</string>
+    <string name="MorokMemoryRetryFileInfo">Проверяется только существующий кеш Telegram. Память не запускает скачивание.</string>
+    <string name="MorokMemoryRetryFileFailed">Оригинала нет в локальном кеше либо его не удалось сохранить.</string>
+    <string name="MorokMemoryStorageCards">Карточки: %1$d · полученные версии: %2$d</string>
+    <string name="MorokMemoryStorageFiles">Сохранённые оригиналы: %1$d · уникальные зашифрованные файлы: %2$d</string>
+    <string name="MorokMemoryStoragePending">Не скачано: %1$d · больше 8 МБ: %2$d</string>
+    <string name="MorokMemoryStorageProblems">Недоступно: %1$d · ошибки места/ключа: %2$d</string>
     <string name="MorokMemoryReminderNotification">Пора вернуться к сохранённой карточке.</string>
     <string name="MorokMemoryCaptureGap">Некоторые изменения источников не удалось сохранить. В карточках только версии, сохранённые этим устройством.</string>
     <string name="MorokMemorySignInRequired">Войдите в аккаунт Telegram, чтобы создавать и открывать его локальные карточки Памяти.</string>

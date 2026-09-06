@@ -51,4 +51,12 @@ pending = store.index("tracking.addPending(pending)", persist)
 replay = store.index("scheduleJournalReplay()", pending)
 expect(persist < pending < replay, "Pending identities must become visible after journal commit and before replay")
 
+retry_start = store.index("public void retryAttachment(")
+retry_end = store.index("public void update(", retry_start)
+retry = store[retry_start:retry_end]
+expect("MemoryCapture.restoreCachedMessage" in retry and "copyAttachment(message, target, database)" in retry,
+       "Attachment retry must use the authenticated stored snapshot and existing store transaction")
+expect("loadFile(" not in retry and "download" not in retry.lower(),
+       "Attachment retry must remain cache-only and never start a download")
+
 print(f"Memory hook order: {checks} checks passed")

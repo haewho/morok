@@ -30,6 +30,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.morok.history.MemoryCapture;
 import org.morok.memory.MemoryCard;
 import org.morok.memory.MemoryPolicy;
+import org.morok.memory.MemoryStorageStats;
 import org.morok.memory.MorokMemoryFileProvider;
 import org.morok.memory.MorokMemoryReminderReceiver;
 import org.morok.memory.MorokMemoryStore;
@@ -205,9 +206,16 @@ public class MorokMemoryActivity extends BaseFragment {
         box.addView(text(context, t(R.string.MorokMemoryReminderAccuracy), 12));
         Button versions = button(context, t(R.string.MorokMemoryVersions) + " (" + card.versions.size() + ")"); box.addView(versions);
         versions.setOnClickListener(v -> showVersions(card));
+        final Button retry;
         if ("saved".equals(card.latest().fileState)) {
             Button file = button(context, t(R.string.MorokMemoryOpenFile)); box.addView(file);
             file.setOnClickListener(v -> openFile(card, card.latest()));
+            retry = null;
+        } else if (canRetry(card.latest())) {
+            retry = button(context, t(R.string.MorokMemoryRetryFile)); box.addView(retry);
+            box.addView(text(context, t(R.string.MorokMemoryRetryFileInfo), 12));
+        } else {
+            retry = null;
         }
         Button source = button(context, t(R.string.MorokMemoryOpenSource)); box.addView(source);
         source.setOnClickListener(v -> openSource(card));
@@ -222,6 +230,10 @@ public class MorokMemoryActivity extends BaseFragment {
                                 refresh();
                             });
                 }).setNegativeButton(t(R.string.Cancel), null).create();
+        if (retry != null) retry.setOnClickListener(v -> {
+            retry.setEnabled(false);
+            retryAttachment(card, card.latest(), editor::dismiss, () -> retry.setEnabled(true));
+        });
         remove.setOnClickListener(v -> showDialog(new AlertDialog.Builder(context)
                 .setTitle(t(R.string.MorokMemoryRemove)).setMessage(t(R.string.MorokMemoryRemoveConfirm))
                 .setNegativeButton(t(R.string.Cancel), null).setPositiveButton(t(R.string.Delete), (dialog, which) -> {
@@ -271,9 +283,39 @@ public class MorokMemoryActivity extends BaseFragment {
                     MemoryCard.Snapshot snapshot = card.versions.get(which);
                     AlertDialog.Builder detail = new AlertDialog.Builder(getParentActivity()).setTitle(date(snapshot.receivedAt))
                             .setMessage(snapshot.text + "\n\n" + snapshotStatus(card, snapshot)).setNegativeButton(t(R.string.Close), null);
-                    if ("saved".equals(snapshot.fileState)) detail.setPositiveButton(t(R.string.MorokMemoryOpenFile), (d, w) -> openFile(card, snapshot));
+                    if ("saved".equals(snapshot.fileState)) {
+                        detail.setPositiveButton(t(R.string.MorokMemoryOpenFile), (d, w) -> openFile(card, snapshot));
+                    } else if (canRetry(snapshot)) {
+                        detail.setPositiveButton(t(R.string.MorokMemoryRetryFile), (d, w) -> retryAttachment(card, snapshot, null, null));
+                    }
                     showDialog(detail.create());
                 }).create());
+    }
+
+    private static boolean canRetry(MemoryCard.Snapshot snapshot) {
+        return "not_downloaded".equals(snapshot.fileState) || "storage_error".equals(snapshot.fileState)
+                || "unavailable".equals(snapshot.fileState);
+    }
+
+    private void retryAttachment(MemoryCard card, MemoryCard.Snapshot snapshot, Runnable success, Runnable failure) {
+        if (!accountValid()) return;
+        store.retryAttachment(card.id, snapshot.fingerprint, (updated, error) -> {
+            if (error != null || updated == null) {
+                if (failure != null) failure.run();
+                toast(t(R.string.MorokMemoryRetryFileFailed));
+                return;
+            }
+            MemoryCard.Snapshot result = null;
+            for (MemoryCard.Snapshot version : updated.versions) {
+                if (version.fingerprint.equals(snapshot.fingerprint)) { result = version; break; }
+            }
+            if (success != null) success.run();
+            if (result != null) {
+                int label = fileStateLabel(result.fileState);
+                toast(label == 0 ? t(R.string.MorokMemoryRetryFileFailed) : t(label));
+            }
+            refresh();
+        });
     }
 
     private void openFile(MemoryCard card, MemoryCard.Snapshot snapshot) {
@@ -309,10 +351,14 @@ public class MorokMemoryActivity extends BaseFragment {
 
     private void storageInfo() {
         if (!accountValid()) return;
-        store.storageSize((bytes, error) -> {
+        store.storageStats((stats, error) -> {
             if (error != null) { toast(t(R.string.MorokMemoryStorageError)); return; }
             showDialog(new AlertDialog.Builder(getParentActivity()).setTitle(t(R.string.MorokMemoryStorage))
-                    .setMessage(AndroidUtilities.formatFileSize(bytes) + " / " + AndroidUtilities.formatFileSize(MemoryPolicy.MAX_ACCOUNT_BYTES)
+                    .setMessage(AndroidUtilities.formatFileSize(stats.usedBytes) + " / " + AndroidUtilities.formatFileSize(MemoryPolicy.MAX_ACCOUNT_BYTES)
+                            + "\n" + LocaleController.formatString(R.string.MorokMemoryStorageCards, stats.cards, stats.versions)
+                            + "\n" + LocaleController.formatString(R.string.MorokMemoryStorageFiles, stats.savedOriginals, stats.uniqueBlobs)
+                            + "\n" + LocaleController.formatString(R.string.MorokMemoryStoragePending, stats.notDownloaded, stats.tooLarge)
+                            + "\n" + LocaleController.formatString(R.string.MorokMemoryStorageProblems, stats.unavailable, stats.storageErrors)
                             + "\n\n" + t(R.string.MorokMemoryLimits)
                             + (store.hasCaptureGap() ? "\n\n" + t(R.string.MorokMemoryCaptureGap) : ""))
                     .setNegativeButton(t(R.string.Close), null)
@@ -327,16 +373,20 @@ public class MorokMemoryActivity extends BaseFragment {
         String value = (card.imported ? t(R.string.MorokMemoryImported) + " · "
                 : card.automatic ? t(R.string.MorokMemoryAutomatic) + " · " : "")
                 + (card.deletedInTelegram ? t(R.string.MorokMemoryDeleted) : t(R.string.MorokMemoryLocalSnapshot));
-        int label;
-        switch (snapshot.fileState) {
-            case "saved": label = R.string.MorokMemoryFileSaved; break;
-            case "not_downloaded": label = R.string.MorokMemoryFileNotDownloaded; break;
-            case "too_large": label = R.string.MorokMemoryFileTooLarge; break;
-            case "storage_error": label = R.string.MorokMemoryFileError; break;
-            case "unavailable": label = R.string.MorokMemoryFileUnavailable; break;
-            default: return value;
-        }
+        int label = fileStateLabel(snapshot.fileState);
+        if (label == 0) return value;
         return value + "\n" + t(label) + (snapshot.fileName.isEmpty() ? "" : " · " + snapshot.fileName);
+    }
+
+    private static int fileStateLabel(String state) {
+        switch (state) {
+            case "saved": return R.string.MorokMemoryFileSaved;
+            case "not_downloaded": return R.string.MorokMemoryFileNotDownloaded;
+            case "too_large": return R.string.MorokMemoryFileTooLarge;
+            case "storage_error": return R.string.MorokMemoryFileError;
+            case "unavailable": return R.string.MorokMemoryFileUnavailable;
+            default: return 0;
+        }
     }
 
     private static String date(long time) { return DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(new Date(time)); }

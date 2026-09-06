@@ -1,6 +1,7 @@
 import org.morok.memory.MemoryKey;
 import org.morok.memory.MemoryJournalPolicy;
 import org.morok.memory.MemoryPolicy;
+import org.morok.memory.MemoryStorageStats;
 import org.morok.memory.MemoryTrackingIndex;
 
 import java.util.HashSet;
@@ -72,6 +73,18 @@ public final class MemoryDomainTest {
                 "Automatic card remains available through the retention boundary");
         expect(MemoryPolicy.automaticExpired(now - MemoryPolicy.AUTOMATIC_RETENTION_MILLIS - 1, now),
                 "Automatic card expires immediately after the retention boundary");
+        MemoryStorageStats stats = new MemoryStorageStats(1234);
+        stats.addCard(); stats.addCard();
+        stats.addSnapshot("saved", "shared"); stats.addSnapshot("saved", "shared");
+        stats.addSnapshot("not_downloaded", ""); stats.addSnapshot("too_large", "");
+        stats.addSnapshot("unavailable", "lost"); stats.addSnapshot("storage_error", "");
+        stats.addSnapshot("none", "");
+        expect(stats.usedBytes == 1234 && stats.cards == 2 && stats.versions == 7,
+                "Storage diagnostics count account bytes, cards and every received version");
+        expect(stats.savedOriginals == 2 && stats.uniqueBlobs == 1,
+                "Shared encrypted originals are counted once while retaining both references");
+        expect(stats.notDownloaded == 1 && stats.tooLarge == 1 && stats.unavailable == 1 && stats.storageErrors == 1,
+                "Storage diagnostics preserve actionable attachment states");
         for (long user : new long[]{0, -1}) {
             try { new MemoryKey(user, "user", 1, 1, 0); throw new AssertionError("Invalid account accepted"); }
             catch (IllegalArgumentException expected) { checks++; }

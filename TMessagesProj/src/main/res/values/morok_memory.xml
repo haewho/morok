@@ -41,6 +41,13 @@
     <string name="MorokMemoryFileTooLarge">Original exceeds the 8 MB limit; not saved</string>
     <string name="MorokMemoryFileError">Original could not be saved: storage or key error</string>
     <string name="MorokMemoryFileUnavailable">Retained original is unavailable</string>
+    <string name="MorokMemoryRetryFile">Retry from local cache</string>
+    <string name="MorokMemoryRetryFileInfo">Checks Telegram’s existing cache only. Memory does not start a download.</string>
+    <string name="MorokMemoryRetryFileFailed">The original is not available in the local cache or cannot be retained.</string>
+    <string name="MorokMemoryStorageCards">Cards: %1$d · received versions: %2$d</string>
+    <string name="MorokMemoryStorageFiles">Saved originals: %1$d · unique encrypted files: %2$d</string>
+    <string name="MorokMemoryStoragePending">Not downloaded: %1$d · over 8 MB: %2$d</string>
+    <string name="MorokMemoryStorageProblems">Unavailable: %1$d · storage/key errors: %2$d</string>
     <string name="MorokMemoryReminderNotification">Time to return to a saved card.</string>
     <string name="MorokMemoryCaptureGap">Some source updates could not be saved. Cards show only versions this device retained.</string>
     <string name="MorokMemorySignInRequired">Sign in to a Telegram account to create and open its local Memory cards.</string>

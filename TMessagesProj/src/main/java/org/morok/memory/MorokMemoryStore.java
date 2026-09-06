@@ -575,13 +575,13 @@ public final class MorokMemoryStore {
                     duplicate = true;
                     if (!"saved".equals(version.fileState)) {
                         String previous = version.fileState;
-                        copyAttachment(capture, version);
+                        copyAttachment(capture.message, version, database);
                         changed |= !previous.equals(version.fileState);
                     }
                     break;
                 }
                 if (!duplicate) {
-                    copyAttachment(capture, capture.snapshot);
+                    copyAttachment(capture.message, capture.snapshot, database);
                     int position = existing.versions.size();
                     while (position > 0 && !MemoryPolicy.becomesLatest(capture.snapshot.editedAt,
                             existing.versions.get(position - 1).editedAt)) position--;
@@ -623,14 +623,14 @@ public final class MorokMemoryStore {
             if (version.fingerprint.equals(capture.snapshot.fingerprint)) {
                 // Explicit retry may preserve an original that has since completed downloading.
                 if (mode == SAVE_MANUAL && !"saved".equals(version.fileState)) {
-                    copyAttachment(capture, version); write(database);
+                    copyAttachment(capture.message, version, database); write(database);
                 } else if (promoted) {
                     write(database);
                 }
                 return existing;
             }
         }
-        copyAttachment(capture, capture.snapshot);
+        copyAttachment(capture.message, capture.snapshot, database);
         int position = existing.versions.size();
         while (position > 0 && !MemoryPolicy.becomesLatest(capture.snapshot.editedAt, existing.versions.get(position - 1).editedAt)) position--;
         existing.versions.add(position, capture.snapshot);
@@ -678,12 +678,12 @@ public final class MorokMemoryStore {
         return true;
     }
 
-    private void copyAttachment(MemoryCapture capture, MemoryCard.Snapshot snapshot) {
-        TLRPC.Message message = capture.message;
+    private void copyAttachment(TLRPC.Message message, MemoryCard.Snapshot snapshot, Database database) {
         TLRPC.Document document = MessageObject.getDocument(message);
         boolean photo = message.media instanceof TLRPC.TL_messageMediaPhoto;
         if (document == null && !photo) return;
         snapshot.fileState = "not_downloaded";
+        snapshot.blob = ""; snapshot.sha256 = ""; snapshot.fileSize = 0;
         snapshot.fileName = document != null ? FileLoader.getDocumentFileName(document) : "photo.jpg";
         if (snapshot.fileName.isEmpty()) snapshot.fileName = "attachment";
         snapshot.mime = document != null && document.mime_type != null ? document.mime_type : "image/jpeg";
@@ -692,27 +692,45 @@ public final class MorokMemoryStore {
             if (source == null || !source.isFile()) source = FileLoader.getInstance(account).getPathToMessage(message);
             if (source == null || !source.isFile() || source.getName().endsWith(".enc")) return;
             long size = source.length();
+            snapshot.fileSize = size;
             if (size > MemoryPolicy.MAX_ATTACHMENT_BYTES) { snapshot.fileState = "too_large"; return; }
             if (document != null && document.size > 0 && size != document.size) return;
             if (!directory.isDirectory() && !directory.mkdirs()) throw new IOException("Storage unavailable");
-            if (!MemoryPolicy.canCopy(size, usedBytes(), directory.getUsableSpace())) { snapshot.fileState = "storage_error"; return; }
             byte[] plain;
             try (FileInputStream stream = new FileInputStream(source)) { plain = readBounded(stream, (int) MemoryPolicy.MAX_ATTACHMENT_BYTES); }
             if (plain.length != size || source.length() != size) return;
             String hash = MemoryCapture.hex(MessageDigest.getInstance("SHA-256").digest(plain));
             // Reuse already retained originals inside this account; metadata remains encrypted.
-            Database database = read();
             for (MemoryCard card : database.cards) for (MemoryCard.Snapshot version : card.versions) {
                 if (hash.equals(version.sha256) && "saved".equals(version.fileState)) {
                     snapshot.blob = version.blob; snapshot.sha256 = hash; snapshot.fileSize = size; snapshot.fileState = "saved"; return;
                 }
             }
+            if (!MemoryPolicy.canCopy(size, usedBytes(), directory.getUsableSpace())) { snapshot.fileState = "storage_error"; return; }
             String id = UUID.randomUUID().toString();
             byte[] encrypted = cipher().encrypt(plain, aad("blob/" + id));
             requireActive();
             writeAtomic(new AtomicFile(new File(directory, id + ".tink")), encrypted);
             snapshot.blob = id; snapshot.sha256 = hash; snapshot.fileSize = size; snapshot.fileState = "saved";
         } catch (Exception error) { snapshot.fileState = "storage_error"; }
+    }
+
+    /** Explicitly retries a retained version from Telegram's current local cache; no network request is made. */
+    public void retryAttachment(String cardId, String fingerprint, Callback<MemoryCard> callback) {
+        execute(() -> {
+            Database database = read();
+            MemoryCard card = find(database, cardId);
+            MemoryCard.Snapshot target = null;
+            for (MemoryCard.Snapshot snapshot : card.versions) {
+                if (snapshot.fingerprint.equals(fingerprint)) { target = snapshot; break; }
+            }
+            if (target == null) throw new IOException("Memory version no longer exists");
+            if ("saved".equals(target.fileState)) return card;
+            TLRPC.Message message = MemoryCapture.restoreCachedMessage(account, card.key, target);
+            copyAttachment(message, target, database);
+            write(database);
+            return card;
+        }, callback);
     }
 
     public void update(String id, String note, String tags, boolean needsReply, boolean completed,
@@ -786,7 +804,18 @@ public final class MorokMemoryStore {
         return changed;
     }
 
-    public void storageSize(Callback<Long> callback) { execute(this::usedBytes, callback); }
+    public void storageStats(Callback<MemoryStorageStats> callback) {
+        execute(() -> {
+            Database database = read();
+            cleanup(database);
+            MemoryStorageStats stats = new MemoryStorageStats(usedBytes());
+            for (MemoryCard card : database.cards) {
+                stats.addCard();
+                for (MemoryCard.Snapshot snapshot : card.versions) stats.addSnapshot(snapshot.fileState, snapshot.blob);
+            }
+            return stats;
+        }, callback);
+    }
 
     private long usedBytes() {
         long bytes = 0;

@@ -121,6 +121,35 @@ public final class MemoryCapture {
         return new MemoryCapture(key, snapshot, message, source, sender);
     }
 
+    /** Restores only server metadata so Memory can check Telegram's existing cache without a download. */
+    public static TLRPC.Message restoreCachedMessage(int account, MemoryKey key, MemoryCard.Snapshot snapshot) throws Exception {
+        if (key.userId != UserConfig.getInstance(account).getClientUserId()) {
+            throw new IllegalArgumentException("Stored Memory account mismatch");
+        }
+        if (!snapshot.fingerprint.matches("[a-f0-9]{64}")
+                || snapshot.serializedMessage.length() > ((MemoryPolicy.MAX_MESSAGE_BYTES + 2) / 3) * 4 + 8) {
+            throw new IllegalArgumentException("Invalid stored Memory snapshot");
+        }
+        byte[] raw = Base64.decode(snapshot.serializedMessage, Base64.NO_WRAP);
+        if (raw.length == 0 || raw.length > MemoryPolicy.MAX_MESSAGE_BYTES) {
+            throw new IllegalArgumentException("Invalid stored Memory message size");
+        }
+        SerializedData input = new SerializedData(raw);
+        TLRPC.Message message;
+        try { message = TLRPC.Message.TLdeserialize(input, input.readInt32(true), true); }
+        finally { input.cleanup(); }
+        if (message == null || message.id != key.messageId || MessageObject.getDialogId(message) != key.dialogId()) {
+            throw new IllegalArgumentException("Stored Memory message identity mismatch");
+        }
+        message.attachPath = "";
+        message.dialog_id = key.dialogId();
+        MessageObject object = new MessageObject(account, message, false, false);
+        if (!isAllowed(object) || !key.equals(keyOf(object))) {
+            throw new IllegalArgumentException("Stored Memory content is no longer eligible");
+        }
+        return message;
+    }
+
     private static String peerName(int account, long dialogId) {
         if (dialogId > 0) {
             TLRPC.User user = MessagesController.getInstance(account).getUser(dialogId);
