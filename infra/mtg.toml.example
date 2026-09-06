@@ -1,0 +1,21 @@
+# Template only. Generate a different real secret for each independent node.
+secret = "REPLACE_WITH_OWN_GENERATED_FAKETLS_SECRET"
+bind-to = "0.0.0.0:443"
+debug = false
+concurrency = 1024
+auto-update = false
+
+[network]
+dns = ""
+
+[network.timeout]
+tcp = "5s"
+http = "10s"
+idle = "1m"
+
+[defense.blocklist]
+enabled = false
+
+[stats.prometheus]
+enabled = true
+bind-to = "127.0.0.1:3129"

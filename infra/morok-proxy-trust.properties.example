@@ -1,0 +1,7 @@
+# APK trust configuration, not a downloaded file. Keep the private key outside the repo/APK.
+# Add to TMessagesProj/src/main/assets/morok-proxy-trust.properties when actual infrastructure exists.
+# endpoint.1 and endpoint.2 must be real owner-controlled HTTPS URLs, not Telegram links.
+# endpoint.1=
+# endpoint.2=
+# key.owner-2026=BASE64_OF_RSA_X509_SUBJECT_PUBLIC_KEY_INFO_DER
+# A rotation release can bundle old and new public keys before the server changes signing keys.

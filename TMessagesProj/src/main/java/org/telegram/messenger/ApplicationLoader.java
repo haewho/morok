@@ -273,6 +273,7 @@ public class ApplicationLoader extends Application {
         }
         BillingController.getInstance().startConnection();
         AndroidUtilities.runOnUIThread(() -> {
+            org.morok.proxy.MorokProxyManager.getInstance().start();
             org.morok.memory.MorokMemoryReminderReceiver.restoreAll();
             org.morok.history.MemoryObserver.start();
         });

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokProxyTitle">Соединение Морока</string>
+    <string name="MorokProxyAutomatic">Подключаться через прокси автоматически</string>
+    <string name="MorokProxyDirect">Подключаться напрямую</string>
+    <string name="MorokProxyAnother">Другой рабочий сервер</string>
+    <string name="MorokProxyImport">Импорт ссылки на прокси</string>
+    <string name="MorokProxyScan">Сканировать QR-код прокси</string>
+    <string name="MorokProxyRefresh">Обновить подписанный список серверов</string>
+    <string name="MorokProxyManage">Управление сохранёнными прокси</string>
+    <string name="MorokProxyNodes">Доверенные серверы · нажмите для ручного выбора</string>
+    <string name="MorokProxySelected">Выбран</string>
+    <string name="MorokProxyNoNodes">Доверенных серверов пока нет. Импортируйте прокси знакомого оператора. Автоматический режим требует хотя бы один сервер.</string>
+    <string name="MorokProxyInfrastructureMissing">Владелец приложения ещё не настроил подписанный пул серверов. Готовое подключение из коробки в этой сборке недоступно; можно использовать импортированные прокси.</string>
+    <string name="MorokProxyTrafficScope">Настройка направляет соединения Telegram через прокси и не является VPN для телефона. Звонки, push-уведомления, mini apps и внешние ссылки используют отдельные транспорты: работа через этот режим не проверена. Отказ прокси не переводит сообщения Telegram на прямое соединение.</string>
+    <string name="MorokProxyEnableFirst">Включите автоматический режим прокси для поиска другого сервера.</string>
+    <string name="MorokProxyStatusDirect">Режим: напрямую. Автоматические проверки остановлены.</string>
+    <string name="MorokProxyStatusManual">Режим: выбранный прокси. Автоматическая смена отключена.</string>
+    <string name="MorokProxyStatusChecking">Проверяем протокольное соединение с Telegram через доверенный сервер с этого устройства.</string>
+    <string name="MorokProxyStatusConnected">Соединение с Telegram доступно. Звонки и медиа в других дата-центрах требуют отдельной проверки.</string>
+    <string name="MorokProxyStatusRetry">Успешной проверки пока нет. Выбранный прокси сохранён; следующая попытка будет с задержкой.</string>
+    <string name="MorokProxyStatusOffline">На устройстве нет сети. Ждём перед следующей проверкой.</string>
+    <string name="MorokProxyStatusPoolError">Подписанный пул недоступен, просрочен или не прошёл проверку. Проверьте дату устройства. Можно использовать действующий сохранённый список или импортированные серверы.</string>
+    <string name="MorokProxyLastCheck">Последняя протокольная проверка:</string>
+    <string name="MorokProxyImportInfo">Импортируйте сервер только от оператора, которому доверяете. Ссылка может содержать пароль или секрет. Импорт сохраняет её локально; подключение начинается при выборе режима.</string>
+    <string name="MorokProxyInvalidLink">Ссылка на прокси неверна или имеет неподдерживаемый формат. Проверьте сервер, порт и параметры доступа.</string>
+    <string name="MorokIntroSettings">Настройки Морока</string>
+    <string name="MorokProxyStatusStorageError">Не удалось сохранить настройку соединения. Прежний режим и маршрут сохранены. Освободите место на устройстве и повторите попытку.</string>
+</resources>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokProxyTitle">MOROK connection</string>
+    <string name="MorokProxyAutomatic">Connect through proxy automatically</string>
+    <string name="MorokProxyDirect">Connect directly</string>
+    <string name="MorokProxyAnother">Another working server</string>
+    <string name="MorokProxyImport">Import proxy link</string>
+    <string name="MorokProxyScan">Scan proxy QR code</string>
+    <string name="MorokProxyRefresh">Refresh signed server list</string>
+    <string name="MorokProxyManage">Manage saved proxies</string>
+    <string name="MorokProxyNodes">Trusted servers · tap to select manually</string>
+    <string name="MorokProxySelected">Selected</string>
+    <string name="MorokProxyNoNodes">No trusted servers are available. Import a proxy supplied by an operator you trust. Automatic mode requires at least one server.</string>
+    <string name="MorokProxyInfrastructureMissing">The app owner has not configured a signed server pool. Ready-to-use connectivity is unavailable in this build; imported proxies can be used.</string>
+    <string name="MorokProxyTrafficScope">This setting routes Telegram connections. It is not a phone VPN. Calls, push notifications, mini apps and external links use separate transports and have not been verified through this mode. A failed proxy does not switch Telegram messages to a direct connection.</string>
+    <string name="MorokProxyEnableFirst">Enable automatic proxy mode to look for an alternative server.</string>
+    <string name="MorokProxyStatusDirect">Mode: direct connection. Automatic checks are stopped.</string>
+    <string name="MorokProxyStatusManual">Mode: selected proxy. Automatic rotation is stopped.</string>
+    <string name="MorokProxyStatusChecking">Checking the Telegram protocol through a trusted server from this device.</string>
+    <string name="MorokProxyStatusConnected">Telegram connection is available. Calls and media in other data centres require separate verification.</string>
+    <string name="MorokProxyStatusRetry">No successful check yet. The selected proxy is retained; the next attempt uses a delay.</string>
+    <string name="MorokProxyStatusOffline">The device has no network connection. Waiting before checking again.</string>
+    <string name="MorokProxyStatusPoolError">The signed pool is unavailable, expired or invalid. Check the device date. A valid cached list or imported servers can still be used.</string>
+    <string name="MorokProxyLastCheck">Last protocol check:</string>
+    <string name="MorokProxyImportInfo">Only import a server from an operator you trust. The link may contain a password or secret. Importing saves it locally; selecting a mode connects through it.</string>
+    <string name="MorokProxyInvalidLink">This proxy link is invalid or uses an unsupported format. Check the server, port and authentication fields.</string>
+    <string name="MorokIntroSettings">MOROK settings</string>
+    <string name="MorokProxyStatusStorageError">The connection setting could not be saved. The previous mode and route are kept. Free some storage and try again.</string>
+</resources>

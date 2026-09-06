@@ -11,3 +11,5 @@ for morok_test in tests/*/run.sh; do
     bash "$morok_test"
 done
 
+MOROK_JAVAC="${JAVA_HOME:+$JAVA_HOME/bin/}javac" MOROK_JAVA="${JAVA_HOME:+$JAVA_HOME/bin/}java" bash infra/test-proxy-core.sh
+MOROK_JAVAC="${JAVA_HOME:+$JAVA_HOME/bin/}javac" MOROK_JAVA="${JAVA_HOME:+$JAVA_HOME/bin/}java" python3 infra/tests/test_signer.py

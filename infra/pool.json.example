@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "issued": 0,
+  "expires": 0,
+  "nodes": [
+    {"id": "primary", "link": "REPLACE_WITH_REAL_OWNED_PROXY_LINK"},
+    {"id": "backup", "link": "REPLACE_WITH_SECOND_INDEPENDENT_PROXY_LINK"}
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "implementation": "9seconds/mtg",
+  "repository": "https://github.com/9seconds/mtg.git",
+  "ref": "refs/tags/v2.2.1",
+  "sha": "dc81f7981c6b3cf132341204f0310662826826a0",
+  "checkedAt": "2026-09-06",
+  "goDirective": "1.26",
+  "sourceReviewed": ["README.md", "example.config.toml", "go.mod"],
+  "deployment": "not performed",
+  "targetNetworkVerification": "not performed"
+}
