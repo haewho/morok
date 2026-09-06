@@ -1248,6 +1248,7 @@ public class ChatActivity extends BaseFragment implements
 
     public final static int OPTION_VIEW_STATISTICS = 115;
     public final static int OPTION_WELCOME_REVERT = 116;
+    public final static int OPTION_MOROK_REMEMBER = 1200;
 
     private final static int[] allowedNotificationsDuringChatListAnimations = new int[]{
             NotificationCenter.messagesRead,
@@ -33298,6 +33299,10 @@ public class ChatActivity extends BaseFragment implements
         }
         boolean preserveDim = false;
         switch (option) {
+            case OPTION_MOROK_REMEMBER: {
+                org.morok.ui.MorokMemoryActivity.remember(this, selectedObject);
+                break;
+            }
             case OPTION_RETRY: {
                 final MessageObject object = selectedObject;
                 final MessageObject.GroupedMessages group = selectedObjectGroup;
@@ -46286,6 +46291,13 @@ public class ChatActivity extends BaseFragment implements
                 options.add(OPTION_DELETE);
                 icons.add(deleteIconRes);
             }
+        }
+
+        if (chatMode == MODE_DEFAULT && !isInsideContainer && currentEncryptedChat == null
+                && org.morok.history.MemoryCapture.isAllowed(selectedObject)) {
+            items.add(LocaleController.getString(R.string.MorokMemoryRemember));
+            options.add(OPTION_MOROK_REMEMBER);
+            icons.add(R.drawable.msg_fave);
         }
 
         if (showWelcomeMessageRevertOption(primaryMessage)) {

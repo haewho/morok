@@ -1542,6 +1542,16 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 return false;
             }
         }
+        if ("org.morok.OPEN_MEMORY".equals(action)) {
+            long morokUserId = intent.getLongExtra("morok_user_id", 0);
+            int morokAccount = org.morok.memory.MorokMemoryStore.resolveAccount(morokUserId);
+            if (morokAccount >= 0) {
+                switchToAccount(morokAccount, true);
+                presentFragment(new org.morok.ui.MorokMemoryActivity(morokAccount, intent.getStringExtra("morok_card_id")));
+            }
+            intent.setAction(null);
+            return true;
+        }
         boolean pushOpened = false;
         long push_user_id = 0;
         long push_chat_id = 0;

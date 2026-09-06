@@ -459,6 +459,7 @@ public class UserConfig extends BaseController {
     }
 
     public void clearConfig() {
+        org.morok.memory.MorokMemoryStore.onLogout(getClientUserId());
         getPreferences().edit().clear().apply();
 
         sharingMyLocationUntil = 0;

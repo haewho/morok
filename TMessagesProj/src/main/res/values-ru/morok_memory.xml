@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokMemoryTitle">Память Морока</string>
+    <string name="MorokMemoryRemember">Запомнить</string>
+    <string name="MorokMemoryAccountOnly">Только этот аккаунт · на устройстве</string>
+    <string name="MorokMemorySearch">Поиск по тексту, заметкам, тегам, чатам и файлам</string>
+    <string name="MorokMemoryAll">Всё</string>
+    <string name="MorokMemoryNeedsReply">Нужно ответить</string>
+    <string name="MorokMemoryLater">Отложено</string>
+    <string name="MorokMemoryWithFiles">С файлами</string>
+    <string name="MorokMemoryCompleted">Завершено</string>
+    <string name="MorokMemoryLoading">Загружаем зашифрованные карточки…</string>
+    <string name="MorokMemoryEmpty">Карточек пока нет. Зажмите сообщение и выберите «Запомнить».</string>
+    <string name="MorokMemoryStorageError">Не удалось прочитать или сохранить Память. Проверьте свободное место и ключ аккаунта. Существующие зашифрованные данные сохранены.</string>
+    <string name="MorokMemoryCardMissing">Эта карточка удалена с устройства.</string>
+    <string name="MorokMemoryUnsupported">Это сообщение нельзя сохранить. Секретные, защищённые и исчезающие сообщения исключены. Для Памяти нужен Android 6 или новее.</string>
+    <string name="MorokMemoryNote">Ваша заметка</string>
+    <string name="MorokMemoryTags">Теги через запятую</string>
+    <string name="MorokMemoryRemind">Напомнить</string>
+    <string name="MorokMemoryCancelReminder">Отменить напоминание</string>
+    <string name="MorokMemoryReminderAccuracy">Напоминания локальные, время приблизительное. Ограничения энергосбережения Android могут задержать доставку. Сохраните карточку, чтобы применить изменения.</string>
+    <string name="MorokMemoryVersions">Полученные версии</string>
+    <string name="MorokMemoryOpenFile">Открыть сохранённый файл</string>
+    <string name="MorokMemoryOpenSource">Открыть исходное сообщение</string>
+    <string name="MorokMemoryOpenSourceInfo">При открытии источника действует обычное поведение чата, включая отметку чтения. Работа с самой карточкой не отмечает сообщения прочитанными.</string>
+    <string name="MorokMemoryRemove">Удалить локальную карточку</string>
+    <string name="MorokMemoryRemoveConfirm">Удалить карточку и её неиспользуемые локальные файлы из Памяти? Сообщение в Telegram сохранится. Повторные обновления не создадут карточку заново.</string>
+    <string name="MorokMemoryNotificationsBlocked">Уведомления запрещены. Разрешите их в Android, затем выберите время. Существующие напоминания сохраняются до разрешения доставки.</string>
+    <string name="MorokMemoryFutureTime">Выберите время в будущем.</string>
+    <string name="MorokMemoryViewerUnavailable">Нет подходящего приложения для просмотра. Зашифрованный оригинал остаётся в Памяти.</string>
+    <string name="MorokMemoryAccountMissing">Исходный аккаунт больше не авторизован.</string>
+    <string name="MorokMemoryTopicUnavailable">Тема недоступна локально. Откройте чат и загрузите список тем, затем вернитесь к карточке.</string>
+    <string name="MorokMemoryStorage">Хранилище Памяти</string>
+    <string name="MorokMemoryLimits">Лимиты первой беты: 500 карточек, 20 полученных версий на карточку, 8 МБ на скачанный оригинал, 256 МБ на аккаунт. Сохраняются последние 20 версий. Карточки не удаляются по возрасту. Память не запускает скачивания. Нужны Android 6+ и рабочий Keystore.</string>
+    <string name="MorokMemoryClear">Очистить Память</string>
+    <string name="MorokMemoryClearConfirm">Удалить все локальные карточки и сохранённые файлы этого аккаунта? Другие аккаунты и сообщения в Telegram сохранятся.</string>
+    <string name="MorokMemoryDeleted">Удалено в Telegram, сохранено на устройстве</string>
+    <string name="MorokMemoryLocalSnapshot">Локальный снимок · источник мог измениться</string>
+    <string name="MorokMemoryFileSaved">Оригинал сохранён</string>
+    <string name="MorokMemoryFileNotDownloaded">Оригинал не скачан; сохранённой копии нет</string>
+    <string name="MorokMemoryFileTooLarge">Оригинал превышает лимит 8 МБ; не сохранён</string>
+    <string name="MorokMemoryFileError">Не удалось сохранить оригинал: ошибка места или ключа</string>
+    <string name="MorokMemoryFileUnavailable">Сохранённый оригинал недоступен</string>
+    <string name="MorokMemoryReminderNotification">Пора вернуться к сохранённой карточке.</string>
+    <string name="MorokMemoryCaptureGap">Некоторые изменения источников не удалось сохранить. В карточках только версии, сохранённые этим устройством.</string>
+    <string name="MorokMemorySignInRequired">Войдите в аккаунт Telegram, чтобы создавать и открывать его локальные карточки Памяти.</string>
+</resources>
