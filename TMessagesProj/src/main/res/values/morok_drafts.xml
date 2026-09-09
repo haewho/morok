@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokDraftMenu">Saved draft</string>
+    <string name="MorokDraftTitle">Saved draft</string>
+    <string name="MorokDraftCurrent">Current composer text</string>
+    <string name="MorokDraftCurrentEmpty">The composer is empty.</string>
+    <string name="MorokDraftSave">Save current text</string>
+    <string name="MorokDraftSaveInfo">Saves one encrypted plain-text snapshot for this chat and topic. Telegram’s regular draft remains unchanged.</string>
+    <string name="MorokDraftSaved">Saved snapshot</string>
+    <string name="MorokDraftLoading">Loading encrypted snapshot…</string>
+    <string name="MorokDraftNone">No saved snapshot for this chat.</string>
+    <string name="MorokDraftSavedReady">An encrypted snapshot is available.</string>
+    <string name="MorokDraftRestore">Restore in composer</string>
+    <string name="MorokDraftRestoreInfo">Restoring never sends a message. If the composer has changed, MOROK asks before replacing its text.</string>
+    <string name="MorokDraftDelete">Delete saved snapshot</string>
+    <string name="MorokDraftDeleteInfo">Delete the encrypted snapshot for this chat and topic?</string>
+    <string name="MorokDraftReplaceTitle">Replace saved snapshot?</string>
+    <string name="MorokDraftReplaceSavedInfo">The previously saved snapshot for this chat and topic will be replaced.</string>
+    <string name="MorokDraftReplaceComposerTitle">Replace current composer text?</string>
+    <string name="MorokDraftReplaceComposerInfo">The text currently in the composer will be replaced by the saved snapshot. Nothing will be sent.</string>
+    <string name="MorokDraftNothingToSave">There is no text to save.</string>
+    <string name="MorokDraftTooLong">This draft is too long for the local snapshot.</string>
+    <string name="MorokDraftStorageError">Encrypted saved drafts are unavailable.</string>
+    <string name="MorokDraftUnavailable">Saved drafts require a signed-in account and Android 6 or later.</string>
+    <string name="MorokDraftSavedToast">Draft snapshot saved.</string>
+    <string name="MorokDraftRestoredToast">Draft restored. Review it before sending.</string>
+</resources>

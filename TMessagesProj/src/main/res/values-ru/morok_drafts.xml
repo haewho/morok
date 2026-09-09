@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokDraftMenu">Сохранённый черновик</string>
+    <string name="MorokDraftTitle">Сохранённый черновик</string>
+    <string name="MorokDraftCurrent">Текущий текст редактора</string>
+    <string name="MorokDraftCurrentEmpty">Редактор пуст.</string>
+    <string name="MorokDraftSave">Сохранить текущий текст</string>
+    <string name="MorokDraftSaveInfo">Сохраняет один зашифрованный снимок обычного текста для этого чата и темы. Штатный черновик Telegram не изменяется.</string>
+    <string name="MorokDraftSaved">Сохранённый снимок</string>
+    <string name="MorokDraftLoading">Загрузка зашифрованного снимка…</string>
+    <string name="MorokDraftNone">Для этого чата нет сохранённого снимка.</string>
+    <string name="MorokDraftSavedReady">Зашифрованный снимок доступен.</string>
+    <string name="MorokDraftRestore">Восстановить в редакторе</string>
+    <string name="MorokDraftRestoreInfo">Восстановление не отправляет сообщение. Если текст редактора изменился, Морок спросит перед его заменой.</string>
+    <string name="MorokDraftDelete">Удалить сохранённый снимок</string>
+    <string name="MorokDraftDeleteInfo">Удалить зашифрованный снимок этого чата и темы?</string>
+    <string name="MorokDraftReplaceTitle">Заменить сохранённый снимок?</string>
+    <string name="MorokDraftReplaceSavedInfo">Предыдущий сохранённый снимок этого чата и темы будет заменён.</string>
+    <string name="MorokDraftReplaceComposerTitle">Заменить текущий текст редактора?</string>
+    <string name="MorokDraftReplaceComposerInfo">Текущий текст редактора будет заменён сохранённым снимком. Ничего не отправится.</string>
+    <string name="MorokDraftNothingToSave">Нет текста для сохранения.</string>
+    <string name="MorokDraftTooLong">Черновик слишком длинный для локального снимка.</string>
+    <string name="MorokDraftStorageError">Зашифрованные черновики недоступны.</string>
+    <string name="MorokDraftUnavailable">Для сохранённых черновиков нужен вход в аккаунт и Android 6 или новее.</string>
+    <string name="MorokDraftSavedToast">Снимок черновика сохранён.</string>
+    <string name="MorokDraftRestoredToast">Черновик восстановлен. Проверьте его перед отправкой.</string>
+</resources>

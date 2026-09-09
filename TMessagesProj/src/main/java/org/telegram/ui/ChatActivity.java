@@ -1650,6 +1650,7 @@ public class ChatActivity extends BaseFragment implements
     private final static int boost_group = 29;
     private final static int morok_chat_metadata = 9102;
     private final static int morok_reply_templates = 9103;
+    private final static int morok_saved_draft = 9104;
 
     private final static int bot_help = 30;
     private final static int bot_settings = 31;
@@ -3991,6 +3992,14 @@ public class ChatActivity extends BaseFragment implements
                         presentFragment(new org.morok.ui.MorokReplyTemplatesActivity(currentAccount,
                                 ChatActivity.this::insertMorokReplyTemplate));
                     }
+                } else if (id == morok_saved_draft) {
+                    if (isMorokSavedDraftAvailable() && chatActivityEnterView != null
+                            && chatActivityEnterView.getEditField() != null) {
+                        presentFragment(new org.morok.ui.MorokSavedDraftActivity(currentAccount, dialog_id,
+                                getTopicId(), getMorokChatMetadataSourceTitle(),
+                                chatActivityEnterView.getEditField().getText().toString(),
+                                ChatActivity.this::restoreMorokSavedDraft));
+                    }
                 } else if (id == translate) {
                     getMessagesController().getTranslateController().setHideTranslateDialog(getDialogId(), false, true);
                     if (!getMessagesController().getTranslateController().toggleTranslatingDialog(getDialogId(), true)) {
@@ -4449,6 +4458,10 @@ public class ChatActivity extends BaseFragment implements
             if (isMorokReplyTemplatesAvailable()) {
                 headerItem.lazilyAddSubItem(morok_reply_templates, R.drawable.msg_copy,
                         LocaleController.getString(R.string.MorokTemplatesMenu));
+            }
+            if (isMorokSavedDraftAvailable()) {
+                headerItem.lazilyAddSubItem(morok_saved_draft, R.drawable.msg_edit,
+                        LocaleController.getString(R.string.MorokDraftMenu));
             }
             if (ChatObject.isBoostSupported(currentChat) && (getUserConfig().isPremium() || ChatObject.isBoosted(chatInfo) || ChatObject.hasAdminRights(currentChat))) {
                 RLottieDrawable drawable = new RLottieDrawable(R.raw.boosts, "" + R.raw.boosts, dp(24), dp(24));
@@ -19609,6 +19622,47 @@ public class ChatActivity extends BaseFragment implements
         AndroidUtilities.showKeyboard(field);
         if (getParentActivity() != null) android.widget.Toast.makeText(getParentActivity(),
                 LocaleController.getString(R.string.MorokTemplatesInserted), android.widget.Toast.LENGTH_SHORT).show();
+    }
+
+    private boolean isMorokSavedDraftAvailable() {
+        return isMorokReplyTemplatesAvailable();
+    }
+
+    private void restoreMorokSavedDraft(String savedText) {
+        if (!isMorokSavedDraftAvailable() || chatActivityEnterView == null
+                || chatActivityEnterView.getEditField() == null || !canSendMessage()) return;
+        String restored = org.morok.drafts.SavedDraftRestoration.prepare(savedText,
+                getMessagesController().getMaxMessageLength());
+        if (restored == null) {
+            if (getParentActivity() != null) android.widget.Toast.makeText(getParentActivity(),
+                    LocaleController.getString(R.string.MorokDraftTooLong), android.widget.Toast.LENGTH_LONG).show();
+            return;
+        }
+        CharSequence current = chatActivityEnterView.getEditField().getText();
+        if (TextUtils.isEmpty(current) || TextUtils.equals(current, restored)) {
+            applyMorokSavedDraft(restored);
+        } else if (getParentActivity() != null) {
+            showDialog(new AlertDialog.Builder(getParentActivity())
+                    .setTitle(LocaleController.getString(R.string.MorokDraftReplaceComposerTitle))
+                    .setMessage(LocaleController.getString(R.string.MorokDraftReplaceComposerInfo))
+                    .setNegativeButton(LocaleController.getString(R.string.Cancel), null)
+                    .setPositiveButton(LocaleController.getString(R.string.Replace),
+                            (dialog, which) -> applyMorokSavedDraft(restored)).create());
+        }
+    }
+
+    private void applyMorokSavedDraft(String restored) {
+        if (!isMorokSavedDraftAvailable() || chatActivityEnterView == null
+                || chatActivityEnterView.getEditField() == null || !canSendMessage()) return;
+        String checked = org.morok.drafts.SavedDraftRestoration.prepare(restored,
+                getMessagesController().getMaxMessageLength());
+        if (checked == null) return;
+        EditText field = chatActivityEnterView.getEditField();
+        chatActivityEnterView.replaceWithText(0, field.length(), checked, true);
+        chatActivityEnterView.setFieldFocused();
+        AndroidUtilities.showKeyboard(field);
+        if (getParentActivity() != null) android.widget.Toast.makeText(getParentActivity(),
+                LocaleController.getString(R.string.MorokDraftRestoredToast), android.widget.Toast.LENGTH_SHORT).show();
     }
 
     private String getMorokChatMetadataSourceTitle() {
