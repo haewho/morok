@@ -5,6 +5,7 @@
 - `org.morok.settings` — версия схемы, настройки устройства и пространство настроек по устойчивому ID пользователя; строгий secret-free профиль переноса и локальные whole-app профили с отдельными версиями форматов. Именованные профили координируют существующие настройки, но не управляют сетевым маршрутом и server preferences.
 - `org.morok.appearance` — политика эффектов поверх существующих render paths; перечень покрытия указан отдельно.
 - `org.morok.memory` / `history` — ручные карточки, allowlisted автоархив live и catch-up message payload, явный ограниченный импорт из локальной Telegram SQLite, приватное хранение, encrypted journal/replay для new/edit/delete событий и напоминания. Автоархив выключен по умолчанию и использует настройки устойчивого ID аккаунта; импорт не запускает Telegram history/media loader.
+- `org.morok.chatmeta` — bounded encrypted хранилище локальных псевдонимов и заметок обычных чатов по устойчивому ID аккаунта; оно не читает и не меняет Telegram database/profile.
 - `org.morok.proxy` — проверка и выбор узлов через штатный `ConnectionsManager`; никакого второго сетевого стека.
 - `org.morok.safety` — локальный confirmation gate перед исходящим private-call `initiateCall` и единая read-only политика secure-window; сетевых или auth-операций здесь нет.
 - `org.morok.interactions` — read-only account-local gate для жестов; выбор самой быстрой реакции остаётся в штатном `MediaDataController`.
@@ -21,6 +22,8 @@
 Настройка реакции по двойному нажатию описана в [INTERACTIONS](INTERACTIONS.md). Она может отключить только chat-message double tap и переиспользует штатный picker Telegram.
 
 Единый read-only экран диагностики и точный состав копируемого отчёта описаны в [DIAGNOSTICS](DIAGNOSTICS.md).
+
+Локальные псевдонимы и заметки чатов, их пределы и logout-erasure описаны в [CHAT_METADATA](CHAT_METADATA.md).
 
 Базовые сообщения продолжают жить в официальной БД. Память не заменяет сообщения «зомби-записями» и не отменяет delete updates. Обработка карточки не отправляет сообщение собеседнику. Переход в исходный чат использует обычную семантику Telegram с учётом выбранной экспериментальной privacy-политики.
 

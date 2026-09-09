@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokChatMetadataMenu">Локальное имя и заметка</string>
+    <string name="MorokChatMetadataTitle">Локальные данные чата</string>
+    <string name="MorokChatMetadataAliasHeader">Псевдоним</string>
+    <string name="MorokChatMetadataAliasHint">Имя, видимое в этом чате</string>
+    <string name="MorokChatMetadataAliasInfo">Псевдоним меняет заголовок этого чата на устройстве. Значки верификации и статуса Telegram сохраняются.</string>
+    <string name="MorokChatMetadataNoteHeader">Личная заметка</string>
+    <string name="MorokChatMetadataNoteHint">Контекст, напоминание или полезная информация об этом чате</string>
+    <string name="MorokChatMetadataPrivacyInfo">Данные зашифрованы на устройстве для текущего аккаунта. Они не отправляются в Telegram и не входят в экспорт настроек MOROK. Секретные чаты и «Сохранённые сообщения» исключены.</string>
+    <string name="MorokChatMetadataLoading">Загрузка зашифрованных данных…</string>
+    <string name="MorokChatMetadataEmpty">Для этого чата пока нет локальных данных.</string>
+    <string name="MorokChatMetadataSavedLocal">Сохранено локально для этого аккаунта.</string>
+    <string name="MorokChatMetadataSaved">Локальные данные чата сохранены</string>
+    <string name="MorokChatMetadataClear">Удалить локальные данные</string>
+    <string name="MorokChatMetadataClearInfo">Удалить псевдоним и личную заметку этого чата с устройства?</string>
+    <string name="MorokChatMetadataStorageError">Зашифрованное локальное хранилище или его ключ недоступны.</string>
+    <string name="MorokChatMetadataUnavailable">Для локальных данных чата нужен вход в аккаунт и Android 6 или новее.</string>
+    <string name="MorokChatMetadataListTitle">Имена и заметки чатов</string>
+    <string name="MorokChatMetadataListInfo">Просмотр зашифрованных псевдонимов и личных заметок текущего аккаунта.</string>
+    <string name="MorokChatMetadataSearch">Поиск по именам и заметкам</string>
+    <string name="MorokChatMetadataListEmpty">Локальные данные чатов не сохранены.</string>
+    <string name="MorokChatMetadataAccountOnly">Зашифровано для этого аккаунта · чатов: %1$d / %2$d</string>
+    <string name="MorokChatMetadataSourceUnavailable">Чат отсутствует в локальном кеше</string>
+    <string name="MorokChatMetadataClearAll">Удалить все локальные данные чатов</string>
+    <string name="MorokChatMetadataClearAllInfo">Удалить с устройства все локальные псевдонимы и личные заметки этого аккаунта?</string>
+</resources>

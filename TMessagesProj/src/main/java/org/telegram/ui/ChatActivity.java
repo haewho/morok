@@ -845,6 +845,8 @@ public class ChatActivity extends BaseFragment implements
     private boolean scrollToTopUnReadOnResume;
     private long dialog_id;
     private Long dialog_id_Long;
+    private String morokLocalAlias;
+    private int morokLocalAliasGeneration;
     private int lastLoadIndex = 1;
     private SparseArray<MessageObject>[] selectedMessagesIds = new SparseArray[]{new SparseArray<>(), new SparseArray<>()};
     private SparseArray<MessageObject>[] selectedMessagesCanCopyIds = new SparseArray[]{new SparseArray<>(), new SparseArray<>()};
@@ -1646,6 +1648,7 @@ public class ChatActivity extends BaseFragment implements
     private final static int change_colors = 27;
     private final static int tag_message = 28;
     private final static int boost_group = 29;
+    private final static int morok_chat_metadata = 9102;
 
     private final static int bot_help = 30;
     private final static int bot_settings = 31;
@@ -3362,6 +3365,7 @@ public class ChatActivity extends BaseFragment implements
 
     @Override
     public void onFragmentDestroy() {
+        morokLocalAliasGeneration++;
         super.onFragmentDestroy();
         if (messageMetricsView != null) {
             messageMetricsView.finish();
@@ -3973,6 +3977,14 @@ public class ChatActivity extends BaseFragment implements
                     getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of("/settings", dialog_id, null, null, null, false, null, null, null, true, 0, 0, null, false));
                 } else if (id == search) {
                     openSearchWithText(isSupportedTags() ? "" : null);
+                } else if (id == morok_chat_metadata) {
+                    if (isMorokChatMetadataAvailable()) {
+                        presentFragment(new org.morok.ui.MorokChatMetadataActivity(currentAccount, dialog_id,
+                                getMorokChatMetadataSourceTitle(), value -> {
+                            morokLocalAlias = value;
+                            updateTitle(true);
+                        }));
+                    }
                 } else if (id == translate) {
                     getMessagesController().getTranslateController().setHideTranslateDialog(getDialogId(), false, true);
                     if (!getMessagesController().getTranslateController().toggleTranslatingDialog(getDialogId(), true)) {
@@ -4424,6 +4436,10 @@ public class ChatActivity extends BaseFragment implements
             if (searchItem != null) {
                 headerItem.lazilyAddSubItem(search, R.drawable.msg_search, LocaleController.getString(R.string.Search));
             }
+            if (isMorokChatMetadataAvailable()) {
+                headerItem.lazilyAddSubItem(morok_chat_metadata, R.drawable.msg_edit,
+                        LocaleController.getString(R.string.MorokChatMetadataMenu));
+            }
             if (ChatObject.isBoostSupported(currentChat) && (getUserConfig().isPremium() || ChatObject.isBoosted(chatInfo) || ChatObject.hasAdminRights(currentChat))) {
                 RLottieDrawable drawable = new RLottieDrawable(R.raw.boosts, "" + R.raw.boosts, dp(24), dp(24));
                 headerItem.lazilyAddSubItem(boost_group, drawable, LocaleController.getString(ChatObject.isChannelAndNotMegaGroup(currentChat) ? R.string.BoostingBoostChannelMenu : R.string.BoostingBoostGroupMenu));
@@ -4523,6 +4539,7 @@ public class ChatActivity extends BaseFragment implements
         menu.setVisibility(inMenuMode ? View.GONE : View.VISIBLE);
 
         updateTitle(false);
+        loadMorokChatMetadata();
         avatarContainer.updateOnlineCount();
         avatarContainer.updateSubtitle();
         updateTitleIcons();
@@ -19542,8 +19559,43 @@ public class ChatActivity extends BaseFragment implements
                 avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(UserObject.getUserName(currentUser))), currentUser.scam, currentUser.fake, currentUser.verified, getMessagesController().isPremiumUser(currentUser), !MessagesController.isSupportUser(currentUser) ? currentUser.emoji_status : null, animated);
             }
         }
+        if (isMorokChatMetadataAvailable() && !TextUtils.isEmpty(morokLocalAlias)) {
+            // Preserve the upstream trust/status icons configured above; replace only their adjacent text.
+            avatarContainer.getTitleTextView().setText(morokLocalAlias);
+        }
         setParentActivityTitle(avatarContainer.getTitleTextView().getText());
         updateTitleIcons();
+    }
+
+    private boolean isMorokChatMetadataAvailable() {
+        return dialog_id != 0 && chatMode == 0 && currentEncryptedChat == null && !isReport()
+                && !UserObject.isUserSelf(currentUser) && !UserObject.isReplyUser(currentUser)
+                && !UserObject.isAnonymous(currentUser);
+    }
+
+    private String getMorokChatMetadataSourceTitle() {
+        if (currentChat != null) return currentChat.title == null ? "" : currentChat.title;
+        return currentUser == null ? "" : UserObject.getUserName(currentUser);
+    }
+
+    private void loadMorokChatMetadata() {
+        final int generation = ++morokLocalAliasGeneration;
+        if (!isMorokChatMetadataAvailable() || !getUserConfig().isClientActivated()) {
+            morokLocalAlias = null;
+            return;
+        }
+        final long expectedDialogId = dialog_id;
+        final long expectedUserId = getUserConfig().getClientUserId();
+        try {
+            org.morok.chatmeta.MorokChatMetadataStore.forAccount(currentAccount).get(dialog_id, (value, error) -> {
+                if (generation != morokLocalAliasGeneration || expectedDialogId != dialog_id
+                        || expectedUserId != getUserConfig().getClientUserId() || value == null || error != null) return;
+                if (!TextUtils.equals(morokLocalAlias, value.alias)) {
+                    morokLocalAlias = value.alias;
+                    updateTitle(true);
+                }
+            });
+        } catch (RuntimeException ignored) { /* Keep Telegram's title when encrypted local storage is unavailable. */ }
     }
 
     public void updateTopicTitleIcon() {
@@ -29891,6 +29943,7 @@ public class ChatActivity extends BaseFragment implements
             chatListView.setLongClickable(true);
         }
         checkBotCommands();
+        loadMorokChatMetadata();
         updateTitle(false);
         showGigagroupConvertAlert();
 

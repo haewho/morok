@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokChatMetadataMenu">Local alias and note</string>
+    <string name="MorokChatMetadataTitle">Local chat details</string>
+    <string name="MorokChatMetadataAliasHeader">Alias</string>
+    <string name="MorokChatMetadataAliasHint">Name shown in this chat</string>
+    <string name="MorokChatMetadataAliasInfo">The alias changes this chat’s title on this device. Telegram’s verification and status indicators remain intact.</string>
+    <string name="MorokChatMetadataNoteHeader">Private note</string>
+    <string name="MorokChatMetadataNoteHint">Context, reminder or anything useful about this chat</string>
+    <string name="MorokChatMetadataPrivacyInfo">Encrypted on this device for the current account. Nothing is sent to Telegram or included in MOROK settings export. Secret chats and Saved Messages are excluded.</string>
+    <string name="MorokChatMetadataLoading">Loading encrypted data…</string>
+    <string name="MorokChatMetadataEmpty">No local details saved for this chat.</string>
+    <string name="MorokChatMetadataSavedLocal">Saved locally for this account.</string>
+    <string name="MorokChatMetadataSaved">Local chat details saved</string>
+    <string name="MorokChatMetadataClear">Clear local details</string>
+    <string name="MorokChatMetadataClearInfo">Delete the alias and private note for this chat from this device?</string>
+    <string name="MorokChatMetadataStorageError">Encrypted local storage or its key is unavailable.</string>
+    <string name="MorokChatMetadataUnavailable">Local chat details require a signed-in account and Android 6 or later.</string>
+    <string name="MorokChatMetadataListTitle">Chat aliases and notes</string>
+    <string name="MorokChatMetadataListInfo">Review encrypted aliases and private notes saved for the current account.</string>
+    <string name="MorokChatMetadataSearch">Search aliases and notes</string>
+    <string name="MorokChatMetadataListEmpty">No local chat details saved.</string>
+    <string name="MorokChatMetadataAccountOnly">Encrypted for this account · %1$d / %2$d chats</string>
+    <string name="MorokChatMetadataSourceUnavailable">Chat unavailable in local cache</string>
+    <string name="MorokChatMetadataClearAll">Clear all local chat details</string>
+    <string name="MorokChatMetadataClearAllInfo">Delete every local alias and private note for this account from this device?</string>
+</resources>
