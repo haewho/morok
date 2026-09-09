@@ -92,6 +92,7 @@ import com.google.firebase.appindexing.Action;
 import com.google.firebase.appindexing.FirebaseUserActions;
 import com.google.firebase.appindexing.builders.AssistActionBuilder;
 
+import org.morok.safety.MorokScreenPrivacy;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -436,7 +437,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         getWindow().setBackgroundDrawable(new ActivityWindowEmptyBackgroundDrawable());
         getWindow().setFormat(PixelFormat.OPAQUE);
 
-        flagSecureReason = new FlagSecureReason(getWindow(), () -> SharedConfig.passcodeHash.length() > 0 && !SharedConfig.allowScreenCapture);
+        flagSecureReason = new FlagSecureReason(getWindow(), () -> MorokScreenPrivacy.enabled()
+                || SharedConfig.passcodeHash.length() > 0 && !SharedConfig.allowScreenCapture);
         flagSecureReason.attach();
 
         super.onCreate(savedInstanceState);
@@ -569,6 +571,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             .add(NotificationCenter.needCheckSystemBarColors)
             .add(NotificationCenter.closeOtherAppActivities)
             .add(NotificationCenter.didSetPasscode)
+            .add(NotificationCenter.morokScreenPrivacyChanged)
             .add(NotificationCenter.didSetNewWallpapper)
             .add(NotificationCenter.screenStateChanged)
             .add(NotificationCenter.showBulletin)
@@ -7299,7 +7302,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             if (backgroundTablet != null) {
                 backgroundTablet.setBackgroundImage(Theme.getCachedWallpaper(), Theme.isWallpaperMotion());
             }
-        } else if (id == NotificationCenter.didSetPasscode) {
+        } else if (id == NotificationCenter.didSetPasscode || id == NotificationCenter.morokScreenPrivacyChanged) {
             flagSecureReason.invalidate();
         } else if (id == NotificationCenter.reloadInterface) {
             boolean last = mainFragmentsStack.size() > 1 && mainFragmentsStack.get(mainFragmentsStack.size() - 1) instanceof ProfileActivity;

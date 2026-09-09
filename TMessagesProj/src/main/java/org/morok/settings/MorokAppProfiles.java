@@ -57,6 +57,13 @@ public final class MorokAppProfiles {
         catch (RuntimeException unavailableAccount) { return true; }
     }
 
+    public static void setNotificationContent(int accountSlot, boolean showContent) {
+        if (!preferences(accountSlot).edit().putBoolean(CURRENT_NOTIFICATION_CONTENT, showContent).commit()) {
+            throw new IllegalStateException("Could not save notification privacy setting");
+        }
+        NotificationsController.getInstance(accountSlot).showNotifications();
+    }
+
     private static void applyState(int accountSlot, AppProfileState state,
                                    AppearanceSettings previousAppearance, Activity activity) {
         MorokSettings.applyProfile(accountSlot, state.settings);

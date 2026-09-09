@@ -2882,14 +2882,14 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
             this.allowScreenshots = allowScreenshots;
 
             if (surfaceView != null) {
-                surfaceView.setSecure(!allowScreenshots);
+                surfaceView.setSecure(!allowScreenshots || org.morok.safety.MorokScreenPrivacy.enabled());
             }
             if (liveView != null) {
-                liveView.setSecure(!allowScreenshots);
+                liveView.setSecure(!allowScreenshots || org.morok.safety.MorokScreenPrivacy.enabled());
             }
             if (ATTACH_TO_FRAGMENT) {
                 if (fragment.getParentActivity() != null) {
-                    if (allowScreenshots) {
+                    if (allowScreenshots && !org.morok.safety.MorokScreenPrivacy.enabled()) {
                         fragment.getParentActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
                         AndroidUtilities.logFlagSecure();
                     } else {
@@ -2898,7 +2898,7 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
                     }
                 }
             } else {
-                if (allowScreenshots) {
+                if (allowScreenshots && !org.morok.safety.MorokScreenPrivacy.enabled()) {
                     windowLayoutParams.flags &= ~WindowManager.LayoutParams.FLAG_SECURE;
                     AndroidUtilities.logFlagSecure();
                 } else {

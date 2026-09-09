@@ -30,11 +30,11 @@
 | Плотность/аватары/пузыри/шрифты/timestamps/анимации | P1 | требование | Полный собственный набор впереди |
 | Жесты/long press/быстрые действия | P1 | реализуется | «Запомнить»; редактор жестов/профилей впереди |
 | Copy selection/templates/drafts/chat aliases/notes | P1 | требование | Штатные сценарии сохранены; локальные дополнения впереди |
-| Call/video confirm/double tap/local undo send | P1 | требование | Фиктивной отмены после отправки нет |
+| Call/video confirm/double tap/local undo send | P1 | реализуется | Opt-in подтверждение исходящих личных audio/video calls стоит после permissions и до центрального initiateCall. Подтверждение отправки кружочка, настройка double-tap и настоящий pre-network undo send впереди; фиктивной отмены после отправки нет |
 | Плеер/позиция/скорость/sleep timer/autoplay | P1 | реализуется | Штатный плеер сохранён; именованные профили управляют существующими LiteMode autoplay video/GIF. Позиция, sleep timer и дополнительные скорости впереди |
 | Downloads queue/pause/priority/traffic limits | P1 | требование | Штатный stack; ускорение не заявляется |
 | Local filters/spoilers/noise | P1 | требование | Sponsored messages и серверная синхронизация сохраняются |
-| Notifications/lock/screen sharing/privacy profiles | P1 | реализуется | Четыре локальных профиля и сохранённый Custom с review-before-apply; Stealth сужает штатный notification preview для сообщений/story без server update. Имена отправителя/чата могут оставаться; FCM/lock-screen/screen-sharing device matrix впереди |
+| Notifications/lock/screen sharing/privacy profiles | P1 | реализуется | Четыре локальных профиля и Custom; Stealth сужает notification preview. Отдельный opt-in `FLAG_SECURE` охватывает main/bubble/external окна и известные story/photo/payment/translate clear paths. Имена в уведомлениях могут оставаться; FCM/lock-screen/physical screen-sharing matrix впереди |
 | Перевод/расшифровка | P1 | ограничено сервером | Штатные API/Premium-условия; проверка аккаунта не проведена |
 | Export/import profiles/schema/preview | P1 | реализуется | SAF export/import переносимых MOROK appearance/round-video/account privacy флагов и отдельные именованные локальные профили со строгими схемами и preview реализованы; chat/account IDs, secrets, proxy, archive/Memory исключены. Темы Telegram и отдельный зашифрованный перенос архива впереди |
 | Камера и качество кружочков | P1 | реализуется | Experimental OFF-by-default профили, Camera2 AF/EIS/FPS, codec fallback и opt-in bounded metadata diagnostics реализованы; физические A/B и recipient-тесты не проведены, см. `ROUND_VIDEO_AUDIT.md` |

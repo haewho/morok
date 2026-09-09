@@ -6,12 +6,15 @@
 - `org.morok.appearance` — политика эффектов поверх существующих render paths; перечень покрытия указан отдельно.
 - `org.morok.memory` / `history` — ручные карточки, allowlisted автоархив live и catch-up message payload, явный ограниченный импорт из локальной Telegram SQLite, приватное хранение, encrypted journal/replay для new/edit/delete событий и напоминания. Автоархив выключен по умолчанию и использует настройки устойчивого ID аккаунта; импорт не запускает Telegram history/media loader.
 - `org.morok.proxy` — проверка и выбор узлов через штатный `ConnectionsManager`; никакого второго сетевого стека.
+- `org.morok.safety` — локальный confirmation gate перед исходящим private-call `initiateCall` и единая read-only политика secure-window; сетевых или auth-операций здесь нет.
 - `org.morok.integration` — собственное имя, сохраняемое при загрузке облачных language packs.
 - `org.morok.ui` — обычные Telegram `BaseFragment`, встроенные в навигацию приложения.
 
 Профиль переноса настроек не является резервной копией аккаунта. SAF-файл не содержит идентификаторы аккаунта/чатов, Telegram auth, Memory, архив и прокси; импорт показывает diff и применяет только локальные MOROK-настройки после явного подтверждения. Подробности — в [SETTINGS_TRANSFER](SETTINGS_TRANSFER.md).
 
 Локальные профили «Обычный / Скрытный / Рабочий / Экономный» и сохранённый «Свой» описаны в [APP_PROFILES](APP_PROFILES.md). Они показывают итоговые значения до применения, сохраняют предыдущий снимок и не подменяют connection policy.
+
+Защита окна и подтверждение личных звонков описаны в [SAFETY](SAFETY.md). Они opt-in и используют штатные Android/Telegram границы: `FLAG_SECURE`, permission gate и `VoIPHelper`.
 
 Базовые сообщения продолжают жить в официальной БД. Память не заменяет сообщения «зомби-записями» и не отменяет delete updates. Обработка карточки не отправляет сообщение собеседнику. Переход в исходный чат использует обычную семантику Telegram с учётом выбранной экспериментальной privacy-политики.
 

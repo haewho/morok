@@ -22,6 +22,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.morok.safety.MorokCallConfirmation;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
@@ -112,12 +113,22 @@ public class VoIPHelper {
 				permissions.add(Manifest.permission.CAMERA);
 			}
 			if (permissions.isEmpty()) {
-				initiateCall(user, null, null, videoCall, canVideoCall, false, null, activity, null, accountInstance);
+				initiatePrivateCall(user, videoCall, canVideoCall, activity, accountInstance);
 			} else {
 				activity.requestPermissions(permissions.toArray(new String[0]), videoCall ? 102 : 101);
 			}
 		} else {
-			initiateCall(user, null, null, videoCall, canVideoCall, false, null, activity, null, accountInstance);
+			initiatePrivateCall(user, videoCall, canVideoCall, activity, accountInstance);
+		}
+	}
+
+	private static void initiatePrivateCall(TLRPC.User user, boolean videoCall, boolean canVideoCall,
+			Activity activity, AccountInstance accountInstance) {
+		Runnable confirmed = () -> initiateCall(user, null, null, videoCall, canVideoCall,
+				false, null, activity, null, accountInstance);
+		if (!MorokCallConfirmation.request(activity,
+				ContactsController.formatName(user.first_name, user.last_name), videoCall, confirmed)) {
+			confirmed.run();
 		}
 	}
 

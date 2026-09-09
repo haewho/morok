@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class MorokSettings {
     private static volatile AppearanceSettings appearance;
     private static volatile RoundVideoSettings roundVideo;
+    private static volatile SafetySettings safety;
     private static final ConcurrentHashMap<Long, PrivacySettings> privacy = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Long, ArchiveSettings> archive = new ConcurrentHashMap<>();
 
@@ -86,6 +87,23 @@ public final class MorokSettings {
     public static synchronized void setRoundVideo(RoundVideoSettings settings) {
         repository("morok_device").saveRoundVideo(settings);
         roundVideo = settings;
+    }
+
+    public static SafetySettings safety() {
+        SafetySettings result = safety;
+        if (result == null) {
+            if (ApplicationLoader.applicationContext == null) return SafetySettings.DEFAULT;
+            synchronized (MorokSettings.class) {
+                result = safety;
+                if (result == null) safety = result = repository("morok_device").safety();
+            }
+        }
+        return result;
+    }
+
+    public static synchronized void setSafety(SafetySettings settings) {
+        repository("morok_device").saveSafety(settings);
+        safety = settings;
     }
 
     public static PrivacySettings privacy(int accountSlot) {

@@ -8,6 +8,7 @@ import org.morok.settings.AppearanceSettings;
 import org.morok.settings.ArchiveSettings;
 import org.morok.settings.PrivacySettings;
 import org.morok.settings.RoundVideoSettings;
+import org.morok.settings.SafetySettings;
 import org.morok.settings.SettingsRepository;
 import org.morok.settings.SettingsProfile;
 import org.morok.settings.SettingsProfileCodec;
@@ -60,7 +61,7 @@ public final class SettingsRepositoryTest {
         repo.saveAppearance(new AppearanceSettings(false, true));
         SettingsRepository restarted = new SettingsRepository(device);
         check(!restarted.appearance().liquidGlass && restarted.appearance().reducedEffects, "restart persistence");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 9, "additive schema migration");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 10, "additive schema migration");
         restarted.resetAppearance();
         check(restarted.appearance().liquidGlass && !restarted.appearance().reducedEffects, "category reset defaults");
         check("keep".equals(device.values.get("future.unrelated")), "reset preserves other settings");
@@ -80,6 +81,19 @@ public final class SettingsRepositoryTest {
                 "invalid round-video profile safely maps to auto");
         restarted.resetRoundVideo();
         check(!restarted.roundVideo().enhanced, "round-video reset restores upstream behavior");
+
+        SafetySettings safetyDefaults = restarted.safety();
+        check(!safetyDefaults.protectScreen && !safetyDefaults.confirmOutgoingCalls,
+                "safety controls default to upstream screen and call behavior");
+        restarted.saveSafety(safetyDefaults.withProtectScreen(true).withConfirmOutgoingCalls(true));
+        SafetySettings restartedSafety = new SettingsRepository(device).safety();
+        check(restartedSafety.protectScreen && restartedSafety.confirmOutgoingCalls,
+                "device safety controls survive restart together");
+        restarted.resetSafety();
+        check(!restarted.safety().protectScreen && !restarted.safety().confirmOutgoingCalls,
+                "safety reset restores upstream behavior");
+        check("keep".equals(device.values.get("future.unrelated")),
+                "safety save and reset preserve unrelated settings");
 
         Map<String, Store> accounts = new HashMap<>();
         String first = SettingsRepository.accountNamespace(9223372036854775806L);
@@ -297,13 +311,13 @@ public final class SettingsRepositoryTest {
             check(rejected, "invalid unauthenticated identity rejected: " + invalid);
         }
 
-        device.values.put(SettingsRepository.SCHEMA_KEY, 10);
+        device.values.put(SettingsRepository.SCHEMA_KEY, 11);
         int oldWrites = device.writes;
         boolean rejected = false;
         try { restarted.resetAppearance(); }
         catch (IllegalStateException expected) { rejected = true; }
         check(rejected && device.writes == oldWrites, "newer schema cannot be downgraded by reset");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 10, "newer schema kept intact");
-        System.out.println("PASS: settings defaults, migration, isolation, archive, round-video, privacy, strict transfer, reviewed app profiles, invalid IDs, downgrade refusal");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 11, "newer schema kept intact");
+        System.out.println("PASS: settings defaults, migration, isolation, archive, round-video, safety, privacy, strict transfer, reviewed app profiles, invalid IDs, downgrade refusal");
     }
 }

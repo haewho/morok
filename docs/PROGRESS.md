@@ -1,6 +1,6 @@
 # Прогресс реализации
 
-Состояние на 2026-09-07: создана и проверена первая исполняемая основа MOROK на базе официального Telegram Android 12.10.1 (7038), commit `62b56a07ca7e30e39f7fd00a6728d6bbd716ca1c`. Полное ТЗ ещё не выполнено; фактическое покрытие требований отражено в `FEATURE_PARITY.md`.
+Состояние на 2026-09-09: создана и последовательно расширяется исполняемая основа MOROK на базе официального Telegram Android 12.10.1 (7038). Полное ТЗ ещё не выполнено; фактическое покрытие требований отражено в `FEATURE_PARITY.md`.
 
 ## Готово в текущей ветке
 
@@ -11,15 +11,16 @@
 - MOROK connection: direct/manual/auto, импорт, проверки, ротация, подписанный пул с anti-rollback и явное отсутствие скрытого direct fallback;
 - экспериментальная privacy-основа: account-local пресет «Призрак», фактическое подавление обычных typing/recording/upload/sticker/emoji activity actions, foreground online-status, обычного server read cursor с сохранением локального read-state, content-read входящих voice/round video и story-view; явный mark-read и opt-in read-on-reply синхронизируют cursor; отдельный opt-in ставит поддержанные Ghost-отправки в видимое серверное расписание на минуту без silent fallback; chat exceptions возвращают штатное поведение в выбранном чате и управляются общим списком;
 - экспериментальное улучшение кружочков, выключенное по умолчанию: Auto / Economy / High, проверка Camera2 source и AVC surface encoder, поддержанные AF/EIS/FPS requests, корректные enhanced metadata и откат к штатному профилю до начала записи; отдельная opt-in диагностика хранит до 40 metadata-only событий и позволяет явно скопировать/очистить отчёт; физическое качество и доставка получателю ещё не подтверждены;
+- локальная безопасность, выключенная по умолчанию: режим защищённого Android-окна для main/bubble/external и известных media/payment/translate путей, ссылка на штатный код-пароль Telegram, подтверждение исходящих личных audio/video calls после permissions и до initiateCall, прямой account-local переключатель текста уведомлений;
 - шаблоны собственной прокси-инфраструктуры и документация сборки, архитектуры, обновления и ограничений.
 
 ## Проверено
 
-- `./scripts/check.sh`: upstream lock и 10 submodules, 12 round-video diagnostic domain checks + 7 integration-инвариантов, 35 Memory domain checks, 9 Memory hook/cache-only checks, 6 proxy transaction cases, 34 proxy core checks, appearance mode mapping, settings migration/isolation/archive-policy, strict secret-free transfer codec и local app-profile matrix/codec/hook checks, совместимость Python/OpenSSL signer с Java verifier;
+- `./scripts/check.sh`: upstream lock и 10 submodules, 12 round-video diagnostic domain checks + 7 integration-инвариантов, 35 Memory domain checks, 9 Memory hook/cache-only checks, 6 proxy transaction cases, 34 proxy core checks, appearance mode mapping, settings migration/isolation/archive/safety policy, strict secret-free transfer codec, local app-profile и safety call/screen hook checks, совместимость Python/OpenSSL signer с Java verifier;
 - `:TMessagesProj_App:assembleAfatDebug`: успешная arm64-v8a debug-сборка;
 - `:TMessagesProj_App:connectedAfatDebugAndroidTest`: 1/1 Android instrumentation test на Android 16 API 36, включая отказ при tampering и cross-account replay;
 - APK проверен `aapt2` и `apksigner`: `io.github.haewho.morok.beta`, version 12.10.1/70389, только `arm64-v8a`, debug certificate;
-- на эмуляторе Android 16 APK установлен и холодно запущен; вручную открыты intro, MOROK connection, MOROK Settings, экран переноса и экран профилей приложения; до входа проверен отказ применения профиля, падений MOROK в logcat нет. Авторизованные profile apply/Custom/Previous, SAF export/import и реальные notification preview ещё не проверены на устройстве.
+- на эмуляторе Android 16 APK установлен и холодно запущен; вручную открыты intro, MOROK connection, MOROK Settings, экран переноса, профили приложения и безопасность; защита экрана добавляет `FLAG_SECURE`, даёт полностью чёрный screenshot, сохраняется после cold restart и корректно снимается; ссылка открывает штатный setup кода-пароля, а account-local уведомления до входа показывают явный отказ. Авторизованные profile apply/Custom/Previous, SAF export/import, реальные notification preview и подтверждение звонка ещё не проверены на устройстве.
 
 Локальный проверенный APK и машинный отчёт находятся в `artifacts/` и намеренно исключены из Git. Это debug/test-only сборка, не релиз для распространения.
 

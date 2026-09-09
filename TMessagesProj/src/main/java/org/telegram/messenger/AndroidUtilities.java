@@ -5294,7 +5294,8 @@ public class AndroidUtilities {
     }
 
     public static boolean allowScreenCapture() {
-        return SharedConfig.passcodeHash.length() == 0 || SharedConfig.allowScreenCapture;
+        return !org.morok.safety.MorokScreenPrivacy.enabled()
+                && (SharedConfig.passcodeHash.length() == 0 || SharedConfig.allowScreenCapture);
     }
 
     public static File getSharingDirectory() {
