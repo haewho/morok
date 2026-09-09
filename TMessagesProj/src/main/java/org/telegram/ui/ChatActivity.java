@@ -8753,6 +8753,16 @@ public class ChatActivity extends BaseFragment implements
                 createUndoView();
                 undoView.showWithAction(0, UndoView.ACTION_TEXT_COPIED, null);
             }
+
+            @Override
+            public boolean canInsertSelectedText() {
+                return isMorokTextSelectionInsertAvailable();
+            }
+
+            @Override
+            public void onInsertSelectedText(CharSequence text) {
+                insertMorokSelectedText(text);
+            }
         });
 
         View overlay = textSelectionHelper.getOverlayView(context);
@@ -19598,6 +19608,7 @@ public class ChatActivity extends BaseFragment implements
 
     private boolean isMorokReplyTemplatesAvailable() {
         return dialog_id != 0 && chatMode == 0 && currentEncryptedChat == null && !isReport()
+                && !UserObject.isService(dialog_id)
                 && (currentUser != null || currentChat != null)
                 && !UserObject.isUserSelf(currentUser) && !UserObject.isReplyUser(currentUser)
                 && !UserObject.isAnonymous(currentUser)
@@ -19663,6 +19674,30 @@ public class ChatActivity extends BaseFragment implements
         AndroidUtilities.showKeyboard(field);
         if (getParentActivity() != null) android.widget.Toast.makeText(getParentActivity(),
                 LocaleController.getString(R.string.MorokDraftRestoredToast), android.widget.Toast.LENGTH_SHORT).show();
+    }
+
+    private boolean isMorokTextSelectionInsertAvailable() {
+        return isMorokReplyTemplatesAvailable() && chatActivityEnterView != null
+                && chatActivityEnterView.getEditField() != null && canSendMessage();
+    }
+
+    private void insertMorokSelectedText(CharSequence selectedText) {
+        if (!isMorokTextSelectionInsertAvailable() || TextUtils.isEmpty(selectedText)) return;
+        EditText field = chatActivityEnterView.getEditField();
+        CharSequence current = field.getText();
+        int cursor = Math.max(0, Math.min(field.getSelectionStart(), current.length()));
+        String insertion = org.morok.templates.ReplyTemplateInsertion.prepare(current, cursor,
+                selectedText.toString(), getMessagesController().getMaxMessageLength());
+        if (insertion == null) {
+            if (getParentActivity() != null) android.widget.Toast.makeText(getParentActivity(),
+                    LocaleController.getString(R.string.MorokSelectionTooLong), android.widget.Toast.LENGTH_LONG).show();
+            return;
+        }
+        chatActivityEnterView.replaceWithText(cursor, 0, insertion, true);
+        chatActivityEnterView.setFieldFocused();
+        AndroidUtilities.showKeyboard(field);
+        if (getParentActivity() != null) android.widget.Toast.makeText(getParentActivity(),
+                LocaleController.getString(R.string.MorokSelectionInserted), android.widget.Toast.LENGTH_SHORT).show();
     }
 
     private String getMorokChatMetadataSourceTitle() {

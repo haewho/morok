@@ -1539,6 +1539,7 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
     }
 
     private static final int TRANSLATE = 3;
+    private static final int MOROK_INSERT_IN_COMPOSER = 0x4d4f5201;
     private ActionMode.Callback createActionCallback() {
         final ActionMode.Callback callback = new ActionMode.Callback() {
             @Override
@@ -1549,6 +1550,8 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                 menu.add(Menu.NONE, android.R.id.cut, 3, android.R.string.cut);
                 menu.add(Menu.NONE, android.R.id.paste, 4, android.R.string.paste);
                 menu.add(Menu.NONE, android.R.id.selectAll, 5, android.R.string.selectAll);
+                menu.add(Menu.NONE, MOROK_INSERT_IN_COMPOSER, 6,
+                        LocaleController.getString(R.string.MorokSelectionInsert));
                 return true;
             }
 
@@ -1582,6 +1585,13 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                 MenuItem pasteItem = menu.findItem(android.R.id.paste);
                 if (pasteItem != null) {
                     pasteItem.setVisible(canPaste() && clipboardHasContent());
+                }
+                MenuItem morokInsertItem = menu.findItem(MOROK_INSERT_IN_COMPOSER);
+                if (morokInsertItem != null) {
+                    CharSequence selectedText = getSelectedText();
+                    morokInsertItem.setVisible(canCopy() && TextSelectionHelper.this.callback != null
+                            && TextSelectionHelper.this.callback.canInsertSelectedText()
+                            && selectedText != null && selectedText.length() > 0);
                 }
                 if (onTranslateListener != null && LanguageDetector.hasSupport() && getSelectedText() != null) {
                     LanguageDetector.detectLanguage(getSelectedText().toString(), lng -> {
@@ -1659,6 +1669,16 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                 } else if (itemId == android.R.id.paste) {
                     onPasteAction();
                     hideActions();
+                    return true;
+                } else if (itemId == MOROK_INSERT_IN_COMPOSER) {
+                    CharSequence selectedText = getSelectedText();
+                    if (canCopy() && TextSelectionHelper.this.callback != null
+                            && TextSelectionHelper.this.callback.canInsertSelectedText()
+                            && selectedText != null && selectedText.length() > 0) {
+                        TextSelectionHelper.this.callback.onInsertSelectedText(selectedText);
+                    }
+                    hideActions();
+                    clear(true);
                     return true;
                 } else {
                     clear();
@@ -1974,6 +1994,8 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
     public static class Callback {
         public void onStateChanged(boolean isSelected){};
         public void onTextCopied(){};
+        public boolean canInsertSelectedText(){ return false; };
+        public void onInsertSelectedText(CharSequence text){};
     }
 
     protected void fillLayoutForOffset(int offset, LayoutBlock layoutBlock) {

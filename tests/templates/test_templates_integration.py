@@ -28,6 +28,7 @@ assert "editor.setOnShowListener" in screen and "editor.dismiss()" in screen
 assert "if (selection != null) return false" in screen
 assert "ChatActivity.this::insertMorokReplyTemplate" in chat
 assert "currentEncryptedChat == null" in chat
+assert "!UserObject.isService(dialog_id)" in chat
 assert "ReplyTemplateInsertion.prepare" in chat
 method = chat[chat.index("private void insertMorokReplyTemplate"):
               chat.index("private String getMorokChatMetadataSourceTitle")]

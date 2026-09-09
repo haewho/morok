@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokSelectionInsert">Insert into composer</string>
+    <string name="MorokSelectionInserted">Selected text inserted. Review it before sending.</string>
+    <string name="MorokSelectionTooLong">The selected text does not fit in this message.</string>
+</resources>

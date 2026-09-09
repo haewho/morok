@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokSelectionInsert">Вставить в редактор</string>
+    <string name="MorokSelectionInserted">Выделенный текст вставлен. Проверьте его перед отправкой.</string>
+    <string name="MorokSelectionTooLong">Выделенный текст не помещается в сообщение.</string>
+</resources>
