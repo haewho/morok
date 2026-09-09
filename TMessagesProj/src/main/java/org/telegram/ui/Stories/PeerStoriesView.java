@@ -3508,7 +3508,8 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
                     if (state == 0) {
                         instantCameraView.showCamera(false);
                     } else if (state == 1 || state == 3 || state == 4) {
-                        instantCameraView.send(state, notify, scheduleDate, 0, ttl, effectId, stars);
+                        instantCameraView.send(org.morok.safety.MorokRoundVideoConfirmation.guardedState(state),
+                                notify, scheduleDate, 0, ttl, effectId, stars);
                     } else if (state == 2 || state == 5) {
                         instantCameraView.cancel(state == 2);
                     }

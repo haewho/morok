@@ -67,6 +67,9 @@ public final class MorokSafetyActivity extends BaseFragment {
         check(R.string.MorokSafetyConfirmCalls, safety.confirmOutgoingCalls, () -> applySafety(
                 MorokSettings.safety().withConfirmOutgoingCalls(!MorokSettings.safety().confirmOutgoingCalls)));
         info(R.string.MorokSafetyConfirmCallsInfo);
+        check(R.string.MorokSafetyConfirmRoundVideos, safety.confirmRoundVideos, () -> applySafety(
+                MorokSettings.safety().withConfirmRoundVideos(!MorokSettings.safety().confirmRoundVideos)));
+        info(R.string.MorokSafetyConfirmRoundVideosInfo);
         boolean activated = isAvailable();
         check(R.string.MorokSafetyNotificationContent,
                 !activated || MorokAppProfiles.showsNotificationContent(currentAccount), () -> {

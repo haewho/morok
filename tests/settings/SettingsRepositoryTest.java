@@ -61,7 +61,7 @@ public final class SettingsRepositoryTest {
         repo.saveAppearance(new AppearanceSettings(false, true));
         SettingsRepository restarted = new SettingsRepository(device);
         check(!restarted.appearance().liquidGlass && restarted.appearance().reducedEffects, "restart persistence");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 10, "additive schema migration");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 11, "additive schema migration");
         restarted.resetAppearance();
         check(restarted.appearance().liquidGlass && !restarted.appearance().reducedEffects, "category reset defaults");
         check("keep".equals(device.values.get("future.unrelated")), "reset preserves other settings");
@@ -83,14 +83,18 @@ public final class SettingsRepositoryTest {
         check(!restarted.roundVideo().enhanced, "round-video reset restores upstream behavior");
 
         SafetySettings safetyDefaults = restarted.safety();
-        check(!safetyDefaults.protectScreen && !safetyDefaults.confirmOutgoingCalls,
+        check(!safetyDefaults.protectScreen && !safetyDefaults.confirmOutgoingCalls
+                        && !safetyDefaults.confirmRoundVideos,
                 "safety controls default to upstream screen and call behavior");
-        restarted.saveSafety(safetyDefaults.withProtectScreen(true).withConfirmOutgoingCalls(true));
+        restarted.saveSafety(safetyDefaults.withProtectScreen(true).withConfirmOutgoingCalls(true)
+                .withConfirmRoundVideos(true));
         SafetySettings restartedSafety = new SettingsRepository(device).safety();
-        check(restartedSafety.protectScreen && restartedSafety.confirmOutgoingCalls,
+        check(restartedSafety.protectScreen && restartedSafety.confirmOutgoingCalls
+                        && restartedSafety.confirmRoundVideos,
                 "device safety controls survive restart together");
         restarted.resetSafety();
-        check(!restarted.safety().protectScreen && !restarted.safety().confirmOutgoingCalls,
+        check(!restarted.safety().protectScreen && !restarted.safety().confirmOutgoingCalls
+                        && !restarted.safety().confirmRoundVideos,
                 "safety reset restores upstream behavior");
         check("keep".equals(device.values.get("future.unrelated")),
                 "safety save and reset preserve unrelated settings");
@@ -311,13 +315,13 @@ public final class SettingsRepositoryTest {
             check(rejected, "invalid unauthenticated identity rejected: " + invalid);
         }
 
-        device.values.put(SettingsRepository.SCHEMA_KEY, 11);
+        device.values.put(SettingsRepository.SCHEMA_KEY, 12);
         int oldWrites = device.writes;
         boolean rejected = false;
         try { restarted.resetAppearance(); }
         catch (IllegalStateException expected) { rejected = true; }
         check(rejected && device.writes == oldWrites, "newer schema cannot be downgraded by reset");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 11, "newer schema kept intact");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 12, "newer schema kept intact");
         System.out.println("PASS: settings defaults, migration, isolation, archive, round-video, safety, privacy, strict transfer, reviewed app profiles, invalid IDs, downgrade refusal");
     }
 }

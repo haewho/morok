@@ -169,6 +169,8 @@
     <string name="MorokSafetyActionsHeader">Случайные действия</string>
     <string name="MorokSafetyConfirmCalls">Подтверждать исходящие личные звонки</string>
     <string name="MorokSafetyConfirmCallsInfo">Показывает подтверждение после выдачи нужных разрешений и до запуска Telegram личного аудио- или видеозвонка. Вход и создание группового звонка сохраняют собственные диалоги Telegram.</string>
+    <string name="MorokSafetyConfirmRoundVideos">Просматривать кружочки перед отправкой</string>
+    <string name="MorokSafetyConfirmRoundVideosInfo">После отпускания кнопки записи открывается штатный предпросмотр Telegram вместо немедленной отправки. Кружочек отправляется только после нажатия кнопки отправки в предпросмотре.</string>
     <string name="MorokSafetyNotificationContent">Показывать текст сообщений в уведомлениях</string>
     <string name="MorokSafetyNotificationContentInfo">Настройка отдельного аккаунта. Выключение перестраивает активные уведомления и скрывает содержимое сообщения или истории; имя отправителя и название чата могут остаться видимыми.</string>
     <string name="MorokSafetyLoginRequired">Войдите в аккаунт, чтобы изменить показ текста в его уведомлениях.</string>
@@ -176,7 +178,7 @@
     <string name="MorokSafetyAppLock">Локальный код-пароль Telegram</string>
     <string name="MorokSafetyAppLockInfo">Открывает существующие настройки локального кода-пароля и биометрии Telegram. Морок не хранит дополнительный пароль.</string>
     <string name="MorokSafetyReset">Сбросить настройки безопасности Морока</string>
-    <string name="MorokSafetyResetInfo">Выключить защиту экрана Морока и подтверждение исходящих звонков? Локальный код-пароль Telegram и настройка уведомлений аккаунта не изменятся.</string>
+    <string name="MorokSafetyResetInfo">Выключить защиту экрана Морока, подтверждение исходящих звонков и просмотр кружочков перед отправкой? Локальный код-пароль Telegram и настройка уведомлений аккаунта не изменятся.</string>
     <string name="MorokSafetyFooter">Эти настройки локальные. Они не меняют серверную приватность Telegram, не отзывают уже захваченное содержимое и не действуют на другом устройстве.</string>
     <string name="MorokSafetySaveError">Не удалось сохранить настройку безопасности. Параметры из более новой версии Морока оставлены без изменений.</string>
     <string name="MorokConfirmVoiceCallTitle">Начать аудиозвонок?</string>

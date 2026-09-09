@@ -30,7 +30,7 @@
 | Плотность/аватары/пузыри/шрифты/timestamps/анимации | P1 | требование | Полный собственный набор впереди |
 | Жесты/long press/быстрые действия | P1 | реализуется | «Запомнить»; редактор жестов/профилей впереди |
 | Copy selection/templates/drafts/chat aliases/notes | P1 | требование | Штатные сценарии сохранены; локальные дополнения впереди |
-| Call/video confirm/double tap/local undo send | P1 | реализуется | Opt-in подтверждение исходящих личных audio/video calls стоит после permissions и до центрального initiateCall. Подтверждение отправки кружочка, настройка double-tap и настоящий pre-network undo send впереди; фиктивной отмены после отправки нет |
+| Call/video confirm/double tap/local undo send | P1 | реализуется | Opt-in подтверждение исходящих личных audio/video calls стоит после permissions и до initiateCall; отдельный opt-in заменяет немедленную отправку кружочка штатным preview с явной кнопкой Send. Настройка double-tap и настоящий pre-network undo send впереди; фиктивной отмены после отправки нет |
 | Плеер/позиция/скорость/sleep timer/autoplay | P1 | реализуется | Штатный плеер сохранён; именованные профили управляют существующими LiteMode autoplay video/GIF. Позиция, sleep timer и дополнительные скорости впереди |
 | Downloads queue/pause/priority/traffic limits | P1 | требование | Штатный stack; ускорение не заявляется |
 | Local filters/spoilers/noise | P1 | требование | Sponsored messages и серверная синхронизация сохраняются |

@@ -2,7 +2,7 @@ package org.morok.settings;
 
 /** Versioned local-only schema. Unknown newer schemas are readable but never overwritten. */
 public final class SettingsRepository {
-    public static final int SCHEMA_VERSION = 10;
+    public static final int SCHEMA_VERSION = 11;
     public static final String SCHEMA_KEY = "schema_version";
     private final SettingsStore store;
 
@@ -45,15 +45,16 @@ public final class SettingsRepository {
 
     public SafetySettings safety() {
         return new SafetySettings(store.getBoolean("safety.protect_screen", false),
-                store.getBoolean("safety.confirm_outgoing_calls", false));
+                store.getBoolean("safety.confirm_outgoing_calls", false),
+                store.getBoolean("safety.confirm_round_videos", false));
     }
 
     public void saveSafety(SafetySettings settings) {
         if (settings == null) throw new IllegalArgumentException("Safety settings are required");
         checkWritable();
         store.saveBooleans(SCHEMA_VERSION,
-                new String[] {"safety.protect_screen", "safety.confirm_outgoing_calls"},
-                new boolean[] {settings.protectScreen, settings.confirmOutgoingCalls});
+                new String[] {"safety.protect_screen", "safety.confirm_outgoing_calls", "safety.confirm_round_videos"},
+                new boolean[] {settings.protectScreen, settings.confirmOutgoingCalls, settings.confirmRoundVideos});
     }
 
     public void resetSafety() {

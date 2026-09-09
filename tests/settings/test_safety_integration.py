@@ -16,6 +16,10 @@ translate = (java / "org/telegram/ui/Components/TranslateAlert2.java").read_text
 bubble = (java / "org/telegram/ui/BubbleActivity.java").read_text()
 external = (java / "org/telegram/ui/ExternalActionActivity.java").read_text()
 screen = (java / "org/morok/ui/MorokSafetyActivity.java").read_text()
+round_confirmation = (java / "org/morok/safety/MorokRoundVideoConfirmation.java").read_text()
+chat = (java / "org/telegram/ui/ChatActivity.java").read_text()
+story_replies = (java / "org/telegram/ui/Stories/PeerStoriesView.java").read_text()
+instant_camera = (java / "org/telegram/ui/Components/InstantCameraView.java").read_text()
 
 assert voip.count("initiatePrivateCall(user, videoCall, canVideoCall, activity, accountInstance)") == 2
 assert "MorokCallConfirmation.request" in voip
@@ -37,5 +41,17 @@ assert "MorokScreenPrivacy.enabled() || !SharedConfig.passcodeHash.isEmpty()" in
 assert "MorokScreenPrivacy.enabled() || !SharedConfig.passcodeHash.isEmpty()" in external
 assert "postNotificationName(NotificationCenter.morokScreenPrivacyChanged)" in screen
 assert "new PasscodeActivity(" in screen
+assert "withConfirmRoundVideos" in screen
 
-print("PASS: outgoing-private-call confirmation and secure-window integration invariants")
+assert "SEND_IMMEDIATELY = 1" in round_confirmation
+assert "OPEN_PREVIEW = 3" in round_confirmation
+assert "confirmRoundVideos" in round_confirmation
+hook = "MorokRoundVideoConfirmation.guardedState(state)"
+assert chat.count(hook) == 1
+assert story_replies.count(hook) == 1
+assert "if (state == 4)" in instant_camera
+assert "state == 3 ? 2 : 5" in instant_camera
+assert "send = 2;" in instant_camera
+assert "send = 1;" in instant_camera
+
+print("PASS: call/round-video confirmation and secure-window integration invariants")
