@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokTemplatesMenu">Reply templates</string>
+    <string name="MorokTemplatesTitle">Reply templates</string>
+    <string name="MorokTemplatesInsertTitle">Insert reply template</string>
+    <string name="MorokTemplatesShortcutInfo">Encrypted reusable text. Choosing a template inserts it at the cursor and never sends it automatically.</string>
+    <string name="MorokTemplatesSearch">Search templates</string>
+    <string name="MorokTemplatesLoading">Loading encrypted templates…</string>
+    <string name="MorokTemplatesEmpty">No reply templates saved. Tap + to create one.</string>
+    <string name="MorokTemplatesCount">Encrypted for this account · %1$d / %2$d templates</string>
+    <string name="MorokTemplatesAdd">New reply template</string>
+    <string name="MorokTemplatesEdit">Edit reply template</string>
+    <string name="MorokTemplatesNameHint">Template name</string>
+    <string name="MorokTemplatesBodyHint">Text inserted into the message field</string>
+    <string name="MorokTemplatesEditorInfo">Plain text only. Using a template preserves the current draft and still requires pressing Send.</string>
+    <string name="MorokTemplatesRequired">Enter both a name and template text.</string>
+    <string name="MorokTemplatesDelete">Delete template?</string>
+    <string name="MorokTemplatesClearAll">Clear all templates</string>
+    <string name="MorokTemplatesClearAllInfo">Delete every reply template for this account from this device?</string>
+    <string name="MorokTemplatesStorageError">Encrypted template storage or its key is unavailable.</string>
+    <string name="MorokTemplatesUnavailable">Reply templates require a signed-in account and Android 6 or later.</string>
+    <string name="MorokTemplatesInserted">Template inserted into the message field</string>
+    <string name="MorokTemplatesTooLong">The template does not fit in the remaining message length.</string>
+</resources>

@@ -42,7 +42,7 @@ public final class MorokSettingsActivity extends BaseFragment {
     private static final int GLASS = 1, REDUCED = 2, THEMES = 3, POWER = 4, RESET = 5;
     private static final int MEMORY = 6, PROXY = 7, PRIVACY = 8, ROUND_VIDEO = 9, ARCHIVE = 10;
     private static final int TRANSFER = 11, APPEARANCE_MODE = 12, APP_PROFILES = 13, SAFETY = 14,
-            INTERACTIONS = 15, DIAGNOSTICS = 16, CHAT_METADATA = 17;
+            INTERACTIONS = 15, DIAGNOSTICS = 16, CHAT_METADATA = 17, REPLY_TEMPLATES = 18;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -107,6 +107,9 @@ public final class MorokSettingsActivity extends BaseFragment {
                     break;
                 case CHAT_METADATA:
                     presentFragment(new MorokChatMetadataListActivity(currentAccount));
+                    break;
+                case REPLY_TEMPLATES:
+                    presentFragment(new MorokReplyTemplatesActivity(currentAccount));
                     break;
                 case GLASS:
                     apply(settings.withLiquidGlass(!settings.liquidGlass));
@@ -203,6 +206,8 @@ public final class MorokSettingsActivity extends BaseFragment {
         add(ACTION, PRIVACY, R.string.MorokPrivacyShortcut);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokPrivacyShortcutInfo);
         add(HEADER, 0, R.string.MorokLocalTools);
+        add(ACTION, REPLY_TEMPLATES, R.string.MorokTemplatesTitle);
+        if (query.isEmpty()) add(INFO, 0, R.string.MorokTemplatesShortcutInfo);
         add(ACTION, CHAT_METADATA, R.string.MorokChatMetadataListTitle);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokChatMetadataListInfo);
         add(ACTION, DIAGNOSTICS, R.string.MorokDiagnosticsTitle);

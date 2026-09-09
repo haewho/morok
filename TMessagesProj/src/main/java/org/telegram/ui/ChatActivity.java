@@ -1649,6 +1649,7 @@ public class ChatActivity extends BaseFragment implements
     private final static int tag_message = 28;
     private final static int boost_group = 29;
     private final static int morok_chat_metadata = 9102;
+    private final static int morok_reply_templates = 9103;
 
     private final static int bot_help = 30;
     private final static int bot_settings = 31;
@@ -3985,6 +3986,11 @@ public class ChatActivity extends BaseFragment implements
                             updateTitle(true);
                         }));
                     }
+                } else if (id == morok_reply_templates) {
+                    if (isMorokReplyTemplatesAvailable()) {
+                        presentFragment(new org.morok.ui.MorokReplyTemplatesActivity(currentAccount,
+                                ChatActivity.this::insertMorokReplyTemplate));
+                    }
                 } else if (id == translate) {
                     getMessagesController().getTranslateController().setHideTranslateDialog(getDialogId(), false, true);
                     if (!getMessagesController().getTranslateController().toggleTranslatingDialog(getDialogId(), true)) {
@@ -4439,6 +4445,10 @@ public class ChatActivity extends BaseFragment implements
             if (isMorokChatMetadataAvailable()) {
                 headerItem.lazilyAddSubItem(morok_chat_metadata, R.drawable.msg_edit,
                         LocaleController.getString(R.string.MorokChatMetadataMenu));
+            }
+            if (isMorokReplyTemplatesAvailable()) {
+                headerItem.lazilyAddSubItem(morok_reply_templates, R.drawable.msg_copy,
+                        LocaleController.getString(R.string.MorokTemplatesMenu));
             }
             if (ChatObject.isBoostSupported(currentChat) && (getUserConfig().isPremium() || ChatObject.isBoosted(chatInfo) || ChatObject.hasAdminRights(currentChat))) {
                 RLottieDrawable drawable = new RLottieDrawable(R.raw.boosts, "" + R.raw.boosts, dp(24), dp(24));
@@ -19571,6 +19581,34 @@ public class ChatActivity extends BaseFragment implements
         return dialog_id != 0 && chatMode == 0 && currentEncryptedChat == null && !isReport()
                 && !UserObject.isUserSelf(currentUser) && !UserObject.isReplyUser(currentUser)
                 && !UserObject.isAnonymous(currentUser);
+    }
+
+    private boolean isMorokReplyTemplatesAvailable() {
+        return dialog_id != 0 && chatMode == 0 && currentEncryptedChat == null && !isReport()
+                && (currentUser != null || currentChat != null)
+                && !UserObject.isUserSelf(currentUser) && !UserObject.isReplyUser(currentUser)
+                && !UserObject.isAnonymous(currentUser)
+                && (currentChat == null || ChatObject.canWriteToChat(currentChat));
+    }
+
+    private void insertMorokReplyTemplate(String template) {
+        if (!isMorokReplyTemplatesAvailable() || TextUtils.isEmpty(template) || chatActivityEnterView == null
+                || chatActivityEnterView.getEditField() == null || !canSendMessage()) return;
+        EditText field = chatActivityEnterView.getEditField();
+        CharSequence current = field.getText();
+        int cursor = Math.max(0, Math.min(field.getSelectionStart(), current.length()));
+        String insertion = org.morok.templates.ReplyTemplateInsertion.prepare(current, cursor, template,
+                getMessagesController().getMaxMessageLength());
+        if (insertion == null) {
+            if (getParentActivity() != null) android.widget.Toast.makeText(getParentActivity(),
+                    LocaleController.getString(R.string.MorokTemplatesTooLong), android.widget.Toast.LENGTH_LONG).show();
+            return;
+        }
+        chatActivityEnterView.replaceWithText(cursor, 0, insertion, true);
+        chatActivityEnterView.setFieldFocused();
+        AndroidUtilities.showKeyboard(field);
+        if (getParentActivity() != null) android.widget.Toast.makeText(getParentActivity(),
+                LocaleController.getString(R.string.MorokTemplatesInserted), android.widget.Toast.LENGTH_SHORT).show();
     }
 
     private String getMorokChatMetadataSourceTitle() {

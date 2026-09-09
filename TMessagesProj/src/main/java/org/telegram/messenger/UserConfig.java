@@ -463,7 +463,11 @@ public class UserConfig extends BaseController {
         try {
             org.morok.memory.MorokMemoryStore.onLogout(morokLogoutUserId);
         } finally {
-            org.morok.chatmeta.MorokChatMetadataStore.onLogout(morokLogoutUserId);
+            try {
+                org.morok.chatmeta.MorokChatMetadataStore.onLogout(morokLogoutUserId);
+            } finally {
+                org.morok.templates.MorokReplyTemplateStore.onLogout(morokLogoutUserId);
+            }
         }
         getPreferences().edit().clear().apply();
 
