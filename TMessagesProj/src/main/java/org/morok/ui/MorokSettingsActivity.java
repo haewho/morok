@@ -41,7 +41,8 @@ import java.util.Locale;
 public final class MorokSettingsActivity extends BaseFragment {
     private static final int GLASS = 1, REDUCED = 2, THEMES = 3, POWER = 4, RESET = 5;
     private static final int MEMORY = 6, PROXY = 7, PRIVACY = 8, ROUND_VIDEO = 9, ARCHIVE = 10;
-    private static final int TRANSFER = 11, APPEARANCE_MODE = 12, APP_PROFILES = 13, SAFETY = 14;
+    private static final int TRANSFER = 11, APPEARANCE_MODE = 12, APP_PROFILES = 13, SAFETY = 14,
+            INTERACTIONS = 15;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -97,6 +98,9 @@ public final class MorokSettingsActivity extends BaseFragment {
                     break;
                 case SAFETY:
                     presentFragment(new MorokSafetyActivity(currentAccount));
+                    break;
+                case INTERACTIONS:
+                    presentFragment(new MorokInteractionsActivity(currentAccount));
                     break;
                 case GLASS:
                     apply(settings.withLiquidGlass(!settings.liquidGlass));
@@ -180,6 +184,9 @@ public final class MorokSettingsActivity extends BaseFragment {
         add(HEADER, 0, R.string.MorokAppProfilesHeader);
         add(ACTION, APP_PROFILES, R.string.MorokAppProfilesTitle);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokAppProfilesShortcutInfo);
+        add(HEADER, 0, R.string.MorokInteractionsHeader);
+        add(ACTION, INTERACTIONS, R.string.MorokInteractionsTitle);
+        if (query.isEmpty()) add(INFO, 0, R.string.MorokInteractionsShortcutInfo);
         add(HEADER, 0, R.string.MorokSafetyHeader);
         add(ACTION, SAFETY, R.string.MorokSafetyTitle);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokSafetyShortcutInfo);
@@ -305,6 +312,15 @@ public final class MorokSettingsActivity extends BaseFragment {
                                             || privacy.hidesStoryViews() || privacy.markReadOnReply || privacy.delayGhostSends
                                             || !privacy.normalBehaviorChats.isEmpty()
                                             ? R.string.MorokPrivacyCustomStatus : R.string.MorokPrivacyOffStatus);
+                        } catch (RuntimeException ignored) {}
+                    }
+                    cell.setTextAndValue(row.title, value, true);
+                } else if (row.id == INTERACTIONS) {
+                    String value = text(R.string.MorokPrivacyLoginStatus);
+                    if (UserConfig.getInstance(currentAccount).isClientActivated()) {
+                        try {
+                            value = text(MorokSettings.interactions(currentAccount).doubleTapReactionsEnabled
+                                    ? R.string.MorokInteractionsEnabled : R.string.MorokInteractionsDisabled);
                         } catch (RuntimeException ignored) {}
                     }
                     cell.setTextAndValue(row.title, value, true);

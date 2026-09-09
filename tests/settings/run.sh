@@ -14,6 +14,7 @@ fi
     "$project_dir/TMessagesProj/src/main/java/org/morok/settings/AppearanceSettings.java" \
     "$project_dir/TMessagesProj/src/main/java/org/morok/settings/AppearanceMode.java" \
     "$project_dir/TMessagesProj/src/main/java/org/morok/settings/ArchiveSettings.java" \
+    "$project_dir/TMessagesProj/src/main/java/org/morok/settings/InteractionSettings.java" \
     "$project_dir/TMessagesProj/src/main/java/org/morok/settings/PrivacySettings.java" \
     "$project_dir/TMessagesProj/src/main/java/org/morok/settings/RoundVideoSettings.java" \
     "$project_dir/TMessagesProj/src/main/java/org/morok/settings/SafetySettings.java" \
@@ -28,3 +29,4 @@ fi
 "$settings_java" -cp "$settings_test_dir" SettingsRepositoryTest
 python3 "$project_dir/tests/settings/test_app_profiles_integration.py"
 python3 "$project_dir/tests/settings/test_safety_integration.py"
+python3 "$project_dir/tests/settings/test_interactions_integration.py"

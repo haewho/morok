@@ -15,6 +15,7 @@ public final class MorokSettings {
     private static volatile SafetySettings safety;
     private static final ConcurrentHashMap<Long, PrivacySettings> privacy = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Long, ArchiveSettings> archive = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Long, InteractionSettings> interactions = new ConcurrentHashMap<>();
 
     private MorokSettings() {}
 
@@ -138,6 +139,23 @@ public final class MorokSettings {
         long userId = authenticatedUserId(accountSlot);
         forUser(userId).saveArchive(settings);
         archive.put(userId, settings);
+    }
+
+    public static InteractionSettings interactions(int accountSlot) {
+        long userId = authenticatedUserId(accountSlot);
+        InteractionSettings result = interactions.get(userId);
+        if (result == null) {
+            InteractionSettings loaded = forUser(userId).interactions();
+            InteractionSettings existing = interactions.putIfAbsent(userId, loaded);
+            result = existing == null ? loaded : existing;
+        }
+        return result;
+    }
+
+    public static void setInteractions(int accountSlot, InteractionSettings settings) {
+        long userId = authenticatedUserId(accountSlot);
+        forUser(userId).saveInteractions(settings);
+        interactions.put(userId, settings);
     }
 
     /** Creates an explicit transfer bundle without account identity, chat IDs, archives, proxy data or secrets. */

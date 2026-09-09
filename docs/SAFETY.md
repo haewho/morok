@@ -24,7 +24,7 @@ Gate применяется к исходящим личным audio/video-зв�
 
 «Просматривать кружочки перед отправкой» заменяет только штатное действие немедленной отправки `state=1` на уже существующий preview `state=3`. После отпускания записи пользователь может просмотреть, обрезать или отменить результат; фактический `delegate.sendMedia` вызывается по штатному `state=4` после отдельного нажатия кнопки отправки. Уже открытый preview, расписание, отмена, stories reply, encoder, muxer и признак `roundVideo` остаются на существующем пути Telegram. Переключатель выключен по умолчанию.
 
-`SafetySettings` хранится в device namespace схемы 11: защита экрана и оба подтверждения общие для установки. Reset возвращает только эти три MOROK-флага в OFF; код-пароль Telegram и account-local настройка уведомлений не изменяются. Pure-Java тест проверяет defaults/persistence/reset/downgrade refusal, source-тест удерживает порядок call gate, переход immediate-send → preview и покрытие известных secure-window путей.
+`SafetySettings` хранится в device namespace общей схемы 12: защита экрана и оба подтверждения общие для установки. Reset возвращает только эти три MOROK-флага в OFF; код-пароль Telegram и account-local настройка уведомлений не изменяются. Pure-Java тест проверяет defaults/persistence/reset/downgrade refusal, source-тест удерживает порядок call gate, переход immediate-send → preview и покрытие известных secure-window путей.
 
 На эмуляторе Android 16 проверены переключение `FLAG_SECURE` без перезапуска, полностью чёрный системный screenshot при включённой защите, сохранение ON и OFF после cold restart, переход в штатный setup кода-пароля и отказ account-local настройки уведомлений до входа.
 

@@ -6,6 +6,7 @@ import org.morok.settings.AppProfileStateCodec;
 import org.morok.settings.AppearanceMode;
 import org.morok.settings.AppearanceSettings;
 import org.morok.settings.ArchiveSettings;
+import org.morok.settings.InteractionSettings;
 import org.morok.settings.PrivacySettings;
 import org.morok.settings.RoundVideoSettings;
 import org.morok.settings.SafetySettings;
@@ -61,7 +62,7 @@ public final class SettingsRepositoryTest {
         repo.saveAppearance(new AppearanceSettings(false, true));
         SettingsRepository restarted = new SettingsRepository(device);
         check(!restarted.appearance().liquidGlass && restarted.appearance().reducedEffects, "restart persistence");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 11, "additive schema migration");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 12, "additive schema migration");
         restarted.resetAppearance();
         check(restarted.appearance().liquidGlass && !restarted.appearance().reducedEffects, "category reset defaults");
         check("keep".equals(device.values.get("future.unrelated")), "reset preserves other settings");
@@ -116,6 +117,17 @@ public final class SettingsRepositoryTest {
                 && !defaults.hidesTyping() && !defaults.hidesOnline() && !defaults.hidesContentRead()
                 && !defaults.hidesRead() && !defaults.hidesStoryViews(), "privacy defaults preserve Telegram behavior");
         SettingsRepository firstAccount = new SettingsRepository(accounts.get(first));
+        InteractionSettings interactionDefaults = firstAccount.interactions();
+        check(interactionDefaults.doubleTapReactionsEnabled,
+                "double-tap reactions default to Telegram behavior");
+        firstAccount.saveInteractions(interactionDefaults.withDoubleTapReactionsEnabled(false));
+        check(!new SettingsRepository(accounts.get(first)).interactions().doubleTapReactionsEnabled,
+                "account gesture setting survives restart");
+        check(new SettingsRepository(accounts.get(second)).interactions().doubleTapReactionsEnabled,
+                "account gesture setting is isolated by stable identity");
+        firstAccount.resetInteractions();
+        check(firstAccount.interactions().doubleTapReactionsEnabled,
+                "gesture reset restores Telegram behavior");
         ArchiveSettings archiveDefaults = firstAccount.archive();
         check(!archiveDefaults.enabled && archiveDefaults.chats.isEmpty(), "archive defaults to off with an empty allowlist");
         ArchiveSettings archive = archiveDefaults.withEnabled(true).withChat(99, true).withChat(-1001, true);
@@ -315,13 +327,13 @@ public final class SettingsRepositoryTest {
             check(rejected, "invalid unauthenticated identity rejected: " + invalid);
         }
 
-        device.values.put(SettingsRepository.SCHEMA_KEY, 12);
+        device.values.put(SettingsRepository.SCHEMA_KEY, 13);
         int oldWrites = device.writes;
         boolean rejected = false;
         try { restarted.resetAppearance(); }
         catch (IllegalStateException expected) { rejected = true; }
         check(rejected && device.writes == oldWrites, "newer schema cannot be downgraded by reset");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 12, "newer schema kept intact");
-        System.out.println("PASS: settings defaults, migration, isolation, archive, round-video, safety, privacy, strict transfer, reviewed app profiles, invalid IDs, downgrade refusal");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 13, "newer schema kept intact");
+        System.out.println("PASS: settings defaults, migration, isolation, archive, round-video, safety, interactions, privacy, strict transfer, reviewed app profiles, invalid IDs, downgrade refusal");
     }
 }
