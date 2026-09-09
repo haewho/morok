@@ -33,6 +33,7 @@
 | Call/video confirm/double tap/local undo send | P1 | реализуется | Opt-in подтверждение исходящих личных audio/video calls стоит после permissions и до initiateCall; отдельный opt-in заменяет немедленную отправку кружочка штатным preview; double tap reaction можно отключить и выбрать через штатный picker. Настоящий pre-network undo send впереди; фиктивной отмены после отправки нет |
 | Плеер/позиция/скорость/sleep timer/autoplay | P1 | реализуется | Штатный плеер сохранён; именованные профили управляют существующими LiteMode autoplay video/GIF. Позиция, sleep timer и дополнительные скорости впереди |
 | Downloads queue/pause/priority/traffic limits | P1 | требование | Штатный stack; ускорение не заявляется |
+| Единая диагностика соединения/архива | P1 | реализуется | Read-only экран показывает сборку/устройство, прокси, автоархив/Память и кружочки; копируемый отчёт исключает identity, endpoints, content и secrets. Нужна authenticated/device error-state матрица |
 | Local filters/spoilers/noise | P1 | требование | Sponsored messages и серверная синхронизация сохраняются |
 | Notifications/lock/screen sharing/privacy profiles | P1 | реализуется | Четыре локальных профиля и Custom; Stealth сужает notification preview. Отдельный opt-in `FLAG_SECURE` охватывает main/bubble/external окна и известные story/photo/payment/translate clear paths. Имена в уведомлениях могут оставаться; FCM/lock-screen/physical screen-sharing matrix впереди |
 | Перевод/расшифровка | P1 | ограничено сервером | Штатные API/Premium-условия; проверка аккаунта не проведена |

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokDiagnosticsTitle">MOROK diagnostics</string>
+    <string name="MorokDiagnosticsShortcutInfo">One local view of the build, connection, encrypted archive and round-video state.</string>
+    <string name="MorokDiagnosticsBuildHeader">Build and device</string>
+    <string name="MorokDiagnosticsBuildInfo">MOROK %1$s · Android API %2$d\n%3$s</string>
+    <string name="MorokDiagnosticsConnectionHeader">Telegram connection</string>
+    <string name="MorokDiagnosticsProxyInfo">Trusted servers: %1$d · signed pool: %2$s · current pool: %3$s. Server addresses and credentials are not shown or copied.</string>
+    <string name="MorokDiagnosticsConfigured">configured</string>
+    <string name="MorokDiagnosticsNotConfigured">not configured</string>
+    <string name="MorokDiagnosticsValid">valid</string>
+    <string name="MorokDiagnosticsUnavailable">unavailable</string>
+    <string name="MorokDiagnosticsProxyDirect">Direct</string>
+    <string name="MorokDiagnosticsProxyManual">Manual proxy</string>
+    <string name="MorokDiagnosticsProxyAuto">Automatic proxy</string>
+    <string name="MorokDiagnosticsStatusDirect">idle</string>
+    <string name="MorokDiagnosticsStatusManual">selected</string>
+    <string name="MorokDiagnosticsStatusChecking">checking</string>
+    <string name="MorokDiagnosticsStatusConnected">connected</string>
+    <string name="MorokDiagnosticsStatusRetry">waiting to retry</string>
+    <string name="MorokDiagnosticsStatusOffline">device offline</string>
+    <string name="MorokDiagnosticsStatusEmpty">no trusted servers</string>
+    <string name="MorokDiagnosticsStatusPoolError">pool unavailable</string>
+    <string name="MorokDiagnosticsStatusStorageError">storage error</string>
+    <string name="MorokDiagnosticsLocalHeader">Encrypted local data</string>
+    <string name="MorokDiagnosticsSignInInfo">Sign in to inspect the current account’s automatic archive and encrypted Memory. The report never includes an account or chat identifier.</string>
+    <string name="MorokDiagnosticsArchiveValue">%1$s · %2$d selected chats</string>
+    <string name="MorokDiagnosticsMemoryValue">%1$d cards · %2$s</string>
+    <string name="MorokDiagnosticsLoading">Loading…</string>
+    <string name="MorokDiagnosticsError">Storage/key error</string>
+    <string name="MorokDiagnosticsRoundHeader">Round videos</string>
+    <string name="MorokDiagnosticsRoundValue">%1$s · %2$d diagnostic events</string>
+    <string name="MorokDiagnosticsReportHeader">Support report</string>
+    <string name="MorokDiagnosticsCopy">Copy local diagnostics</string>
+    <string name="MorokDiagnosticsReportInfo">Copying is explicit. The report contains build/device details, modes, states and aggregate counts. It excludes account and chat IDs, message contents, file paths, proxy addresses, passwords, secrets and media bytes.</string>
+    <string name="MorokDiagnosticsCopied">Diagnostics copied</string>
+</resources>

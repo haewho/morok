@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokDiagnosticsTitle">Диагностика Морока</string>
+    <string name="MorokDiagnosticsShortcutInfo">Единый локальный экран состояния сборки, соединения, зашифрованного архива и кружочков.</string>
+    <string name="MorokDiagnosticsBuildHeader">Сборка и устройство</string>
+    <string name="MorokDiagnosticsBuildInfo">MOROK %1$s · Android API %2$d\n%3$s</string>
+    <string name="MorokDiagnosticsConnectionHeader">Соединение Telegram</string>
+    <string name="MorokDiagnosticsProxyInfo">Доверенных серверов: %1$d · подписанный пул: %2$s · текущий пул: %3$s. Адреса серверов и данные доступа не показываются и не копируются.</string>
+    <string name="MorokDiagnosticsConfigured">настроен</string>
+    <string name="MorokDiagnosticsNotConfigured">не настроен</string>
+    <string name="MorokDiagnosticsValid">действителен</string>
+    <string name="MorokDiagnosticsUnavailable">недоступен</string>
+    <string name="MorokDiagnosticsProxyDirect">Напрямую</string>
+    <string name="MorokDiagnosticsProxyManual">Прокси вручную</string>
+    <string name="MorokDiagnosticsProxyAuto">Автопрокси</string>
+    <string name="MorokDiagnosticsStatusDirect">ожидание</string>
+    <string name="MorokDiagnosticsStatusManual">выбран</string>
+    <string name="MorokDiagnosticsStatusChecking">проверка</string>
+    <string name="MorokDiagnosticsStatusConnected">соединение есть</string>
+    <string name="MorokDiagnosticsStatusRetry">ожидание повтора</string>
+    <string name="MorokDiagnosticsStatusOffline">устройство без сети</string>
+    <string name="MorokDiagnosticsStatusEmpty">нет доверенных серверов</string>
+    <string name="MorokDiagnosticsStatusPoolError">пул недоступен</string>
+    <string name="MorokDiagnosticsStatusStorageError">ошибка хранилища</string>
+    <string name="MorokDiagnosticsLocalHeader">Зашифрованные локальные данные</string>
+    <string name="MorokDiagnosticsSignInInfo">Войдите, чтобы проверить автоархив и зашифрованную Память текущего аккаунта. Отчёт не содержит идентификатор аккаунта или чата.</string>
+    <string name="MorokDiagnosticsArchiveValue">%1$s · выбрано чатов: %2$d</string>
+    <string name="MorokDiagnosticsMemoryValue">Карточек: %1$d · %2$s</string>
+    <string name="MorokDiagnosticsLoading">Загрузка…</string>
+    <string name="MorokDiagnosticsError">Ошибка хранилища/ключа</string>
+    <string name="MorokDiagnosticsRoundHeader">Кружочки</string>
+    <string name="MorokDiagnosticsRoundValue">%1$s · событий диагностики: %2$d</string>
+    <string name="MorokDiagnosticsReportHeader">Отчёт для поддержки</string>
+    <string name="MorokDiagnosticsCopy">Скопировать локальную диагностику</string>
+    <string name="MorokDiagnosticsReportInfo">Копирование выполняется явно. Отчёт содержит сведения о сборке и устройстве, режимы, состояния и общие счётчики. В него не входят ID аккаунтов и чатов, сообщения, пути файлов, адреса прокси, пароли, секреты и медиаданные.</string>
+    <string name="MorokDiagnosticsCopied">Диагностика скопирована</string>
+</resources>
