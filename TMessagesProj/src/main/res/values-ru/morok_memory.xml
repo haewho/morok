@@ -9,6 +9,12 @@
     <string name="MorokMemoryLater">Отложено</string>
     <string name="MorokMemoryWithFiles">С файлами</string>
     <string name="MorokMemoryCompleted">Завершено</string>
+    <string name="MorokMemoryFilterTag">Фильтр по тегу</string>
+    <string name="MorokMemoryFilterChat">Фильтр по чату</string>
+    <string name="MorokMemoryAllTags">Все теги</string>
+    <string name="MorokMemoryAllChats">Все чаты</string>
+    <string name="MorokMemoryTagFilterValue">Тег: %1$s</string>
+    <string name="MorokMemoryChatFilterValue">Чат: %1$s</string>
     <string name="MorokMemoryLoading">Загружаем зашифрованные карточки…</string>
     <string name="MorokMemoryEmpty">Карточек пока нет. Зажмите сообщение и выберите «Запомнить».</string>
     <string name="MorokMemoryStorageError">Не удалось прочитать или сохранить Память. Проверьте свободное место и ключ аккаунта. Существующие зашифрованные данные сохранены.</string>
@@ -20,6 +26,9 @@
     <string name="MorokMemoryCancelReminder">Отменить напоминание</string>
     <string name="MorokMemoryReminderAccuracy">Напоминания локальные, время приблизительное. Ограничения энергосбережения Android могут задержать доставку. Сохраните карточку, чтобы применить изменения.</string>
     <string name="MorokMemoryVersions">Полученные версии</string>
+    <string name="MorokMemorySavedContext">Сохранённый контекст (%1$d)</string>
+    <string name="MorokMemorySavedContextTitle">Соседние сохранённые карточки</string>
+    <string name="MorokMemorySavedContextInfo">Показаны до четырёх ближайших карточек, уже сохранённых из того же чата и темы. Этот просмотр остаётся локальным, не открывает чат, не использует сеть и не отмечает сообщения прочитанными.</string>
     <string name="MorokMemoryOpenFile">Открыть сохранённый файл</string>
     <string name="MorokMemoryOpenSource">Открыть исходное сообщение</string>
     <string name="MorokMemoryOpenSourceInfo">При открытии источника действует обычное поведение чата, включая отметку чтения. Работа с самой карточкой не отмечает сообщения прочитанными.</string>

@@ -31,6 +31,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.morok.history.MemoryCapture;
 import org.morok.memory.MemoryCard;
 import org.morok.memory.MemoryExportPolicy;
+import org.morok.memory.MemoryFilterPolicy;
 import org.morok.memory.MemoryPolicy;
 import org.morok.memory.MemoryStorageStats;
 import org.morok.memory.MorokMemoryFileProvider;
@@ -58,8 +59,10 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 
 /** Account-scoped native screen: every action on a card is local until Open source is explicitly tapped. */
@@ -76,7 +79,11 @@ public class MorokMemoryActivity extends BaseFragment {
     private CardsAdapter adapter;
     private TextView status;
     private EditText search;
+    private Button tagFilterButton;
+    private Button chatFilterButton;
     private int filter;
+    private String selectedTag = "";
+    private long selectedDialogId;
     private int queryGeneration;
     private boolean destroyed;
     private boolean exporting;
@@ -137,9 +144,17 @@ public class MorokMemoryActivity extends BaseFragment {
         for (int i = 0; i < labels.length; i++) {
             final int selected = i;
             Button tab = button(context, t(labels[i]));
-            tab.setOnClickListener(v -> { filter = selected; applyFilter(); }); tabs.addView(tab);
+            tab.setOnClickListener(v -> { clearSelection(); filter = selected; applyFilter(); }); tabs.addView(tab);
         }
         filters.addView(tabs); root.addView(filters);
+        HorizontalScrollView facets = new HorizontalScrollView(context); facets.setHorizontalScrollBarEnabled(false);
+        LinearLayout facetButtons = new LinearLayout(context);
+        tagFilterButton = button(context, t(R.string.MorokMemoryAllTags));
+        chatFilterButton = button(context, t(R.string.MorokMemoryAllChats));
+        tagFilterButton.setOnClickListener(v -> chooseTagFilter());
+        chatFilterButton.setOnClickListener(v -> chooseChatFilter());
+        facetButtons.addView(tagFilterButton); facetButtons.addView(chatFilterButton);
+        facets.addView(facetButtons); root.addView(facets);
         status = text(context, t(R.string.MorokMemoryLoading), 13);
         status.setPadding(AndroidUtilities.dp(16), AndroidUtilities.dp(8), AndroidUtilities.dp(16), AndroidUtilities.dp(8)); root.addView(status);
         list = new RecyclerListView(context); list.setLayoutManager(new LinearLayoutManager(context));
@@ -180,7 +195,8 @@ public class MorokMemoryActivity extends BaseFragment {
             all = cards;
             HashSet<String> retained = new HashSet<>();
             for (MemoryCard card : cards) if (selected.contains(card.id)) retained.add(card.id);
-            selected.clear(); selected.addAll(retained); updateSelectionUi(); applyFilter();
+            selected.clear(); selected.addAll(retained); updateSelectionUi();
+            validateFacetFilters(); updateFacetLabels(); applyFilter();
             if (openCardId != null) {
                 String id = openCardId; openCardId = null;
                 for (MemoryCard card : cards) if (card.id.equals(id)) { editCard(card); return; }
@@ -192,6 +208,8 @@ public class MorokMemoryActivity extends BaseFragment {
     private void applyFilter() {
         final int generation = ++queryGeneration, selected = filter;
         final String query = search == null ? "" : search.getText().toString();
+        final String tag = selectedTag;
+        final long dialogId = selectedDialogId;
         final ArrayList<MemoryCard> cards = new ArrayList<>(all);
         Utilities.searchQueue.postRunnable(() -> {
             ArrayList<MemoryCard> result = new ArrayList<>();
@@ -199,7 +217,9 @@ public class MorokMemoryActivity extends BaseFragment {
                 boolean matches = selected == 0 || selected == 1 && card.needsReply && !card.completed
                         || selected == 2 && card.reminderAt > 0 && !card.completed
                         || selected == 3 && card.hasFile() || selected == 4 && card.completed;
-                if (matches && card.matches(query)) result.add(card);
+                if (matches && (dialogId == 0 || card.key.dialogId() == dialogId)
+                        && (tag.isEmpty() || MemoryFilterPolicy.hasTag(card.tags, tag))
+                        && card.matches(query)) result.add(card);
             }
             AndroidUtilities.runOnUIThread(() -> {
                 if (!accountValid() || generation != queryGeneration || adapter == null) return;
@@ -209,6 +229,73 @@ public class MorokMemoryActivity extends BaseFragment {
                         t(R.string.MorokMemoryAccountOnly) + " · " + result.size() + " / " + MemoryPolicy.MAX_CARDS));
             });
         }, 120);
+    }
+
+    private void chooseTagFilter() {
+        if (getParentActivity() == null) return;
+        LinkedHashMap<String, String> unique = new LinkedHashMap<>();
+        for (MemoryCard card : all) {
+            for (String tag : MemoryFilterPolicy.distinctTags(card.tags)) {
+                String key = tag.toLowerCase(Locale.ROOT);
+                if (!unique.containsKey(key) && unique.size() < MemoryFilterPolicy.MAX_VISIBLE_TAGS) unique.put(key, tag);
+            }
+        }
+        ArrayList<String> tags = new ArrayList<>(unique.values());
+        Collections.sort(tags, String.CASE_INSENSITIVE_ORDER);
+        CharSequence[] labels = new CharSequence[tags.size() + 1];
+        labels[0] = t(R.string.MorokMemoryAllTags);
+        for (int i = 0; i < tags.size(); i++) labels[i + 1] = tags.get(i);
+        showDialog(new AlertDialog.Builder(getParentActivity()).setTitle(t(R.string.MorokMemoryFilterTag))
+                .setItems(labels, (dialog, which) -> {
+                    clearSelection(); selectedTag = which == 0 ? "" : tags.get(which - 1);
+                    updateFacetLabels(); applyFilter();
+                }).create());
+    }
+
+    private void chooseChatFilter() {
+        if (getParentActivity() == null) return;
+        LinkedHashMap<Long, String> unique = new LinkedHashMap<>();
+        for (MemoryCard card : all) if (!unique.containsKey(card.key.dialogId())) {
+            unique.put(card.key.dialogId(), card.source);
+        }
+        ArrayList<ChatFacet> chats = new ArrayList<>();
+        for (Long id : unique.keySet()) chats.add(new ChatFacet(id, unique.get(id)));
+        Collections.sort(chats, (first, second) -> first.label.compareToIgnoreCase(second.label));
+        CharSequence[] labels = new CharSequence[chats.size() + 1];
+        labels[0] = t(R.string.MorokMemoryAllChats);
+        for (int i = 0; i < chats.size(); i++) labels[i + 1] = chats.get(i).label;
+        showDialog(new AlertDialog.Builder(getParentActivity()).setTitle(t(R.string.MorokMemoryFilterChat))
+                .setItems(labels, (dialog, which) -> {
+                    clearSelection(); selectedDialogId = which == 0 ? 0 : chats.get(which - 1).dialogId;
+                    updateFacetLabels(); applyFilter();
+                }).create());
+    }
+
+    private void validateFacetFilters() {
+        if (!selectedTag.isEmpty()) {
+            boolean found = false;
+            for (MemoryCard card : all) if (MemoryFilterPolicy.hasTag(card.tags, selectedTag)) { found = true; break; }
+            if (!found) selectedTag = "";
+        }
+        if (selectedDialogId != 0) {
+            boolean found = false;
+            for (MemoryCard card : all) if (card.key.dialogId() == selectedDialogId) { found = true; break; }
+            if (!found) selectedDialogId = 0;
+        }
+    }
+
+    private void updateFacetLabels() {
+        if (tagFilterButton != null) tagFilterButton.setText(selectedTag.isEmpty()
+                ? t(R.string.MorokMemoryAllTags)
+                : LocaleController.formatString(R.string.MorokMemoryTagFilterValue, selectedTag));
+        if (chatFilterButton != null) chatFilterButton.setText(selectedDialogId == 0
+                ? t(R.string.MorokMemoryAllChats)
+                : LocaleController.formatString(R.string.MorokMemoryChatFilterValue, chatLabel(selectedDialogId)));
+    }
+
+    private String chatLabel(long dialogId) {
+        for (MemoryCard card : all) if (card.key.dialogId() == dialogId) return card.source;
+        return Long.toString(dialogId);
     }
 
     private void toggleSelection(MemoryCard card) {
@@ -320,6 +407,13 @@ public class MorokMemoryActivity extends BaseFragment {
         box.addView(text(context, t(R.string.MorokMemoryReminderAccuracy), 12));
         Button versions = button(context, t(R.string.MorokMemoryVersions) + " (" + card.versions.size() + ")"); box.addView(versions);
         versions.setOnClickListener(v -> showVersions(card));
+        ArrayList<MemoryCard> contextCards = savedContext(card);
+        if (!contextCards.isEmpty()) {
+            Button contextButton = button(context, LocaleController.formatString(
+                    R.string.MorokMemorySavedContext, contextCards.size()));
+            box.addView(contextButton);
+            contextButton.setOnClickListener(v -> showSavedContext(contextCards));
+        }
         final Button retry;
         if ("saved".equals(card.latest().fileState)) {
             Button file = button(context, t(R.string.MorokMemoryOpenFile)); box.addView(file);
@@ -356,6 +450,39 @@ public class MorokMemoryActivity extends BaseFragment {
                     });
                 }).create()));
         showDialog(editor);
+    }
+
+    private ArrayList<MemoryCard> savedContext(MemoryCard anchor) {
+        ArrayList<MemoryCard> result = new ArrayList<>();
+        for (MemoryCard card : all) {
+            if (!card.id.equals(anchor.id) && MemoryFilterPolicy.sameContext(
+                    anchor.key.dialogId(), anchor.key.topicId, card.key.dialogId(), card.key.topicId)) result.add(card);
+        }
+        Collections.sort(result, (first, second) -> {
+            long firstDistance = MemoryFilterPolicy.messageDistance(anchor.key.messageId, first.key.messageId);
+            long secondDistance = MemoryFilterPolicy.messageDistance(anchor.key.messageId, second.key.messageId);
+            int distanceOrder = Long.compare(firstDistance, secondDistance);
+            return distanceOrder != 0 ? distanceOrder : Integer.compare(first.key.messageId, second.key.messageId);
+        });
+        if (result.size() > MemoryFilterPolicy.MAX_CONTEXT_CARDS) {
+            result = new ArrayList<>(result.subList(0, MemoryFilterPolicy.MAX_CONTEXT_CARDS));
+        }
+        Collections.sort(result, (first, second) -> Integer.compare(first.key.messageId, second.key.messageId));
+        return result;
+    }
+
+    private void showSavedContext(ArrayList<MemoryCard> cards) {
+        if (!accountValid() || getParentActivity() == null) return;
+        StringBuilder value = new StringBuilder();
+        for (MemoryCard card : cards) {
+            if (value.length() > 0) value.append("\n\n");
+            value.append(date(card.latest().receivedAt)).append(" · ").append(card.sender).append('\n')
+                    .append(excerpt(card.latest().text, 320));
+            if (card.deletedInTelegram) value.append("\n").append(t(R.string.MorokMemoryDeleted));
+        }
+        value.append("\n\n").append(t(R.string.MorokMemorySavedContextInfo));
+        showDialog(new AlertDialog.Builder(getParentActivity()).setTitle(t(R.string.MorokMemorySavedContextTitle))
+                .setMessage(value.toString()).setNegativeButton(t(R.string.Close), null).create());
     }
 
     private void chooseReminder(long[] value, Button button) {
@@ -530,6 +657,12 @@ public class MorokMemoryActivity extends BaseFragment {
     private static CheckBox check(Context context, String label, boolean checked) {
         CheckBox box = new CheckBox(context); box.setText(label); box.setChecked(checked);
         box.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText)); return box;
+    }
+
+    private static final class ChatFacet {
+        final long dialogId;
+        final String label;
+        ChatFacet(long dialogId, String label) { this.dialogId = dialogId; this.label = label; }
     }
 
     private final class CardsAdapter extends RecyclerListView.SelectionAdapter {

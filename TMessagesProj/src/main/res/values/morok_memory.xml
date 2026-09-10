@@ -9,6 +9,12 @@
     <string name="MorokMemoryLater">Later</string>
     <string name="MorokMemoryWithFiles">With files</string>
     <string name="MorokMemoryCompleted">Completed</string>
+    <string name="MorokMemoryFilterTag">Filter by tag</string>
+    <string name="MorokMemoryFilterChat">Filter by chat</string>
+    <string name="MorokMemoryAllTags">All tags</string>
+    <string name="MorokMemoryAllChats">All chats</string>
+    <string name="MorokMemoryTagFilterValue">Tag: %1$s</string>
+    <string name="MorokMemoryChatFilterValue">Chat: %1$s</string>
     <string name="MorokMemoryLoading">Loading encrypted cards…</string>
     <string name="MorokMemoryEmpty">No matching cards. Long-press a message and choose Remember.</string>
     <string name="MorokMemoryStorageError">Memory could not read or save data. Check free space and the account encryption key. Existing encrypted data is retained.</string>
@@ -20,6 +26,9 @@
     <string name="MorokMemoryCancelReminder">Cancel reminder</string>
     <string name="MorokMemoryReminderAccuracy">Reminders are local and approximate. Android power restrictions can delay delivery. Save the card to apply changes.</string>
     <string name="MorokMemoryVersions">Received versions</string>
+    <string name="MorokMemorySavedContext">Saved context (%1$d)</string>
+    <string name="MorokMemorySavedContextTitle">Nearby saved cards</string>
+    <string name="MorokMemorySavedContextInfo">Shows up to four nearest cards already saved from the same chat and topic. This view stays local and does not open the chat, use the network or mark messages as read.</string>
     <string name="MorokMemoryOpenFile">Open saved file</string>
     <string name="MorokMemoryOpenSource">Open source message</string>
     <string name="MorokMemoryOpenSourceInfo">Opening the source uses ordinary chat behavior, including read status. Editing this card does not mark messages as read.</string>

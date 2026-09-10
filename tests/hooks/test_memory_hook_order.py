@@ -89,4 +89,25 @@ expect("Intent.ACTION_CREATE_DOCUMENT" in activity and 'setType("application/zip
        and "MorokMemoryExportConfirm" in activity,
        "Memory export must disclose plaintext and let Android choose the destination")
 
+filter_start = activity.index("private void applyFilter()")
+filter_end = activity.index("private void chooseTagFilter()", filter_start)
+memory_filter = activity[filter_start:filter_end]
+expect("MemoryFilterPolicy.hasTag(card.tags, tag)" in memory_filter
+       and "card.key.dialogId() == dialogId" in memory_filter,
+       "Memory tag and chat facets must be exact account-local card filters")
+expect("Utilities.searchQueue.postRunnable" in memory_filter
+       and "MessagesController" not in memory_filter and "MessagesStorage" not in memory_filter,
+       "Memory facets must stay on the local search queue without Telegram reads or network paths")
+
+context_start = activity.index("private ArrayList<MemoryCard> savedContext(")
+context_end = activity.index("private void chooseReminder(", context_start)
+saved_context = activity[context_start:context_end]
+expect("MemoryFilterPolicy.sameContext(" in saved_context
+       and "MemoryFilterPolicy.MAX_CONTEXT_CARDS" in saved_context
+       and "MemoryFilterPolicy.messageDistance" in saved_context,
+       "Saved context must be bounded to nearest cards from the same dialog and topic")
+expect("openSource(" not in saved_context and "MessagesController" not in saved_context
+       and "MessagesStorage" not in saved_context and "FileLoader" not in saved_context,
+       "Viewing saved context must not open Telegram, read storage or start a download")
+
 print(f"Memory hook order: {checks} checks passed")

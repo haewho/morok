@@ -1,6 +1,7 @@
 import org.morok.memory.MemoryKey;
 import org.morok.memory.MemoryJournalPolicy;
 import org.morok.memory.MemoryExportPolicy;
+import org.morok.memory.MemoryFilterPolicy;
 import org.morok.memory.MemoryPolicy;
 import org.morok.memory.MemoryStorageStats;
 import org.morok.memory.MemoryTrackingIndex;
@@ -100,6 +101,22 @@ public final class MemoryDomainTest {
                 "Memory export uses a bounded relative attachment path");
         expect(MemoryExportPolicy.safeFileName("x".repeat(200)).length() == MemoryExportPolicy.MAX_FILE_NAME,
                 "Memory export file names are bounded");
+        expect(MemoryFilterPolicy.hasTag("work, Later", "WORK"),
+                "Tag facets match exact values without case sensitivity");
+        expect(!MemoryFilterPolicy.hasTag("homework, later", "work"),
+                "Tag facets do not use substring matches");
+        expect(MemoryFilterPolicy.distinctTags(" Work,work, later, ,LATER ").size() == 2,
+                "Tag facets trim and deduplicate display values");
+        StringBuilder manyTags = new StringBuilder();
+        for (int i = 0; i < 100; i++) manyTags.append(i == 0 ? "" : ",").append("tag").append(i);
+        expect(MemoryFilterPolicy.distinctTags(manyTags.toString()).size() == MemoryFilterPolicy.MAX_VISIBLE_TAGS,
+                "Visible tag facets have a deterministic bound");
+        expect(MemoryFilterPolicy.sameContext(-33, 7, -33, 7)
+                        && !MemoryFilterPolicy.sameContext(-33, 7, -33, 8)
+                        && !MemoryFilterPolicy.sameContext(-33, 7, -34, 7),
+                "Saved context requires the same dialog and topic");
+        expect(MemoryFilterPolicy.messageDistance(Integer.MIN_VALUE, Integer.MAX_VALUE) == 4294967295L,
+                "Message distance does not overflow at integer boundaries");
         MemoryStorageStats stats = new MemoryStorageStats(1234);
         stats.addCard(true); stats.addCard(false);
         stats.addSnapshot("saved", "shared"); stats.addSnapshot("saved", "shared");
