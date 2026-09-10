@@ -425,6 +425,11 @@ public class MorokMemoryActivity extends BaseFragment {
         } else {
             retry = null;
         }
+        if ("saved".equals(card.latest().thumbnailState)) {
+            Button thumbnail = button(context, t(R.string.MorokMemoryOpenThumbnail)); box.addView(thumbnail);
+            thumbnail.setOnClickListener(v -> openThumbnail(card, card.latest()));
+            box.addView(text(context, t(R.string.MorokMemoryThumbnailNotOriginal), 12));
+        }
         Button source = button(context, t(R.string.MorokMemoryOpenSource)); box.addView(source);
         source.setOnClickListener(v -> openSource(card));
         box.addView(text(context, t(R.string.MorokMemoryOpenSourceInfo), 12));
@@ -529,12 +534,16 @@ public class MorokMemoryActivity extends BaseFragment {
                     } else if (canRetry(snapshot)) {
                         detail.setPositiveButton(t(R.string.MorokMemoryRetryFile), (d, w) -> retryAttachment(card, snapshot, null, null));
                     }
+                    if ("saved".equals(snapshot.thumbnailState)) {
+                        detail.setNeutralButton(t(R.string.MorokMemoryOpenThumbnail), (d, w) -> openThumbnail(card, snapshot));
+                    }
                     showDialog(detail.create());
                 }).create());
     }
 
     private static boolean canRetry(MemoryCard.Snapshot snapshot) {
         return "not_downloaded".equals(snapshot.fileState) || "policy_blocked".equals(snapshot.fileState)
+                || "downloading".equals(snapshot.fileState) || "download_unavailable".equals(snapshot.fileState)
                 || "storage_error".equals(snapshot.fileState)
                 || "unavailable".equals(snapshot.fileState);
     }
@@ -571,6 +580,17 @@ public class MorokMemoryActivity extends BaseFragment {
         } catch (Exception error) { toast(t(R.string.MorokMemoryViewerUnavailable)); }
     }
 
+    private void openThumbnail(MemoryCard card, MemoryCard.Snapshot snapshot) {
+        if (!accountValid() || !"saved".equals(snapshot.thumbnailState)) return;
+        try {
+            Uri uri = MorokMemoryFileProvider.grantThumbnail(getParentActivity(), card, snapshot);
+            Intent intent = new Intent(Intent.ACTION_VIEW).setDataAndType(uri, snapshot.thumbnailMime)
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.setClipData(ClipData.newRawUri("Memory thumbnail", uri));
+            getParentActivity().startActivity(Intent.createChooser(intent, t(R.string.MorokMemoryOpenThumbnail)));
+        } catch (Exception error) { toast(t(R.string.MorokMemoryViewerUnavailable)); }
+    }
+
     private void openSource(MemoryCard card) {
         int account = MorokMemoryStore.resolveAccount(card.key.userId);
         if (account < 0 || account != currentAccount || !accountValid()) { toast(t(R.string.MorokMemoryAccountMissing)); return; }
@@ -599,7 +619,11 @@ public class MorokMemoryActivity extends BaseFragment {
                     .setMessage(AndroidUtilities.formatFileSize(stats.usedBytes) + " / " + AndroidUtilities.formatFileSize(MemoryPolicy.MAX_ACCOUNT_BYTES)
                             + "\n" + LocaleController.formatString(R.string.MorokMemoryStorageCards, stats.cards, stats.versions)
                             + "\n" + LocaleController.formatString(R.string.MorokMemoryStorageFiles, stats.savedOriginals, stats.uniqueBlobs)
+                            + "\n" + LocaleController.formatString(R.string.MorokMemoryStorageThumbnails,
+                                    stats.savedThumbnails, stats.thumbnailUnavailable, stats.thumbnailErrors)
                             + "\n" + LocaleController.formatString(R.string.MorokMemoryStoragePending, stats.notDownloaded, stats.tooLarge)
+                            + "\n" + LocaleController.formatString(R.string.MorokMemoryStorageDownloading,
+                                    stats.downloading, stats.downloadUnavailable)
                             + "\n" + LocaleController.formatString(R.string.MorokMemoryStoragePolicyBlocked, stats.policyBlocked)
                             + "\n" + LocaleController.formatString(R.string.MorokMemoryStorageProblems, stats.unavailable, stats.storageErrors)
                             + "\n\n" + t(R.string.MorokMemoryLimits)
@@ -617,18 +641,32 @@ public class MorokMemoryActivity extends BaseFragment {
                 : card.automatic ? t(R.string.MorokMemoryAutomatic) + " · " : "")
                 + (card.deletedInTelegram ? t(R.string.MorokMemoryDeleted) : t(R.string.MorokMemoryLocalSnapshot));
         int label = fileStateLabel(snapshot.fileState);
-        if (label == 0) return value;
-        return value + "\n" + t(label) + (snapshot.fileName.isEmpty() ? "" : " · " + snapshot.fileName);
+        if (label != 0) value += "\n" + t(label) + (snapshot.fileName.isEmpty() ? "" : " · " + snapshot.fileName);
+        int thumbnailLabel = thumbnailStateLabel(snapshot.thumbnailState);
+        if (thumbnailLabel != 0) value += "\n" + t(thumbnailLabel)
+                + (snapshot.thumbnailName.isEmpty() ? "" : " · " + snapshot.thumbnailName);
+        return value;
     }
 
     private static int fileStateLabel(String state) {
         switch (state) {
             case "saved": return R.string.MorokMemoryFileSaved;
             case "not_downloaded": return R.string.MorokMemoryFileNotDownloaded;
+            case "downloading": return R.string.MorokMemoryFileDownloading;
+            case "download_unavailable": return R.string.MorokMemoryFileDownloadUnavailable;
             case "too_large": return R.string.MorokMemoryFileTooLarge;
             case "policy_blocked": return R.string.MorokMemoryFilePolicyBlocked;
             case "storage_error": return R.string.MorokMemoryFileError;
             case "unavailable": return R.string.MorokMemoryFileUnavailable;
+            default: return 0;
+        }
+    }
+
+    private static int thumbnailStateLabel(String state) {
+        switch (state) {
+            case "saved": return R.string.MorokMemoryThumbnailSaved;
+            case "unavailable": return R.string.MorokMemoryThumbnailUnavailable;
+            case "storage_error": return R.string.MorokMemoryThumbnailError;
             default: return 0;
         }
     }

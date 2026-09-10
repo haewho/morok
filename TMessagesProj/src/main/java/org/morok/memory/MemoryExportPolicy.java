@@ -20,6 +20,13 @@ public final class MemoryExportPolicy {
         return "attachments/" + (cardIndex + 1) + "-" + (versionIndex + 1) + "-" + safeFileName(fileName);
     }
 
+    public static String thumbnailEntry(int cardIndex, int versionIndex, String fileName) {
+        if (cardIndex < 0 || cardIndex >= MAX_CARDS || versionIndex < 0 || versionIndex >= MemoryPolicy.MAX_VERSIONS) {
+            throw new IllegalArgumentException("Invalid Memory export position");
+        }
+        return "thumbnails/" + (cardIndex + 1) + "-" + (versionIndex + 1) + "-" + safeFileName(fileName);
+    }
+
     public static String safeFileName(String value) {
         String source = value == null ? "" : Normalizer.normalize(value, Normalizer.Form.NFKC);
         StringBuilder safe = new StringBuilder();

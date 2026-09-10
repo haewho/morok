@@ -10,7 +10,12 @@ public final class MemoryStorageStats {
     public int versions;
     public int savedOriginals;
     public int uniqueBlobs;
+    public int savedThumbnails;
+    public int thumbnailUnavailable;
+    public int thumbnailErrors;
     public int notDownloaded;
+    public int downloading;
+    public int downloadUnavailable;
     public int tooLarge;
     public int unavailable;
     public int storageErrors;
@@ -37,6 +42,10 @@ public final class MemoryStorageStats {
             if (blob != null && !blob.isEmpty() && blobs.add(blob)) uniqueBlobs++;
         } else if ("not_downloaded".equals(state)) {
             notDownloaded++;
+        } else if ("downloading".equals(state)) {
+            downloading++;
+        } else if ("download_unavailable".equals(state)) {
+            downloadUnavailable++;
         } else if ("too_large".equals(state)) {
             tooLarge++;
         } else if ("unavailable".equals(state)) {
@@ -45,6 +54,17 @@ public final class MemoryStorageStats {
             storageErrors++;
         } else if ("policy_blocked".equals(state)) {
             policyBlocked++;
+        }
+    }
+
+    public void addThumbnail(String state, String blob) {
+        if ("saved".equals(state)) {
+            savedThumbnails++;
+            if (blob != null && !blob.isEmpty() && blobs.add(blob)) uniqueBlobs++;
+        } else if ("unavailable".equals(state)) {
+            thumbnailUnavailable++;
+        } else if ("storage_error".equals(state)) {
+            thumbnailErrors++;
         }
     }
 }

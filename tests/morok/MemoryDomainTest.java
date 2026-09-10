@@ -4,6 +4,7 @@ import org.morok.memory.MemoryExportPolicy;
 import org.morok.memory.MemoryFilterPolicy;
 import org.morok.memory.MemoryPolicy;
 import org.morok.memory.MemoryStorageStats;
+import org.morok.memory.MemoryThumbnailPolicy;
 import org.morok.memory.MemoryTrackingIndex;
 
 import java.util.HashSet;
@@ -101,6 +102,8 @@ public final class MemoryDomainTest {
                 "Memory export uses a bounded relative attachment path");
         expect(MemoryExportPolicy.safeFileName("x".repeat(200)).length() == MemoryExportPolicy.MAX_FILE_NAME,
                 "Memory export file names are bounded");
+        expect("thumbnails/1-1-preview.jpg".equals(MemoryExportPolicy.thumbnailEntry(0, 0, "preview.jpg")),
+                "Memory export keeps thumbnails in a distinct bounded directory");
         expect(MemoryFilterPolicy.hasTag("work, Later", "WORK"),
                 "Tag facets match exact values without case sensitivity");
         expect(!MemoryFilterPolicy.hasTag("homework, later", "work"),
@@ -117,19 +120,47 @@ public final class MemoryDomainTest {
                 "Saved context requires the same dialog and topic");
         expect(MemoryFilterPolicy.messageDistance(Integer.MIN_VALUE, Integer.MAX_VALUE) == 4294967295L,
                 "Message distance does not overflow at integer boundaries");
+        expect(MemoryPolicy.MAX_THUMBNAIL_BYTES > 0
+                        && MemoryPolicy.MAX_THUMBNAIL_BYTES < MemoryPolicy.MAX_ATTACHMENT_BYTES,
+                "Thumbnail storage has a smaller independent bound");
+        byte[] jpeg = {(byte) 0xff, (byte) 0xd8, (byte) 0xff, 0x00, (byte) 0xff, (byte) 0xd9};
+        expect("image/jpeg".equals(MemoryThumbnailPolicy.mimeType(jpeg)),
+                "A complete bounded JPEG thumbnail is recognized");
+        expect(MemoryThumbnailPolicy.mimeType(new byte[]{(byte) 0xff, (byte) 0xd8, 0, 0}).isEmpty(),
+                "A truncated JPEG thumbnail is rejected");
+        byte[] webp = {'R', 'I', 'F', 'F', 12, 0, 0, 0, 'W', 'E', 'B', 'P',
+                'V', 'P', '8', 'L', 0, 0, 0, 0};
+        expect("image/webp".equals(MemoryThumbnailPolicy.mimeType(webp))
+                        && ".webp".equals(MemoryThumbnailPolicy.extension("image/webp"))
+                        && MemoryThumbnailPolicy.supportedMime("image/webp")
+                        && !MemoryThumbnailPolicy.supportedMime("text/html"),
+                "A complete bounded WebP thumbnail retains its type and extension");
+        expect(MemoryThumbnailPolicy.mimeType(new byte[MemoryPolicy.MAX_THUMBNAIL_BYTES + 1]).isEmpty(),
+                "Oversized thumbnail bytes are rejected before encryption");
+        expect(MemoryThumbnailPolicy.mimeType("not an image".getBytes()).isEmpty(),
+                "Arbitrary cached bytes are never labeled as an image thumbnail");
         MemoryStorageStats stats = new MemoryStorageStats(1234);
         stats.addCard(true); stats.addCard(false);
         stats.addSnapshot("saved", "shared"); stats.addSnapshot("saved", "shared");
         stats.addSnapshot("not_downloaded", ""); stats.addSnapshot("too_large", "");
         stats.addSnapshot("unavailable", "lost"); stats.addSnapshot("storage_error", "");
         stats.addSnapshot("policy_blocked", ""); stats.addSnapshot("none", "");
-        expect(stats.usedBytes == 1234 && stats.cards == 2 && stats.automaticCards == 1 && stats.versions == 8,
+        stats.addSnapshot("downloading", ""); stats.addSnapshot("download_unavailable", "");
+        expect(stats.usedBytes == 1234 && stats.cards == 2 && stats.automaticCards == 1 && stats.versions == 10,
                 "Storage diagnostics count account bytes, cards and every received version");
         expect(stats.savedOriginals == 2 && stats.uniqueBlobs == 1,
                 "Shared encrypted originals are counted once while retaining both references");
         expect(stats.notDownloaded == 1 && stats.tooLarge == 1 && stats.unavailable == 1
-                        && stats.storageErrors == 1 && stats.policyBlocked == 1,
+                        && stats.storageErrors == 1 && stats.policyBlocked == 1
+                        && stats.downloading == 1 && stats.downloadUnavailable == 1,
                 "Storage diagnostics preserve actionable attachment states");
+        stats.addThumbnail("saved", "shared"); stats.addThumbnail("saved", "thumb-shared");
+        stats.addThumbnail("saved", "thumb-shared"); stats.addThumbnail("unavailable", "");
+        stats.addThumbnail("storage_error", "");
+        expect(stats.savedThumbnails == 3 && stats.uniqueBlobs == 2,
+                "Thumbnail diagnostics deduplicate blobs shared with originals and other thumbnails");
+        expect(stats.thumbnailUnavailable == 1 && stats.thumbnailErrors == 1,
+                "Thumbnail diagnostics retain unavailable and storage error states");
         for (long user : new long[]{0, -1}) {
             try { new MemoryKey(user, "user", 1, 1, 0); throw new AssertionError("Invalid account accepted"); }
             catch (IllegalArgumentException expected) { checks++; }

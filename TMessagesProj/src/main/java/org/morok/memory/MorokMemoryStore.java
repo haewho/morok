@@ -227,6 +227,16 @@ public final class MorokMemoryStore {
             for (MemoryCard.Snapshot snapshot : card.versions) {
                 if (!snapshot.blob.isEmpty() && !safeId(snapshot.blob)) throw new IOException("Invalid Memory attachment");
                 if ("saved".equals(snapshot.fileState) && !new File(directory, snapshot.blob + ".tink").isFile()) snapshot.fileState = "unavailable";
+                if (!snapshot.thumbnailBlob.isEmpty() && !safeId(snapshot.thumbnailBlob)) throw new IOException("Invalid Memory thumbnail");
+                if ("saved".equals(snapshot.thumbnailState)) {
+                    if (snapshot.thumbnailSize <= 0 || snapshot.thumbnailSize > MemoryPolicy.MAX_THUMBNAIL_BYTES
+                            || !snapshot.thumbnailSha256.matches("[a-f0-9]{64}")
+                            || !MemoryThumbnailPolicy.supportedMime(snapshot.thumbnailMime)
+                            || snapshot.thumbnailName.length() > MemoryExportPolicy.MAX_FILE_NAME) {
+                        throw new IOException("Invalid Memory thumbnail metadata");
+                    }
+                    if (!new File(directory, snapshot.thumbnailBlob + ".tink").isFile()) snapshot.thumbnailState = "unavailable";
+                }
             }
             database.cards.add(card);
         }
@@ -550,6 +560,7 @@ public final class MorokMemoryStore {
         referenced.add("journal.tink"); referenced.add("journal.tink.bak");
         for (MemoryCard card : database.cards) for (MemoryCard.Snapshot snapshot : card.versions) {
             if (!snapshot.blob.isEmpty()) referenced.add(snapshot.blob + ".tink");
+            if (!snapshot.thumbnailBlob.isEmpty()) referenced.add(snapshot.thumbnailBlob + ".tink");
         }
         File[] files = directory.listFiles();
         if (files != null) for (File file : files) if (!referenced.contains(file.getName())) file.delete();
@@ -607,10 +618,10 @@ public final class MorokMemoryStore {
                 for (MemoryCard.Snapshot version : existing.versions) {
                     if (!version.fingerprint.equals(capture.snapshot.fingerprint)) continue;
                     duplicate = true;
-                    if (!"saved".equals(version.fileState)) {
-                        String previous = version.fileState;
+                    if (!"saved".equals(version.fileState) || !"saved".equals(version.thumbnailState)) {
+                        String previous = version.fileState, previousThumbnail = version.thumbnailState;
                         copyAttachment(capture.message, version, database, existing.automatic);
-                        changed |= !previous.equals(version.fileState);
+                        changed |= !previous.equals(version.fileState) || !previousThumbnail.equals(version.thumbnailState);
                     }
                     break;
                 }
@@ -656,7 +667,8 @@ public final class MorokMemoryStore {
         for (MemoryCard.Snapshot version : existing.versions) {
             if (version.fingerprint.equals(capture.snapshot.fingerprint)) {
                 // Explicit retry may preserve an original that has since completed downloading.
-                if (mode == SAVE_MANUAL && !"saved".equals(version.fileState)) {
+                if (mode == SAVE_MANUAL && (!"saved".equals(version.fileState)
+                        || !"saved".equals(version.thumbnailState))) {
                     copyAttachment(capture.message, version, database, false); write(database);
                 } else if (promoted) {
                     write(database);
@@ -734,7 +746,12 @@ public final class MorokMemoryStore {
         TLRPC.Document document = MessageObject.getDocument(message);
         boolean photo = message.media instanceof TLRPC.TL_messageMediaPhoto;
         if (document == null && !photo) return;
-        snapshot.fileState = "not_downloaded";
+        boolean originalAlreadySaved = "saved".equals(snapshot.fileState) && safeId(snapshot.blob);
+        copyThumbnail(message, snapshot, database, automatic);
+        if (originalAlreadySaved) return;
+        String messageFileName = FileLoader.getMessageFileName(message);
+        snapshot.fileState = messageFileName.isEmpty() ? "download_unavailable"
+                : FileLoader.getInstance(account).isLoadingFile(messageFileName) ? "downloading" : "not_downloaded";
         snapshot.blob = ""; snapshot.sha256 = ""; snapshot.fileSize = 0;
         snapshot.fileName = document != null ? FileLoader.getDocumentFileName(document) : "photo.jpg";
         if (snapshot.fileName.isEmpty()) snapshot.fileName = "attachment";
@@ -759,20 +776,73 @@ public final class MorokMemoryStore {
             try (FileInputStream stream = new FileInputStream(source)) { plain = readBounded(stream, (int) MemoryPolicy.MAX_ATTACHMENT_BYTES); }
             if (plain.length != size || source.length() != size) return;
             String hash = MemoryCapture.hex(MessageDigest.getInstance("SHA-256").digest(plain));
-            // Reuse already retained originals inside this account; metadata remains encrypted.
-            for (MemoryCard card : database.cards) for (MemoryCard.Snapshot version : card.versions) {
-                if (hash.equals(version.sha256) && "saved".equals(version.fileState)) {
-                    snapshot.blob = version.blob; snapshot.sha256 = hash; snapshot.fileSize = size; snapshot.fileState = "saved"; return;
-                }
-            }
-            if (!MemoryPolicy.canCopy(size, estimatedUsedBytes(database), directory.getUsableSpace(),
-                    attachmentLimit, storageLimit)) { snapshot.fileState = "storage_error"; return; }
-            String id = UUID.randomUUID().toString();
-            byte[] encrypted = cipher().encrypt(plain, aad("blob/" + id));
-            requireActive();
-            writeAtomic(new AtomicFile(new File(directory, id + ".tink")), encrypted);
+            String id = retainBlob(plain, hash, database, attachmentLimit, storageLimit);
+            if (id == null) { snapshot.fileState = "storage_error"; return; }
             snapshot.blob = id; snapshot.sha256 = hash; snapshot.fileSize = size; snapshot.fileState = "saved";
         } catch (Exception error) { snapshot.fileState = "storage_error"; }
+    }
+
+    /** Retains only a complete, recognized image already present in Telegram's local cache or TL cached bytes. */
+    private void copyThumbnail(TLRPC.Message message, MemoryCard.Snapshot snapshot, Database database,
+            boolean automatic) {
+        if ("saved".equals(snapshot.thumbnailState) && safeId(snapshot.thumbnailBlob)) return;
+        ArrayList<TLRPC.PhotoSize> sizes = null;
+        if (message.media instanceof TLRPC.TL_messageMediaPhoto && message.media.photo != null) {
+            sizes = message.media.photo.sizes;
+        } else {
+            TLRPC.Document document = MessageObject.getDocument(message);
+            if (document != null) sizes = document.thumbs;
+        }
+        if (sizes == null || sizes.isEmpty()) return;
+        TLRPC.PhotoSize thumbnail = FileLoader.getClosestPhotoSizeWithSize(sizes, 320, false, null, true);
+        if (thumbnail == null) return;
+        snapshot.thumbnailState = "unavailable";
+        snapshot.thumbnailBlob = ""; snapshot.thumbnailSha256 = ""; snapshot.thumbnailSize = 0;
+        try {
+            byte[] plain = null;
+            if (thumbnail instanceof TLRPC.TL_photoCachedSize && thumbnail.bytes != null) {
+                plain = thumbnail.bytes.clone();
+            } else {
+                File source = FileLoader.getInstance(account).getPathToAttach(thumbnail, true);
+                if (source == null || !source.isFile()) source = FileLoader.getInstance(account).getPathToAttach(thumbnail, false);
+                if (source == null || !source.isFile() || source.getName().endsWith(".enc")
+                        || source.length() <= 0 || source.length() > MemoryPolicy.MAX_THUMBNAIL_BYTES) return;
+                long size = source.length();
+                try (FileInputStream stream = new FileInputStream(source)) {
+                    plain = readBounded(stream, MemoryPolicy.MAX_THUMBNAIL_BYTES);
+                }
+                if (plain.length != size || source.length() != size) return;
+            }
+            String mime = MemoryThumbnailPolicy.mimeType(plain);
+            if (mime.isEmpty()) return;
+            String hash = MemoryCapture.hex(MessageDigest.getInstance("SHA-256").digest(plain));
+            long storageLimit = automatic ? archiveSettings().storageBytes() : MemoryPolicy.MAX_ACCOUNT_BYTES;
+            String id = retainBlob(plain, hash, database, MemoryPolicy.MAX_THUMBNAIL_BYTES, storageLimit);
+            if (id == null) { snapshot.thumbnailState = "storage_error"; return; }
+            snapshot.thumbnailBlob = id; snapshot.thumbnailSha256 = hash; snapshot.thumbnailSize = plain.length;
+            snapshot.thumbnailMime = mime; snapshot.thumbnailName = "thumbnail" + MemoryThumbnailPolicy.extension(mime);
+            snapshot.thumbnailState = "saved";
+        } catch (Exception error) {
+            snapshot.thumbnailState = "storage_error";
+        }
+    }
+
+    /** Reuses equal encrypted data inside one account; metadata and references stay in the encrypted index. */
+    private String retainBlob(byte[] plain, String hash, Database database,
+            long objectLimit, long storageLimit) throws Exception {
+        for (MemoryCard card : database.cards) for (MemoryCard.Snapshot version : card.versions) {
+            if (hash.equals(version.sha256) && "saved".equals(version.fileState) && safeId(version.blob)) return version.blob;
+            if (hash.equals(version.thumbnailSha256) && "saved".equals(version.thumbnailState)
+                    && safeId(version.thumbnailBlob)) return version.thumbnailBlob;
+        }
+        if (!directory.isDirectory() && !directory.mkdirs()) throw new IOException("Storage unavailable");
+        if (!MemoryPolicy.canCopy(plain.length, estimatedUsedBytes(database), directory.getUsableSpace(),
+                objectLimit, storageLimit)) return null;
+        String id = UUID.randomUUID().toString();
+        byte[] encrypted = cipher().encrypt(plain, aad("blob/" + id));
+        requireActive();
+        writeAtomic(new AtomicFile(new File(directory, id + ".tink")), encrypted);
+        return id;
     }
 
     /** Explicitly retries a retained version from Telegram's current local cache; no network request is made. */
@@ -785,7 +855,7 @@ public final class MorokMemoryStore {
                 if (snapshot.fingerprint.equals(fingerprint)) { target = snapshot; break; }
             }
             if (target == null) throw new IOException("Memory version no longer exists");
-            if ("saved".equals(target.fileState)) return card;
+            if ("saved".equals(target.fileState) && "saved".equals(target.thumbnailState)) return card;
             TLRPC.Message message = MemoryCapture.restoreCachedMessage(account, card.key, target);
             copyAttachment(message, target, database, false);
             write(database);
@@ -883,7 +953,10 @@ public final class MorokMemoryStore {
             MemoryStorageStats stats = new MemoryStorageStats(usedBytes());
             for (MemoryCard card : database.cards) {
                 stats.addCard(card.automatic);
-                for (MemoryCard.Snapshot snapshot : card.versions) stats.addSnapshot(snapshot.fileState, snapshot.blob);
+                for (MemoryCard.Snapshot snapshot : card.versions) {
+                    stats.addSnapshot(snapshot.fileState, snapshot.blob);
+                    stats.addThumbnail(snapshot.thumbnailState, snapshot.thumbnailBlob);
+                }
             }
             return stats;
         }, callback);
@@ -934,7 +1007,10 @@ public final class MorokMemoryStore {
                 JSONObject version = new JSONObject().put("text", snapshot.text)
                         .put("receivedAt", snapshot.receivedAt).put("editedAt", snapshot.editedAt)
                         .put("fileState", snapshot.fileState).put("fileName", snapshot.fileName)
-                        .put("mime", snapshot.mime).put("sha256", snapshot.sha256).put("fileSize", snapshot.fileSize);
+                        .put("mime", snapshot.mime).put("sha256", snapshot.sha256).put("fileSize", snapshot.fileSize)
+                        .put("thumbnailState", snapshot.thumbnailState).put("thumbnailName", snapshot.thumbnailName)
+                        .put("thumbnailMime", snapshot.thumbnailMime).put("thumbnailSha256", snapshot.thumbnailSha256)
+                        .put("thumbnailSize", snapshot.thumbnailSize);
                 if ("saved".equals(snapshot.fileState) && safeId(snapshot.blob)) {
                     String entry = blobs.get(snapshot.blob);
                     if (entry == null) {
@@ -942,6 +1018,14 @@ public final class MorokMemoryStore {
                         blobs.put(snapshot.blob, entry);
                     }
                     version.put("attachment", entry);
+                }
+                if ("saved".equals(snapshot.thumbnailState) && safeId(snapshot.thumbnailBlob)) {
+                    String entry = blobs.get(snapshot.thumbnailBlob);
+                    if (entry == null) {
+                        entry = MemoryExportPolicy.thumbnailEntry(cardIndex, versionIndex, snapshot.thumbnailName);
+                        blobs.put(snapshot.thumbnailBlob, entry);
+                    }
+                    version.put("thumbnail", entry);
                 }
                 versions.put(version);
             }
@@ -981,21 +1065,26 @@ public final class MorokMemoryStore {
     }
 
     private byte[] readAttachmentBlob(ArrayList<MemoryCard> cards, String blob) throws Exception {
+        BlobReference reference = null;
         for (MemoryCard card : cards) for (MemoryCard.Snapshot snapshot : card.versions) {
             if (snapshot.blob.equals(blob) && "saved".equals(snapshot.fileState)) {
-                byte[] encrypted;
-                try (FileInputStream stream = new FileInputStream(new File(directory, blob + ".tink"))) {
-                    encrypted = readBounded(stream, (int) MemoryPolicy.MAX_ATTACHMENT_BYTES + 128);
-                }
-                byte[] plain = cipher().decrypt(encrypted, aad("blob/" + blob));
-                if (plain.length != snapshot.fileSize || !snapshot.sha256.equals(MemoryCapture.hex(
-                        MessageDigest.getInstance("SHA-256").digest(plain)))) {
-                    throw new IOException("Attachment integrity check failed");
-                }
-                return plain;
+                reference = new BlobReference(snapshot.fileSize, snapshot.sha256, MemoryPolicy.MAX_ATTACHMENT_BYTES); break;
+            }
+            if (snapshot.thumbnailBlob.equals(blob) && "saved".equals(snapshot.thumbnailState)) {
+                reference = new BlobReference(snapshot.thumbnailSize, snapshot.thumbnailSha256, MemoryPolicy.MAX_THUMBNAIL_BYTES); break;
             }
         }
-        throw new IOException("Attachment no longer exists");
+        if (reference == null) throw new IOException("Attachment no longer exists");
+        byte[] encrypted;
+        try (FileInputStream stream = new FileInputStream(new File(directory, blob + ".tink"))) {
+            encrypted = readBounded(stream, reference.maxBytes + 128);
+        }
+        byte[] plain = cipher().decrypt(encrypted, aad("blob/" + blob));
+        if (plain.length != reference.size || !reference.sha256.equals(MemoryCapture.hex(
+                MessageDigest.getInstance("SHA-256").digest(plain)))) {
+            throw new IOException("Attachment integrity check failed");
+        }
+        return plain;
     }
 
     private void requireExportAllowed() throws IOException {
@@ -1018,6 +1107,10 @@ public final class MorokMemoryStore {
         for (MemoryCard card : database.cards) for (MemoryCard.Snapshot snapshot : card.versions) {
             if ("saved".equals(snapshot.fileState) && safeId(snapshot.blob) && blobs.add(snapshot.blob)) {
                 bytes += fileBytes(new File(directory, snapshot.blob + ".tink"));
+            }
+            if ("saved".equals(snapshot.thumbnailState) && safeId(snapshot.thumbnailBlob)
+                    && blobs.add(snapshot.thumbnailBlob)) {
+                bytes += fileBytes(new File(directory, snapshot.thumbnailBlob + ".tink"));
             }
         }
         return bytes;
@@ -1055,6 +1148,15 @@ public final class MorokMemoryStore {
             requireActive(); return plain;
         });
         return pending.get();
+    }
+
+    private static final class BlobReference {
+        final long size;
+        final String sha256;
+        final int maxBytes;
+        BlobReference(long size, String sha256, long maxBytes) {
+            this.size = size; this.sha256 = sha256; this.maxBytes = (int) maxBytes;
+        }
     }
 
     static byte[] readBounded(FileInputStream input, int maxBytes) throws IOException {

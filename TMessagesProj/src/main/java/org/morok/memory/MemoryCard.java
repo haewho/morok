@@ -85,11 +85,20 @@ public final class MemoryCard {
         public String mime = "application/octet-stream";
         public String sha256 = "";
         public long fileSize;
+        public String thumbnailState = "none";
+        public String thumbnailBlob = "";
+        public String thumbnailName = "";
+        public String thumbnailMime = "image/jpeg";
+        public String thumbnailSha256 = "";
+        public long thumbnailSize;
 
         public JSONObject toJson() throws JSONException {
             return new JSONObject().put("text", text).put("tl", serializedMessage).put("fingerprint", fingerprint)
                     .put("received", receivedAt).put("edited", editedAt).put("fileState", fileState)
-                    .put("blob", blob).put("fileName", fileName).put("mime", mime).put("sha256", sha256).put("size", fileSize);
+                    .put("blob", blob).put("fileName", fileName).put("mime", mime).put("sha256", sha256).put("size", fileSize)
+                    .put("thumbnailState", thumbnailState).put("thumbnailBlob", thumbnailBlob)
+                    .put("thumbnailName", thumbnailName).put("thumbnailMime", thumbnailMime)
+                    .put("thumbnailSha256", thumbnailSha256).put("thumbnailSize", thumbnailSize);
         }
 
         public static Snapshot fromJson(JSONObject value) throws JSONException {
@@ -100,6 +109,12 @@ public final class MemoryCard {
             snapshot.blob = value.optString("blob"); snapshot.fileName = value.optString("fileName");
             snapshot.mime = value.optString("mime", "application/octet-stream");
             snapshot.sha256 = value.optString("sha256"); snapshot.fileSize = value.optLong("size");
+            snapshot.thumbnailState = value.optString("thumbnailState", "none");
+            snapshot.thumbnailBlob = value.optString("thumbnailBlob");
+            snapshot.thumbnailName = value.optString("thumbnailName");
+            snapshot.thumbnailMime = value.optString("thumbnailMime", "image/jpeg");
+            snapshot.thumbnailSha256 = value.optString("thumbnailSha256");
+            snapshot.thumbnailSize = value.optLong("thumbnailSize");
             return snapshot;
         }
     }

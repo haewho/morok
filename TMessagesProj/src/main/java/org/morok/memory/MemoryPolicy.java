@@ -11,6 +11,7 @@ public final class MemoryPolicy {
     public static final int MAX_MESSAGE_BYTES = 256 * 1024;
     public static final int MAX_DATABASE_BYTES = 16 * 1024 * 1024;
     public static final long MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+    public static final int MAX_THUMBNAIL_BYTES = 512 * 1024;
     public static final long MAX_ACCOUNT_BYTES = 256 * 1024 * 1024;
     public static final long MIN_FREE_BYTES = 32 * 1024 * 1024;
 

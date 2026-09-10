@@ -27,10 +27,19 @@ public final class MorokMemoryFileProvider extends ContentProvider {
     }
 
     public static Uri grant(Context context, MemoryCard card, MemoryCard.Snapshot snapshot) {
+        return grant(context, card, snapshot.blob, snapshot.fileName, snapshot.mime, snapshot.fileSize);
+    }
+
+    public static Uri grantThumbnail(Context context, MemoryCard card, MemoryCard.Snapshot snapshot) {
+        return grant(context, card, snapshot.thumbnailBlob, snapshot.thumbnailName,
+                snapshot.thumbnailMime, snapshot.thumbnailSize);
+    }
+
+    private static Uri grant(Context context, MemoryCard card, String blob, String name, String mime, long size) {
         long now = SystemClock.elapsedRealtime();
         Grant grant = new Grant(); grant.userId = card.key.userId;
-        grant.session = MorokMemoryStore.forAccount(MorokMemoryStore.resolveAccount(grant.userId)); grant.card = card.id; grant.blob = snapshot.blob;
-        grant.name = snapshot.fileName; grant.mime = snapshot.mime; grant.size = snapshot.fileSize;
+        grant.session = MorokMemoryStore.forAccount(MorokMemoryStore.resolveAccount(grant.userId)); grant.card = card.id; grant.blob = blob;
+        grant.name = name; grant.mime = mime; grant.size = size;
         grant.expires = now + 10 * 60 * 1000;
         String token = UUID.randomUUID().toString();
         synchronized (GRANTS) {

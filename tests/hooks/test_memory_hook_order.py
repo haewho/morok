@@ -63,10 +63,32 @@ expect("enforceAutomaticPolicy(database, archiveSettings())" in store,
        "Every committed Memory index must enforce the selected automatic retention and storage policy")
 expect("policy.allowsAutomaticAttachment(isUnmeteredNetwork())" in store,
        "Automatic original retention must consult the selected network policy")
-expect("MemoryPolicy.canCopy(size, estimatedUsedBytes(database)" in store,
-       "Automatic originals must use projected referenced bytes rather than orphaned cache files")
+expect("MemoryPolicy.canCopy(plain.length, estimatedUsedBytes(database)" in store,
+       "Retained originals and thumbnails must use projected referenced bytes rather than orphaned cache files")
 expect("cleanAutomaticArchive" in store and "beforeCards - automaticCount(database)" in store,
        "The explicit cleanup action must report only removed automatic cards")
+
+attachment_start = store.index("private void copyAttachment(")
+attachment_end = store.index("public void retryAttachment(", attachment_start)
+attachment_copy = store[attachment_start:attachment_end]
+expect("copyThumbnail(message, snapshot, database, automatic)" in attachment_copy
+       and "FileLoader.getMessageFileName(message)" in attachment_copy
+       and "isLoadingFile(messageFileName)" in attachment_copy,
+       "Memory must distinguish a Telegram download in progress while retaining a thumbnail independently")
+expect(attachment_copy.index("boolean originalAlreadySaved")
+       < attachment_copy.index("copyThumbnail(message, snapshot, database, automatic)")
+       < attachment_copy.index("if (originalAlreadySaved) return")
+       < attachment_copy.index('snapshot.fileState = messageFileName.isEmpty()'),
+       "Retrying a missing thumbnail must never discard an already retained original")
+thumbnail_start = store.index("private void copyThumbnail(", attachment_start)
+thumbnail_end = store.index("private String retainBlob(", thumbnail_start)
+thumbnail_copy = store[thumbnail_start:thumbnail_end]
+expect("TL_photoCachedSize" in thumbnail_copy and "getPathToAttach(thumbnail, true)" in thumbnail_copy
+       and "loadFile(" not in thumbnail_copy and "download" not in thumbnail_copy.lower(),
+       "Thumbnail retention must use only cached bytes and never start a Telegram download")
+expect("MemoryThumbnailPolicy.mimeType(plain)" in thumbnail_copy
+       and "MemoryPolicy.MAX_THUMBNAIL_BYTES" in thumbnail_copy,
+       "A cached thumbnail must pass a bounded complete-image check before encryption")
 
 export_start = store.index("public void exportSelected(")
 export_end = store.index("private long usedBytes()", export_start)
@@ -81,6 +103,8 @@ expect("MessageDigest.getInstance(\"SHA-256\")" in memory_export
        "Every exported original must pass integrity and active unlocked-session checks")
 expect('put("tl"' not in memory_export and "serializedMessage" not in memory_export,
        "The readable export must omit internal serialized Telegram payloads")
+expect('put("thumbnailState"' in memory_export and "MemoryExportPolicy.thumbnailEntry" in memory_export,
+       "Readable export must identify a thumbnail separately from the original attachment")
 
 activity = (root / "TMessagesProj/src/main/java/org/morok/ui/MorokMemoryActivity.java").read_text()
 expect("setOnItemLongClickListener" in activity and "selected.add(card.id)" in activity,
@@ -88,6 +112,13 @@ expect("setOnItemLongClickListener" in activity and "selected.add(card.id)" in a
 expect("Intent.ACTION_CREATE_DOCUMENT" in activity and 'setType("application/zip")' in activity
        and "MorokMemoryExportConfirm" in activity,
        "Memory export must disclose plaintext and let Android choose the destination")
+expect("grantThumbnail" in activity and "MorokMemoryThumbnailNotOriginal" in activity,
+       "Memory UI must expose a saved thumbnail with an explicit not-the-original label")
+
+provider = (root / "TMessagesProj/src/main/java/org/morok/memory/MorokMemoryFileProvider.java").read_text()
+expect("grantThumbnail" in provider and "readAttachment(entry.card, entry.blob)" in provider
+       and "SharedConfig.appLocked" in provider,
+       "Thumbnail viewing must reuse the expiring locked-session encrypted blob grant")
 
 filter_start = activity.index("private void applyFilter()")
 filter_end = activity.index("private void chooseTagFilter()", filter_start)

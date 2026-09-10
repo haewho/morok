@@ -15,6 +15,7 @@ fi
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryJournalPolicy.java" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryExportPolicy.java" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryFilterPolicy.java" \
+  "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryThumbnailPolicy.java" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryPolicy.java" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryStorageStats.java" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryTrackingIndex.java" \
