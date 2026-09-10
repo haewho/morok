@@ -1,0 +1,7 @@
+# APK trust configuration, bundled with the app and never downloaded.
+# Add as TMessagesProj/src/main/assets/morok-update-trust.properties only after real release hosting exists.
+# endpoint.1 and endpoint.2 serve the same signed text manifest from independent HTTPS locations.
+# endpoint.1=
+# endpoint.2=
+# key.owner-2026=BASE64_OF_RSA_X509_SUBJECT_PUBLIC_KEY_INFO_DER
+# Bundle an old and a new public key in a transition release before rotating the signing key.

@@ -1,0 +1,13 @@
+{
+  "version_code": 0,
+  "version_name": "REPLACE_VERSION",
+  "package": "io.github.haewho.morok",
+  "abi": "arm64-v8a",
+  "issued": 0,
+  "expires": 0,
+  "url": "https://REPLACE_OWNER_HOST/MOROK.apk",
+  "certificate_sha256": "REPLACE_WITH_64_LOWERCASE_HEX",
+  "telegram_base": "REPLACE_BASE",
+  "commit": "REPLACE_COMMIT",
+  "changelog": "REPLACE_CHANGELOG"
+}

@@ -23,9 +23,9 @@
 | Подписанный bootstrap, зеркала, antirollback и 2 независимых узла | P0 | заблокировано зависимостью | Основы/шаблоны; нет серверов, endpoints и ключей владельца |
 | Память: карточка/цитата/файл/заметка/теги/поиск | P0 | реализуется | Native экран, encrypted private store, cache-only повтор оригинала и диагностика хранилища |
 | Память: reminder/cancel/restart/правильный контекст | P0 | реализуется | Local alarms/stable-user routing; Doze/permission/device проверки впереди |
-| Подпись и данные при update APK | P0 | заблокировано зависимостью | Нет release key; двухверсийный тест ещё нужен |
+| Подпись и данные при update APK | P0 | реализуется | Explicit signed manifest и APK verifier требуют package/ABI/version/size/SHA-256 и тот же signer, что установленное приложение; системный installer сохраняет Android confirmation. Нет release key/endpoints и двухверсийного device-теста |
 | Upstream lock, upgrade worktree, CI | P0 | реализуется | Скрипты подготовлены, перенос разных upstream-версий ещё не проверен |
-| Подписанный APK-updater | P0 | требование | Upstream APK-updater отключён |
+| Подписанный APK-updater | P0 | реализуется | Upstream updater отключён; собственный explicit-only RSA/HTTPS primary+backup/cache/anti-rollback путь и системный installer реализованы. Текущая сборка честно не настроена без owner public key/endpoints |
 | Навигация: tabs/folders/order/start screen | P1 | требование | Штатная навигация сохранена |
 | Плотность/аватары/пузыри/шрифты/timestamps/анимации | P1 | требование | Полный собственный набор впереди |
 | Жесты/long press/быстрые действия | P1 | реализуется | «Запомнить»; account-local выключатель реакции по двойному нажатию, штатный выбор emoji и встроенный выбор действия свайпа списка чатов. Свайпы сообщений и остальные действия впереди |

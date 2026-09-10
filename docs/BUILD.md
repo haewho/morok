@@ -17,6 +17,8 @@
 
 `git submodule update --init --recursive --depth=1 --jobs=3` получает закреплённые SHA. `python3 scripts/check_upstream.py` проверяет их. Android SDK packages: `platforms;android-36`, `build-tools;36.0.0`, `ndk;27.2.12479018`, `cmake;3.22.1`. Установите их штатным SDK Manager с принятием лицензий SDK. Не подменяйте NDK текущей версией Android Studio.
 
+Собственный updater не использует Telegram update service. Release-канал включается только наличием `TMessagesProj/src/main/assets/morok-update-trust.properties` с владельческими RSA public keys и HTTPS primary/backup по примеру из `infra/`; отсутствие файла является допустимой отключённой конфигурацией. Private update key и release keystore в `morok.local.properties` не помещаются. Полный выпуск manifest описан в [APP_UPDATES](APP_UPDATES.md).
+
 На macOS скрипт находит JBR в Android Studio и SDK в `~/Library/Android/sdk`; в другой среде задайте `JAVA_HOME` и `ANDROID_HOME`. Экономный профиль: heap3GB, metaspace768MB, 2 workers, без параллельных Gradle-проектов. Не запускайте одновременно исходную и модифицированную сборки. Полный arm64 native-код upstream компилируется, функции камеры/звонков/медиа не вырезаются.
 
 ## Разработка

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokUpdateTitle">Обновления Морока</string>
+    <string name="MorokUpdateShortcutInfo">Проверка подписанного источника владельца и установка проверенного APK через Android.</string>
+    <string name="MorokUpdateInstalledHeader">Установленная сборка</string>
+    <string name="MorokUpdateInstalled">Версия %1$s · код %2$d</string>
+    <string name="MorokUpdateSecurityInfo">Морок принимает только непросроченный RSA-подписанный манифест для этого package и arm64 ABI. Скачанный APK должен точно совпасть по размеру и SHA-256, иметь больший код версии и тот же сертификат подписи, что установленное приложение.</string>
+    <string name="MorokUpdateCheckHeader">Источник обновлений</string>
+    <string name="MorokUpdateUnconfigured">В эту сборку не добавлены endpoint и публичный ключ владельца. Проверка и загрузка обновлений отключены.</string>
+    <string name="MorokUpdateChecking">Проверка основного и резервного HTTPS-источников…</string>
+    <string name="MorokUpdateCurrent">Более новой проверенной сборки нет.</string>
+    <string name="MorokUpdateDownloading">Загрузка и проверка выбранного APK…</string>
+    <string name="MorokUpdateError">Не удалось проверить непросроченный манифест или APK. Ничего не будет установлено.</string>
+    <string name="MorokUpdateReady">APK прошёл проверку package, версии, размера, хеша и сертификата подписи.</string>
+    <string name="MorokUpdateCached">Сетевые источники недоступны; показан последний проверенный манифест, срок которого ещё не истёк.</string>
+    <string name="MorokUpdateCheck">Проверить сейчас</string>
+    <string name="MorokUpdateAvailableHeader">Проверенное обновление</string>
+    <string name="MorokUpdateAvailable">Версия %1$s · код %2$d · %3$s
+База Telegram: %4$s
+Коммит: %5$s</string>
+    <string name="MorokUpdateDownload">Скачать и проверить APK</string>
+    <string name="MorokUpdateInstall">Открыть установщик Android</string>
+    <string name="MorokUpdateExplicitInfo">Проверка и загрузка запускаются только вашим нажатием. Установка всегда требует подтверждения Android; Морок не выполняет тихую установку.</string>
+    <string name="MorokUpdateInstallPermissionTitle">Разрешите установку приложений</string>
+    <string name="MorokUpdateInstallPermissionInfo">Android открыл разрешение для этой установки Морока. Включите его, вернитесь сюда и снова нажмите «Открыть установщик Android».</string>
+</resources>

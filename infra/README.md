@@ -47,3 +47,9 @@ Signer валидирует поля, сроки, уникальность endpo
 ## Проверено локально
 
 `sh infra/test-proxy-core.sh` — 34 проверки Java-ядра; `python3 infra/tests/test_signer.py` — совместимость Python/OpenSSL-подписи и Java-проверки. Тестовые ключи создаются во временном каталоге и удаляются; реальная инфраструктура ими не подписывается. Shell-синтаксис сборочного шаблона и Python-синтаксис signer проверены. Развёртывание MTG, работа узлов и российские сети не проверены.
+
+## Подписанные обновления APK
+
+`sign-update.py`, `update.json.example` и `morok-update-trust.properties.example` готовят отдельный канал обновления приложения. Signer сам вычисляет размер и SHA-256 переданного APK, проверяет bounded schema/HTTPS URL/срок и подписывает точные payload bytes владельческим RSA-2048+ key. Он не публикует APK/manifest и не извлекает release certificate: lowercase SHA-256 сертификата нужно получить из фактически подписанного APK и сверить через `apksigner`.
+
+Private RSA key и release keystore остаются вне репозитория. Public DER key и два реальных owner-controlled HTTPS manifest endpoint добавляются в APK только перед проверенным release. Полная модель клиента, команды и двухверсийная матрица находятся в [`docs/APP_UPDATES.md`](../docs/APP_UPDATES.md). `tests/update/run.sh` проверяет Java verifier, Android integration invariants и совместимость Python/OpenSSL signer; настоящая публикация и upgrade устройства не выполнялись.

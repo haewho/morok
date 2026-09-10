@@ -7,6 +7,7 @@
 - `org.morok.memory` / `history` — ручные карточки, allowlisted автоархив live и catch-up message payload, явный ограниченный импорт из локальной Telegram SQLite, приватное хранение, encrypted journal/replay для new/edit/delete событий и напоминания. Автоархив выключен по умолчанию и использует настройки устойчивого ID аккаунта; импорт не запускает Telegram history/media loader.
 - `org.morok.chatmeta` — bounded encrypted хранилище локальных псевдонимов и заметок обычных чатов по устойчивому ID аккаунта; оно не читает и не меняет Telegram database/profile.
 - `org.morok.templates` — bounded encrypted шаблоны plain-text ответов, чистая локальная подстановка документированных переменных и политика вставки в существующий composer draft; результат сначала показывается в preview, отправка остаётся отдельным штатным действием пользователя.
+- `org.morok.update` — explicit-only проверка RSA-подписанного bounded manifest, anti-rollback/expiry, HTTPS primary/backup, потоковая проверка APK и same-certificate handoff штатному Android installer; без доверительной конфигурации сеть отключена.
 - `org.morok.drafts` — отдельные bounded encrypted снимки plain-text редактора по account/dialog/topic и чистая проверка восстановления; штатная синхронизация Telegram drafts не подменяется.
 - `org.morok.proxy` — проверка и выбор узлов через штатный `ConnectionsManager`; никакого второго сетевого стека.
 - `org.morok.safety` — локальный confirmation gate перед исходящим private-call `initiateCall` и единая read-only политика secure-window; сетевых или auth-операций здесь нет.
@@ -28,6 +29,7 @@
 Локальные псевдонимы и заметки чатов, их пределы и logout-erasure описаны в [CHAT_METADATA](CHAT_METADATA.md).
 
 Зашифрованные шаблоны и composer-only путь вставки описаны в [REPLY_TEMPLATES](REPLY_TEMPLATES.md).
+Собственный канал обновлений и его границы доверия описаны в [APP_UPDATES](APP_UPDATES.md).
 
 Явные локальные снимки текста редактора и их границы описаны в [SAVED_DRAFTS](SAVED_DRAFTS.md).
 

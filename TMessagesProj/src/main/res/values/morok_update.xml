@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokUpdateTitle">MOROK updates</string>
+    <string name="MorokUpdateShortcutInfo">Check a signed owner-controlled source and install a verified APK through Android.</string>
+    <string name="MorokUpdateInstalledHeader">Installed build</string>
+    <string name="MorokUpdateInstalled">Version %1$s · code %2$d</string>
+    <string name="MorokUpdateSecurityInfo">MOROK accepts only an unexpired RSA-signed manifest for this package and arm64 ABI. The downloaded APK must match its exact size and SHA-256, use a newer version code, and have the same signing certificate as this installed app.</string>
+    <string name="MorokUpdateCheckHeader">Update source</string>
+    <string name="MorokUpdateUnconfigured">No owner update endpoint and public key are embedded in this build. Update checks and downloads are disabled.</string>
+    <string name="MorokUpdateChecking">Checking the primary and backup HTTPS sources…</string>
+    <string name="MorokUpdateCurrent">No newer verified build is available.</string>
+    <string name="MorokUpdateDownloading">Downloading and verifying the selected APK…</string>
+    <string name="MorokUpdateError">No valid unexpired update manifest or APK could be verified. Nothing will be installed.</string>
+    <string name="MorokUpdateReady">The APK passed package, version, size, hash and signing-certificate verification.</string>
+    <string name="MorokUpdateCached">The network sources were unavailable; this result comes from the last verified, still-unexpired manifest.</string>
+    <string name="MorokUpdateCheck">Check now</string>
+    <string name="MorokUpdateAvailableHeader">Verified update</string>
+    <string name="MorokUpdateAvailable">Version %1$s · code %2$d · %3$s
+Telegram base: %4$s
+Commit: %5$s</string>
+    <string name="MorokUpdateDownload">Download and verify APK</string>
+    <string name="MorokUpdateInstall">Open Android installer</string>
+    <string name="MorokUpdateExplicitInfo">Checks and downloads run only after your tap. Installation always uses Android’s confirmation screen; MOROK never performs a silent install.</string>
+    <string name="MorokUpdateInstallPermissionTitle">Allow app installs</string>
+    <string name="MorokUpdateInstallPermissionInfo">Android opened the permission screen for this MOROK installation. Allow it there, return here and tap “Open Android installer” again.</string>
+</resources>
