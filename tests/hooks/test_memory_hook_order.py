@@ -68,4 +68,25 @@ expect("MemoryPolicy.canCopy(size, estimatedUsedBytes(database)" in store,
 expect("cleanAutomaticArchive" in store and "beforeCards - automaticCount(database)" in store,
        "The explicit cleanup action must report only removed automatic cards")
 
+export_start = store.index("public void exportSelected(")
+export_end = store.index("private long usedBytes()", export_start)
+memory_export = store[export_start:export_end]
+expect('"content".equals(destination.getScheme())' in memory_export
+       and "openOutputStream(destination" in memory_export and "ZipOutputStream" in memory_export,
+       "Memory export must stream only to an explicit SAF content destination")
+expect("FileOutputStream" not in memory_export and "readAttachmentBlob" in memory_export,
+       "Memory export must not create a decrypted temporary file")
+expect("MessageDigest.getInstance(\"SHA-256\")" in memory_export
+       and "requireExportAllowed()" in memory_export,
+       "Every exported original must pass integrity and active unlocked-session checks")
+expect('put("tl"' not in memory_export and "serializedMessage" not in memory_export,
+       "The readable export must omit internal serialized Telegram payloads")
+
+activity = (root / "TMessagesProj/src/main/java/org/morok/ui/MorokMemoryActivity.java").read_text()
+expect("setOnItemLongClickListener" in activity and "selected.add(card.id)" in activity,
+       "Memory cards must support explicit multi-selection")
+expect("Intent.ACTION_CREATE_DOCUMENT" in activity and 'setType("application/zip")' in activity
+       and "MorokMemoryExportConfirm" in activity,
+       "Memory export must disclose plaintext and let Android choose the destination")
+
 print(f"Memory hook order: {checks} checks passed")

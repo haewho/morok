@@ -1,5 +1,6 @@
 package org.morok.ui;
 
+import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.ClipData;
@@ -29,6 +30,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.morok.history.MemoryCapture;
 import org.morok.memory.MemoryCard;
+import org.morok.memory.MemoryExportPolicy;
 import org.morok.memory.MemoryPolicy;
 import org.morok.memory.MemoryStorageStats;
 import org.morok.memory.MorokMemoryFileProvider;
@@ -45,6 +47,7 @@ import org.telegram.messenger.Utilities;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.ActionBar.ActionBar;
+import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -52,12 +55,18 @@ import org.telegram.ui.Components.Forum.ForumUtilities;
 import org.telegram.ui.Components.RecyclerListView;
 
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Locale;
 
 /** Account-scoped native screen: every action on a card is local until Open source is explicitly tapped. */
 public class MorokMemoryActivity extends BaseFragment {
+    private static final int MENU_STORAGE = 1;
+    private static final int MENU_EXPORT = 2;
+    private static final int REQUEST_EXPORT = 741;
     private final long expectedUserId;
     private String openCardId;
     private MorokMemoryStore store;
@@ -70,6 +79,10 @@ public class MorokMemoryActivity extends BaseFragment {
     private int filter;
     private int queryGeneration;
     private boolean destroyed;
+    private boolean exporting;
+    private View exportItem;
+    private final HashSet<String> selected = new HashSet<>();
+    private ArrayList<String> pendingExportIds;
 
     public MorokMemoryActivity(int account) { this(account, null); }
     public MorokMemoryActivity(int account, String cardId) {
@@ -96,9 +109,17 @@ public class MorokMemoryActivity extends BaseFragment {
         actionBar.setTitle(t(R.string.MorokMemoryTitle));
         actionBar.setSubtitle(t(R.string.MorokMemoryAccountOnly));
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
-        actionBar.createMenu().addItem(1, R.drawable.msg_settings);
+        ActionBarMenu menu = actionBar.createMenu();
+        menu.addItem(MENU_STORAGE, R.drawable.msg_settings);
+        exportItem = menu.addItem(MENU_EXPORT, R.drawable.msg_share);
+        exportItem.setVisibility(View.GONE);
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
-            @Override public void onItemClick(int id) { if (id == -1) finishFragment(); else if (id == 1) storageInfo(); }
+            @Override public void onItemClick(int id) {
+                if (id == -1) {
+                    if (selected.isEmpty()) finishFragment(); else clearSelection();
+                } else if (id == MENU_STORAGE) storageInfo();
+                else if (id == MENU_EXPORT) confirmExport();
+            }
         });
         LinearLayout root = new LinearLayout(context); root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
@@ -123,13 +144,29 @@ public class MorokMemoryActivity extends BaseFragment {
         status.setPadding(AndroidUtilities.dp(16), AndroidUtilities.dp(8), AndroidUtilities.dp(16), AndroidUtilities.dp(8)); root.addView(status);
         list = new RecyclerListView(context); list.setLayoutManager(new LinearLayoutManager(context));
         list.setAdapter(adapter = new CardsAdapter());
-        list.setOnItemClickListener((view, position) -> { if (position < visible.size()) editCard(visible.get(position)); });
+        list.setOnItemClickListener((view, position) -> {
+            if (position >= visible.size() || exporting) return;
+            if (selected.isEmpty()) editCard(visible.get(position)); else toggleSelection(visible.get(position));
+        });
+        list.setOnItemLongClickListener((view, position) -> {
+            if (position < 0 || position >= visible.size() || exporting) return false;
+            toggleSelection(visible.get(position));
+            return true;
+        });
         root.addView(list, new LinearLayout.LayoutParams(-1, 0, 1));
         refresh(); return root;
     }
 
     @Override public void onResume() { super.onResume(); if (list != null) refresh(); }
     @Override public void onFragmentDestroy() { destroyed = true; queryGeneration++; super.onFragmentDestroy(); }
+
+    @Override public boolean onBackPressed(boolean invoked) {
+        if (!selected.isEmpty()) {
+            if (invoked) clearSelection();
+            return false;
+        }
+        return super.onBackPressed(invoked);
+    }
 
     private boolean accountValid() {
         return !destroyed && UserConfig.getInstance(currentAccount).getClientUserId() == expectedUserId && store != null && store.isActive();
@@ -140,7 +177,10 @@ public class MorokMemoryActivity extends BaseFragment {
         store.list((cards, error) -> {
             if (!accountValid() || status == null) return;
             if (error != null) { status.setText(t(R.string.MorokMemoryStorageError)); return; }
-            all = cards; applyFilter();
+            all = cards;
+            HashSet<String> retained = new HashSet<>();
+            for (MemoryCard card : cards) if (selected.contains(card.id)) retained.add(card.id);
+            selected.clear(); selected.addAll(retained); updateSelectionUi(); applyFilter();
             if (openCardId != null) {
                 String id = openCardId; openCardId = null;
                 for (MemoryCard card : cards) if (card.id.equals(id)) { editCard(card); return; }
@@ -169,6 +209,80 @@ public class MorokMemoryActivity extends BaseFragment {
                         t(R.string.MorokMemoryAccountOnly) + " · " + result.size() + " / " + MemoryPolicy.MAX_CARDS));
             });
         }, 120);
+    }
+
+    private void toggleSelection(MemoryCard card) {
+        if (!selected.add(card.id)) selected.remove(card.id);
+        updateSelectionUi();
+        if (adapter != null) adapter.notifyDataSetChanged();
+    }
+
+    private void clearSelection() {
+        selected.clear();
+        updateSelectionUi();
+        if (adapter != null) adapter.notifyDataSetChanged();
+    }
+
+    private void updateSelectionUi() {
+        if (actionBar == null) return;
+        actionBar.setTitle(selected.isEmpty() ? t(R.string.MorokMemoryTitle)
+                : LocaleController.formatString(R.string.MorokMemorySelected, selected.size()));
+        if (exportItem != null) exportItem.setVisibility(selected.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    private void confirmExport() {
+        if (selected.isEmpty() || exporting || getParentActivity() == null) return;
+        showDialog(new AlertDialog.Builder(getParentActivity()).setTitle(t(R.string.MorokMemoryExport))
+                .setMessage(LocaleController.formatString(R.string.MorokMemoryExportConfirm, selected.size()))
+                .setNegativeButton(t(R.string.Cancel), null)
+                .setPositiveButton(t(R.string.MorokMemoryExportChoose), (dialog, which) -> chooseExportDestination())
+                .create());
+    }
+
+    private void chooseExportDestination() {
+        pendingExportIds = new ArrayList<>();
+        for (MemoryCard card : all) if (selected.contains(card.id)) pendingExportIds.add(card.id);
+        if (!MemoryExportPolicy.validSelectionSize(pendingExportIds.size())) {
+            pendingExportIds = null;
+            toast(t(R.string.MorokMemoryExportError));
+            return;
+        }
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/zip");
+        intent.putExtra(Intent.EXTRA_TITLE, "MOROK-memory-" + new SimpleDateFormat(
+                "yyyyMMdd-HHmm", Locale.US).format(new Date()) + ".zip");
+        startActivityForResult(intent, REQUEST_EXPORT);
+    }
+
+    @Override
+    public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
+        super.onActivityResultFragment(requestCode, resultCode, data);
+        if (requestCode != REQUEST_EXPORT) return;
+        ArrayList<String> ids = pendingExportIds;
+        pendingExportIds = null;
+        if (resultCode != Activity.RESULT_OK || data == null || data.getData() == null || ids == null) return;
+        exportTo(data.getData(), ids);
+    }
+
+    private void exportTo(Uri destination, ArrayList<String> ids) {
+        if (!accountValid() || exporting || getParentActivity() == null) return;
+        exporting = true;
+        AlertDialog progress = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER);
+        progress.setCanCancel(false);
+        showDialog(progress);
+        store.exportSelected(destination, ids, (result, error) -> {
+            exporting = false;
+            try { progress.dismiss(); } catch (RuntimeException ignored) { }
+            if (!accountValid()) return;
+            if (error != null || result == null) {
+                toast(t(R.string.MorokMemoryExportError));
+                return;
+            }
+            clearSelection();
+            toast(LocaleController.formatString(R.string.MorokMemoryExported,
+                    result.cards, result.files, AndroidUtilities.formatFileSize(result.bytes)));
+        });
     }
 
     public static void remember(BaseFragment fragment, MessageObject message) {
@@ -429,6 +543,8 @@ public class MorokMemoryActivity extends BaseFragment {
         }
         @Override public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             MemoryCard card = visible.get(position); LinearLayout row = (LinearLayout) holder.itemView;
+            row.setBackgroundColor(Theme.getColor(selected.contains(card.id)
+                    ? Theme.key_listSelector : Theme.key_windowBackgroundWhite));
             ((TextView) row.getChildAt(0)).setText((card.completed ? "✓ " : "") + card.source + "\n" + excerpt(card.latest().text, 240));
             ((TextView) row.getChildAt(1)).setText((card.tags.isEmpty() ? "" : card.tags + " · ")
                     + (card.reminderAt > 0 ? date(card.reminderAt) + "\n" : "") + snapshotStatus(card, card.latest()));

@@ -55,4 +55,10 @@
     <string name="MorokMemorySignInRequired">Sign in to a Telegram account to create and open its local Memory cards.</string>
     <string name="MorokMemoryAutomatic">Automatic archive</string>
     <string name="MorokMemoryImported">Local history import</string>
+    <string name="MorokMemorySelected">Selected: %1$d</string>
+    <string name="MorokMemoryExport">Export selected cards</string>
+    <string name="MorokMemoryExportConfirm">Export %1$d selected cards and their retained originals? The ZIP is readable without MOROK encryption and may contain private message text, notes, peer identifiers and files. Choose a destination you trust.</string>
+    <string name="MorokMemoryExportChoose">Choose destination</string>
+    <string name="MorokMemoryExported">Exported %1$d cards and %2$d unique files (%3$s).</string>
+    <string name="MorokMemoryExportError">The export could not be completed. Any incomplete destination file was removed when the document provider allowed it.</string>
 </resources>

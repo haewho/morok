@@ -13,6 +13,7 @@ fi
 "${MOROK_JAVA_BIN}javac" -d "$MOROK_TEST_OUTPUT" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryKey.java" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryJournalPolicy.java" \
+  "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryExportPolicy.java" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryPolicy.java" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryStorageStats.java" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/memory/MemoryTrackingIndex.java" \

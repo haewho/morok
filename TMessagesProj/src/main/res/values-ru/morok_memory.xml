@@ -55,4 +55,10 @@
     <string name="MorokMemorySignInRequired">Войдите в аккаунт Telegram, чтобы создавать и открывать его локальные карточки Памяти.</string>
     <string name="MorokMemoryAutomatic">Автоархив</string>
     <string name="MorokMemoryImported">Импорт локальной истории</string>
+    <string name="MorokMemorySelected">Выбрано: %1$d</string>
+    <string name="MorokMemoryExport">Экспорт выбранных карточек</string>
+    <string name="MorokMemoryExportConfirm">Экспортировать выбранные карточки (%1$d) и сохранённые оригиналы? ZIP читается без шифрования MOROK и может содержать личный текст сообщений, заметки, идентификаторы чатов и файлы. Выберите доверенное место.</string>
+    <string name="MorokMemoryExportChoose">Выбрать место</string>
+    <string name="MorokMemoryExported">Экспортировано карточек: %1$d, уникальных файлов: %2$d (%3$s).</string>
+    <string name="MorokMemoryExportError">Не удалось завершить экспорт. Незавершённый файл назначения удалён, если это разрешил системный проводник.</string>
 </resources>

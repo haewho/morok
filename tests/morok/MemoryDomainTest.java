@@ -1,5 +1,6 @@
 import org.morok.memory.MemoryKey;
 import org.morok.memory.MemoryJournalPolicy;
+import org.morok.memory.MemoryExportPolicy;
 import org.morok.memory.MemoryPolicy;
 import org.morok.memory.MemoryStorageStats;
 import org.morok.memory.MemoryTrackingIndex;
@@ -86,6 +87,19 @@ public final class MemoryDomainTest {
         expect(!MemoryPolicy.automaticExpired(now - thirtyDays, now, thirtyDays)
                         && MemoryPolicy.automaticExpired(now - thirtyDays - 1, now, thirtyDays),
                 "Selected automatic retention has a precise inclusive boundary");
+        expect(MemoryExportPolicy.validSelectionSize(1)
+                        && MemoryExportPolicy.validSelectionSize(MemoryPolicy.MAX_CARDS)
+                        && !MemoryExportPolicy.validSelectionSize(0)
+                        && !MemoryExportPolicy.validSelectionSize(MemoryPolicy.MAX_CARDS + 1),
+                "Memory export selection stays within the card bound");
+        String safeExportName = MemoryExportPolicy.safeFileName("../secret?.txt");
+        expect(!safeExportName.contains("/") && !safeExportName.contains("\\") && !safeExportName.startsWith("."),
+                "Memory export removes path traversal characters from file names");
+        expect(("attachments/1-1-" + safeExportName).equals(
+                        MemoryExportPolicy.attachmentEntry(0, 0, "../secret?.txt")),
+                "Memory export uses a bounded relative attachment path");
+        expect(MemoryExportPolicy.safeFileName("x".repeat(200)).length() == MemoryExportPolicy.MAX_FILE_NAME,
+                "Memory export file names are bounded");
         MemoryStorageStats stats = new MemoryStorageStats(1234);
         stats.addCard(true); stats.addCard(false);
         stats.addSnapshot("saved", "shared"); stats.addSnapshot("saved", "shared");

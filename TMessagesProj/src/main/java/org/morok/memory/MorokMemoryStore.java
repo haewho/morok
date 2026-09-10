@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
+import android.net.Uri;
 import android.os.Build;
 import android.util.AtomicFile;
 
@@ -19,6 +20,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
 
@@ -27,6 +29,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.MessageDigest;
@@ -35,11 +38,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /** Serialized, fail-closed local projection. It never writes to Telegram's messages database. */
 public final class MorokMemoryStore {
@@ -53,6 +60,17 @@ public final class MorokMemoryStore {
             this.removedCards = removedCards;
             this.beforeBytes = beforeBytes;
             this.afterBytes = afterBytes;
+        }
+    }
+    public static final class ExportResult {
+        public final int cards;
+        public final int files;
+        public final long bytes;
+
+        ExportResult(int cards, int files, long bytes) {
+            this.cards = cards;
+            this.files = files;
+            this.bytes = bytes;
         }
     }
     private interface Operation<T> { T run() throws Exception; }
@@ -871,6 +889,122 @@ public final class MorokMemoryStore {
         }, callback);
     }
 
+    /** Writes plaintext only to the user-selected SAF destination; no decrypted temporary file is created. */
+    public void exportSelected(Uri destination, ArrayList<String> cardIds, Callback<ExportResult> callback) {
+        execute(() -> {
+            if (destination == null || !"content".equals(destination.getScheme()) || cardIds == null
+                    || !MemoryExportPolicy.validSelectionSize(cardIds.size())) {
+                throw new IOException("Invalid Memory export selection");
+            }
+            HashSet<String> uniqueIds = new HashSet<>(cardIds);
+            if (uniqueIds.size() != cardIds.size()) throw new IOException("Duplicate Memory export selection");
+            Database database = read();
+            ArrayList<MemoryCard> selected = new ArrayList<>();
+            for (String id : cardIds) {
+                if (!safeId(id)) throw new IOException("Invalid Memory export identity");
+                selected.add(find(database, id));
+            }
+            try {
+                return writeExport(destination, selected);
+            } catch (Exception error) {
+                try { ApplicationLoader.applicationContext.getContentResolver().delete(destination, null, null); }
+                catch (RuntimeException ignored) { }
+                throw error;
+            }
+        }, callback);
+    }
+
+    private ExportResult writeExport(Uri destination, ArrayList<MemoryCard> cards) throws Exception {
+        requireExportAllowed();
+        JSONArray exportedCards = new JSONArray();
+        LinkedHashMap<String, String> blobs = new LinkedHashMap<>();
+        for (int cardIndex = 0; cardIndex < cards.size(); cardIndex++) {
+            MemoryCard card = cards.get(cardIndex);
+            JSONObject exported = new JSONObject().put("id", card.id)
+                    .put("peerKind", card.key.peerKind).put("peerId", card.key.peerId)
+                    .put("messageId", card.key.messageId).put("topicId", card.key.topicId)
+                    .put("source", card.source).put("sender", card.sender).put("note", card.note)
+                    .put("tags", card.tags).put("needsReply", card.needsReply).put("completed", card.completed)
+                    .put("deletedInTelegram", card.deletedInTelegram).put("automatic", card.automatic)
+                    .put("imported", card.imported).put("createdAt", card.createdAt)
+                    .put("reminderAt", card.reminderAt);
+            JSONArray versions = new JSONArray();
+            for (int versionIndex = 0; versionIndex < card.versions.size(); versionIndex++) {
+                MemoryCard.Snapshot snapshot = card.versions.get(versionIndex);
+                JSONObject version = new JSONObject().put("text", snapshot.text)
+                        .put("receivedAt", snapshot.receivedAt).put("editedAt", snapshot.editedAt)
+                        .put("fileState", snapshot.fileState).put("fileName", snapshot.fileName)
+                        .put("mime", snapshot.mime).put("sha256", snapshot.sha256).put("fileSize", snapshot.fileSize);
+                if ("saved".equals(snapshot.fileState) && safeId(snapshot.blob)) {
+                    String entry = blobs.get(snapshot.blob);
+                    if (entry == null) {
+                        entry = MemoryExportPolicy.attachmentEntry(cardIndex, versionIndex, snapshot.fileName);
+                        blobs.put(snapshot.blob, entry);
+                    }
+                    version.put("attachment", entry);
+                }
+                versions.put(version);
+            }
+            exportedCards.put(exported.put("versions", versions));
+        }
+        JSONObject manifest = new JSONObject().put("schema", 1).put("product", "MOROK Memory")
+                .put("exportedAt", System.currentTimeMillis()).put("cards", exportedCards);
+        byte[] manifestBytes = manifest.toString(2).getBytes(StandardCharsets.UTF_8);
+        long exportedBytes = manifestBytes.length;
+        int exportedFiles = 0;
+        OutputStream raw = ApplicationLoader.applicationContext.getContentResolver().openOutputStream(destination, "wt");
+        if (raw == null) throw new IOException("Memory export destination unavailable");
+        try (OutputStream output = raw; ZipOutputStream zip = new ZipOutputStream(output)) {
+            writeZipEntry(zip, "memory.json", manifestBytes);
+            for (Map.Entry<String, String> entry : blobs.entrySet()) {
+                requireExportAllowed();
+                byte[] plain = readAttachmentBlob(cards, entry.getKey());
+                writeZipEntry(zip, entry.getValue(), plain);
+                exportedBytes += plain.length;
+                exportedFiles++;
+            }
+            requireExportAllowed();
+            zip.finish();
+        }
+        return new ExportResult(cards.size(), exportedFiles, exportedBytes);
+    }
+
+    private void writeZipEntry(ZipOutputStream zip, String name, byte[] bytes) throws IOException {
+        ZipEntry entry = new ZipEntry(name);
+        entry.setTime(0);
+        zip.putNextEntry(entry);
+        for (int offset = 0; offset < bytes.length; offset += 32768) {
+            requireExportAllowed();
+            zip.write(bytes, offset, Math.min(32768, bytes.length - offset));
+        }
+        zip.closeEntry();
+    }
+
+    private byte[] readAttachmentBlob(ArrayList<MemoryCard> cards, String blob) throws Exception {
+        for (MemoryCard card : cards) for (MemoryCard.Snapshot snapshot : card.versions) {
+            if (snapshot.blob.equals(blob) && "saved".equals(snapshot.fileState)) {
+                byte[] encrypted;
+                try (FileInputStream stream = new FileInputStream(new File(directory, blob + ".tink"))) {
+                    encrypted = readBounded(stream, (int) MemoryPolicy.MAX_ATTACHMENT_BYTES + 128);
+                }
+                byte[] plain = cipher().decrypt(encrypted, aad("blob/" + blob));
+                if (plain.length != snapshot.fileSize || !snapshot.sha256.equals(MemoryCapture.hex(
+                        MessageDigest.getInstance("SHA-256").digest(plain)))) {
+                    throw new IOException("Attachment integrity check failed");
+                }
+                return plain;
+            }
+        }
+        throw new IOException("Attachment no longer exists");
+    }
+
+    private void requireExportAllowed() throws IOException {
+        requireActive();
+        if (SharedConfig.appLocked || SharedConfig.isWaitingForPasscodeEnter) {
+            throw new IOException("Memory export stopped while the app is locked");
+        }
+    }
+
     private long usedBytes() {
         long bytes = 0;
         File[] files = directory.listFiles(); if (files != null) for (File file : files) bytes += file.length();
@@ -916,18 +1050,9 @@ public final class MorokMemoryStore {
         if (!safeId(cardId) || !safeId(blob)) throw new IOException("Invalid attachment");
         java.util.concurrent.Future<byte[]> pending = QUEUE.submit(() -> {
             requireActive(); MemoryCard card = find(read(), cardId);
-            for (MemoryCard.Snapshot snapshot : card.versions) {
-                if (snapshot.blob.equals(blob) && "saved".equals(snapshot.fileState)) {
-                    byte[] encrypted;
-                    try (FileInputStream stream = new FileInputStream(new File(directory, blob + ".tink"))) {
-                        encrypted = readBounded(stream, (int) MemoryPolicy.MAX_ATTACHMENT_BYTES + 128);
-                    }
-                    byte[] plain = cipher().decrypt(encrypted, aad("blob/" + blob));
-                    if (plain.length != snapshot.fileSize || !snapshot.sha256.equals(MemoryCapture.hex(MessageDigest.getInstance("SHA-256").digest(plain)))) throw new IOException("Attachment integrity check failed");
-                    requireActive(); return plain;
-                }
-            }
-            throw new IOException("Attachment no longer exists");
+            ArrayList<MemoryCard> cards = new ArrayList<>(); cards.add(card);
+            byte[] plain = readAttachmentBlob(cards, blob);
+            requireActive(); return plain;
         });
         return pending.get();
     }
