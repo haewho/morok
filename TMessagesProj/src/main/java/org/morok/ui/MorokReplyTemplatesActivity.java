@@ -36,7 +36,10 @@ import java.util.ArrayList;
 
 /** Manages encrypted reply templates and optionally returns plain text to a chat composer. */
 public final class MorokReplyTemplatesActivity extends BaseFragment {
-    public interface Selection { void selected(String text); }
+    public interface Selection {
+        String preview(String template);
+        void selected(String expandedText);
+    }
 
     private static final int ADD = 1;
     private static final int CLEAR = 2;
@@ -113,8 +116,7 @@ public final class MorokReplyTemplatesActivity extends BaseFragment {
             if (position < 0 || position >= visible.size()) return;
             ReplyTemplate template = visible.get(position);
             if (selection != null) {
-                selection.selected(template.body);
-                finishFragment();
+                preview(template);
             } else {
                 edit(template);
             }
@@ -204,6 +206,24 @@ public final class MorokReplyTemplatesActivity extends BaseFragment {
                     else store.update(template.id, nextTitle, nextBody, callback);
                 }));
         showDialog(editor);
+    }
+
+    private void preview(ReplyTemplate template) {
+        if (!active() || selection == null || getParentActivity() == null) return;
+        String expanded = selection.preview(template.body);
+        if (expanded == null) {
+            toast(text(R.string.MorokTemplatesUnavailable));
+            return;
+        }
+        showDialog(new AlertDialog.Builder(getParentActivity())
+                .setTitle(text(R.string.MorokTemplatesPreviewTitle))
+                .setMessage(expanded)
+                .setNegativeButton(text(R.string.Cancel), null)
+                .setPositiveButton(text(R.string.MorokTemplatesInsertAction), (dialog, which) -> {
+                    if (!active()) return;
+                    selection.selected(expanded);
+                    finishFragment();
+                }).create());
     }
 
     private void confirmRemove(ReplyTemplate template) {

@@ -1,5 +1,6 @@
 import org.morok.templates.ReplyTemplate;
 import org.morok.templates.ReplyTemplateInsertion;
+import org.morok.templates.ReplyTemplateVariables;
 
 public final class ReplyTemplateTest {
     private static final String ID = "123e4567-e89b-12d3-a456-426614174000";
@@ -17,6 +18,19 @@ public final class ReplyTemplateTest {
         check(ReplyTemplateInsertion.prepare("hello", 5, "world", 10) == null, "message length bound");
         check(ReplyTemplateInsertion.prepare("hello", -1, "world", 100) == null, "cursor bound");
 
+        ReplyTemplateVariables.Values variables = new ReplyTemplateVariables.Values(
+                "  Alice\nAdmin  ", " Alice ", "10 September 2026", "21:45");
+        check("Hi Alice! Alice Admin · 10 September 2026 21:45".equals(
+                ReplyTemplateVariables.expand("Hi {first_name}! {name} · {date} {time}", variables)),
+                "known variable expansion");
+        check("{name} {unknown}".equals(
+                ReplyTemplateVariables.expand("{{name}} {unknown}", variables)), "literal and unknown variables");
+        check("Alice Admin".equals(new ReplyTemplateVariables.Values("Alice Admin", "", "", "").firstName),
+                "first name fallback");
+        check(ReplyTemplateVariables.expand(null, variables) == null
+                        && ReplyTemplateVariables.expand("x", null) == null,
+                "invalid expansion context");
+
         new ReplyTemplate(ID, repeat('t', ReplyTemplate.MAX_TITLE_LENGTH),
                 repeat('b', ReplyTemplate.MAX_BODY_LENGTH), 0, 0);
         rejects(() -> new ReplyTemplate("bad", "title", "body", 0, 0));
@@ -26,7 +40,7 @@ public final class ReplyTemplateTest {
         rejects(() -> new ReplyTemplate(ID, repeat('t', ReplyTemplate.MAX_TITLE_LENGTH + 1), "body", 0, 0));
         rejects(() -> new ReplyTemplate(ID, "title", repeat('b', ReplyTemplate.MAX_BODY_LENGTH + 1), 0, 0));
         rejects(() -> new ReplyTemplate(ID, "title", "body", 5, 4));
-        System.out.println("PASS: reply template identity, search, insertion and limits");
+        System.out.println("PASS: reply template identity, variables, preview input, insertion and limits");
     }
 
     private static String repeat(char value, int count) {

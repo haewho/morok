@@ -13,6 +13,7 @@ fi
 "${MOROK_JAVA_BIN}javac" -d "$MOROK_TEST_OUTPUT" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/templates/ReplyTemplate.java" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/templates/ReplyTemplateInsertion.java" \
+  "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/templates/ReplyTemplateVariables.java" \
   "$MOROK_ROOT/tests/templates/ReplyTemplateTest.java"
 "${MOROK_JAVA_BIN}java" -cp "$MOROK_TEST_OUTPUT" ReplyTemplateTest
 python3 "$MOROK_ROOT/tests/templates/test_templates_integration.py"

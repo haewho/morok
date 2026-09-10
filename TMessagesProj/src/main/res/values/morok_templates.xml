@@ -12,7 +12,7 @@
     <string name="MorokTemplatesEdit">Edit reply template</string>
     <string name="MorokTemplatesNameHint">Template name</string>
     <string name="MorokTemplatesBodyHint">Text inserted into the message field</string>
-    <string name="MorokTemplatesEditorInfo">Plain text only. Using a template preserves the current draft and still requires pressing Send.</string>
+    <string name="MorokTemplatesEditorInfo">Plain text only. Variables: {name}, {first_name}, {date}, {time}. Double braces show a literal brace. A preview is always shown before insertion.</string>
     <string name="MorokTemplatesRequired">Enter both a name and template text.</string>
     <string name="MorokTemplatesDelete">Delete template?</string>
     <string name="MorokTemplatesClearAll">Clear all templates</string>
@@ -21,4 +21,6 @@
     <string name="MorokTemplatesUnavailable">Reply templates require a signed-in account and Android 6 or later.</string>
     <string name="MorokTemplatesInserted">Template inserted into the message field</string>
     <string name="MorokTemplatesTooLong">The template does not fit in the remaining message length.</string>
+    <string name="MorokTemplatesPreviewTitle">Insert this result?</string>
+    <string name="MorokTemplatesInsertAction">Insert</string>
 </resources>

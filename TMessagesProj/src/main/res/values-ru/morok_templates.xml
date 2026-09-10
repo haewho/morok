@@ -12,7 +12,7 @@
     <string name="MorokTemplatesEdit">Изменить шаблон ответа</string>
     <string name="MorokTemplatesNameHint">Название шаблона</string>
     <string name="MorokTemplatesBodyHint">Текст для вставки в поле сообщения</string>
-    <string name="MorokTemplatesEditorInfo">Только обычный текст. Шаблон сохраняет текущий черновик, а для отправки всё равно нужно нажать кнопку отправки.</string>
+    <string name="MorokTemplatesEditorInfo">Только обычный текст. Переменные: {name}, {first_name}, {date}, {time}. Двойные скобки вставляют обычную скобку. Перед вставкой всегда показывается результат.</string>
     <string name="MorokTemplatesRequired">Введите название и текст шаблона.</string>
     <string name="MorokTemplatesDelete">Удалить шаблон?</string>
     <string name="MorokTemplatesClearAll">Удалить все шаблоны</string>
@@ -21,4 +21,6 @@
     <string name="MorokTemplatesUnavailable">Для шаблонов ответов нужен вход в аккаунт и Android 6 или новее.</string>
     <string name="MorokTemplatesInserted">Шаблон вставлен в поле сообщения</string>
     <string name="MorokTemplatesTooLong">Шаблон не помещается в оставшуюся длину сообщения.</string>
+    <string name="MorokTemplatesPreviewTitle">Вставить этот результат?</string>
+    <string name="MorokTemplatesInsertAction">Вставить</string>
 </resources>

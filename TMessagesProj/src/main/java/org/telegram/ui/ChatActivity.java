@@ -3990,7 +3990,15 @@ public class ChatActivity extends BaseFragment implements
                 } else if (id == morok_reply_templates) {
                     if (isMorokReplyTemplatesAvailable()) {
                         presentFragment(new org.morok.ui.MorokReplyTemplatesActivity(currentAccount,
-                                ChatActivity.this::insertMorokReplyTemplate));
+                                new org.morok.ui.MorokReplyTemplatesActivity.Selection() {
+                                    @Override public String preview(String template) {
+                                        return expandMorokReplyTemplate(template);
+                                    }
+
+                                    @Override public void selected(String expandedText) {
+                                        insertMorokReplyTemplate(expandedText);
+                                    }
+                                }));
                     }
                 } else if (id == morok_saved_draft) {
                     if (isMorokSavedDraftAvailable() && chatActivityEnterView != null
@@ -19633,6 +19641,17 @@ public class ChatActivity extends BaseFragment implements
         AndroidUtilities.showKeyboard(field);
         if (getParentActivity() != null) android.widget.Toast.makeText(getParentActivity(),
                 LocaleController.getString(R.string.MorokTemplatesInserted), android.widget.Toast.LENGTH_SHORT).show();
+    }
+
+    private String expandMorokReplyTemplate(String template) {
+        if (!isMorokReplyTemplatesAvailable() || template == null) return null;
+        String name = !TextUtils.isEmpty(morokLocalAlias) ? morokLocalAlias : getMorokChatMetadataSourceTitle();
+        String firstName = currentUser == null ? name : UserObject.getFirstName(currentUser);
+        long now = System.currentTimeMillis();
+        return org.morok.templates.ReplyTemplateVariables.expand(template,
+                new org.morok.templates.ReplyTemplateVariables.Values(name, firstName,
+                        LocaleController.getInstance().getChatFullDate().format(now),
+                        LocaleController.getInstance().getFormatterDay().format(now)));
     }
 
     private boolean isMorokSavedDraftAvailable() {

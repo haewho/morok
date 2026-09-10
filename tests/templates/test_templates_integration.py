@@ -7,6 +7,7 @@ JAVA = ROOT / "TMessagesProj/src/main/java"
 store = (JAVA / "org/morok/templates/MorokReplyTemplateStore.java").read_text()
 screen = (JAVA / "org/morok/ui/MorokReplyTemplatesActivity.java").read_text()
 chat = (JAVA / "org/telegram/ui/ChatActivity.java").read_text()
+variables = (JAVA / "org/morok/templates/ReplyTemplateVariables.java").read_text()
 settings = (JAVA / "org/morok/ui/MorokSettingsActivity.java").read_text()
 config = (JAVA / "org/telegram/messenger/UserConfig.java").read_text()
 
@@ -26,10 +27,15 @@ for forbidden in ("ConnectionsManager", "sendRequest", "MessagesStorage", "SendM
 assert "new MorokReplyTemplatesActivity(currentAccount)" in settings
 assert "editor.setOnShowListener" in screen and "editor.dismiss()" in screen
 assert "if (selection != null) return false" in screen
-assert "ChatActivity.this::insertMorokReplyTemplate" in chat
+assert "new org.morok.ui.MorokReplyTemplatesActivity.Selection()" in chat
 assert "currentEncryptedChat == null" in chat
 assert "!UserObject.isService(dialog_id)" in chat
 assert "ReplyTemplateInsertion.prepare" in chat
+assert "ReplyTemplateVariables.expand" in chat
+assert "MorokTemplatesPreviewTitle" in screen and "selection.preview(template.body)" in screen
+assert screen.index("selection.preview(template.body)") < screen.index("selection.selected(expanded)")
+for token in ("{name}", "{first_name}", "{date}", "{time}"):
+    assert token in variables
 method = chat[chat.index("private void insertMorokReplyTemplate"):
               chat.index("private String getMorokChatMetadataSourceTitle")]
 assert "replaceWithText(cursor, 0, insertion, true)" in method
