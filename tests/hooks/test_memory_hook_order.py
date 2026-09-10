@@ -54,9 +54,18 @@ expect(persist < pending < replay, "Pending identities must become visible after
 retry_start = store.index("public void retryAttachment(")
 retry_end = store.index("public void update(", retry_start)
 retry = store[retry_start:retry_end]
-expect("MemoryCapture.restoreCachedMessage" in retry and "copyAttachment(message, target, database)" in retry,
+expect("MemoryCapture.restoreCachedMessage" in retry and "copyAttachment(message, target, database, false)" in retry,
        "Attachment retry must use the authenticated stored snapshot and existing store transaction")
 expect("loadFile(" not in retry and "download" not in retry.lower(),
        "Attachment retry must remain cache-only and never start a download")
+
+expect("enforceAutomaticPolicy(database, archiveSettings())" in store,
+       "Every committed Memory index must enforce the selected automatic retention and storage policy")
+expect("policy.allowsAutomaticAttachment(isUnmeteredNetwork())" in store,
+       "Automatic original retention must consult the selected network policy")
+expect("MemoryPolicy.canCopy(size, estimatedUsedBytes(database)" in store,
+       "Automatic originals must use projected referenced bytes rather than orphaned cache files")
+expect("cleanAutomaticArchive" in store and "beforeCards - automaticCount(database)" in store,
+       "The explicit cleanup action must report only removed automatic cards")
 
 print(f"Memory hook order: {checks} checks passed")

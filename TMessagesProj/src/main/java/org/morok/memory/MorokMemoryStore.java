@@ -2,6 +2,8 @@ package org.morok.memory;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import android.os.Build;
 import android.util.AtomicFile;
 
@@ -11,6 +13,8 @@ import com.google.crypto.tink.integration.android.AndroidKeystoreKmsClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.morok.history.MemoryCapture;
+import org.morok.settings.ArchiveSettings;
+import org.morok.settings.MorokSettings;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLoader;
@@ -40,6 +44,17 @@ import java.util.concurrent.TimeUnit;
 /** Serialized, fail-closed local projection. It never writes to Telegram's messages database. */
 public final class MorokMemoryStore {
     public interface Callback<T> { void done(T result, String error); }
+    public static final class ArchiveCleanupResult {
+        public final int removedCards;
+        public final long beforeBytes;
+        public final long afterBytes;
+
+        ArchiveCleanupResult(int removedCards, long beforeBytes, long afterBytes) {
+            this.removedCards = removedCards;
+            this.beforeBytes = beforeBytes;
+            this.afterBytes = afterBytes;
+        }
+    }
     private interface Operation<T> { T run() throws Exception; }
     private static final ExecutorService QUEUE = Executors.newSingleThreadExecutor(r -> new Thread(r, "morok-memory"));
     private static final ExecutorService JOURNAL_QUEUE = Executors.newSingleThreadExecutor(r -> new Thread(r, "morok-memory-journal"));
@@ -472,6 +487,7 @@ public final class MorokMemoryStore {
 
     private void write(Database database) throws Exception {
         requireActive();
+        enforceAutomaticPolicy(database, archiveSettings());
         JSONArray cards = new JSONArray(), tombstones = new JSONArray();
         for (MemoryCard card : database.cards) cards.put(card.toJson());
         for (String key : database.tombstones) tombstones.put(key);
@@ -534,7 +550,7 @@ public final class MorokMemoryStore {
     public void list(Callback<ArrayList<MemoryCard>> callback) {
         execute(() -> {
             Database database = read();
-            if (pruneExpiredAutomatic(database)) write(database); else cleanup(database);
+            if (enforceAutomaticPolicy(database, archiveSettings())) write(database); else cleanup(database);
             MorokMemoryReminderReceiver.scheduleNext(userId, database.cards);
             Collections.sort(database.cards, (a, b) -> Long.compare(b.createdAt, a.createdAt));
             return database.cards;
@@ -575,13 +591,13 @@ public final class MorokMemoryStore {
                     duplicate = true;
                     if (!"saved".equals(version.fileState)) {
                         String previous = version.fileState;
-                        copyAttachment(capture.message, version, database);
+                        copyAttachment(capture.message, version, database, existing.automatic);
                         changed |= !previous.equals(version.fileState);
                     }
                     break;
                 }
                 if (!duplicate) {
-                    copyAttachment(capture.message, capture.snapshot, database);
+                    copyAttachment(capture.message, capture.snapshot, database, existing.automatic);
                     int position = existing.versions.size();
                     while (position > 0 && !MemoryPolicy.becomesLatest(capture.snapshot.editedAt,
                             existing.versions.get(position - 1).editedAt)) position--;
@@ -623,14 +639,15 @@ public final class MorokMemoryStore {
             if (version.fingerprint.equals(capture.snapshot.fingerprint)) {
                 // Explicit retry may preserve an original that has since completed downloading.
                 if (mode == SAVE_MANUAL && !"saved".equals(version.fileState)) {
-                    copyAttachment(capture.message, version, database); write(database);
+                    copyAttachment(capture.message, version, database, false); write(database);
                 } else if (promoted) {
                     write(database);
                 }
                 return existing;
             }
         }
-        copyAttachment(capture.message, capture.snapshot, database);
+        copyAttachment(capture.message, capture.snapshot, database,
+                mode == SAVE_AUTOMATIC_NEW || mode == SAVE_TRACKED_UPDATE && existing.automatic);
         int position = existing.versions.size();
         while (position > 0 && !MemoryPolicy.becomesLatest(capture.snapshot.editedAt, existing.versions.get(position - 1).editedAt)) position--;
         existing.versions.add(position, capture.snapshot);
@@ -640,7 +657,7 @@ public final class MorokMemoryStore {
     }
 
     private void pruneForInsertion(Database database, boolean automatic) throws IOException {
-        pruneExpiredAutomatic(database);
+        enforceAutomaticPolicy(database, archiveSettings());
         if (automatic) {
             while (automaticCount(database) >= MemoryPolicy.MAX_AUTOMATIC_CARDS) {
                 if (!removeOldestAutomatic(database)) throw new IOException("Automatic archive limit reached");
@@ -651,14 +668,30 @@ public final class MorokMemoryStore {
         }
     }
 
-    private static boolean pruneExpiredAutomatic(Database database) {
+    private static boolean pruneExpiredAutomatic(Database database, long retentionMillis) {
         long now = System.currentTimeMillis();
         boolean changed = false;
         for (int i = database.cards.size() - 1; i >= 0; i--) {
             MemoryCard card = database.cards.get(i);
-            if (card.automatic && MemoryPolicy.automaticExpired(card.createdAt, now)) { database.cards.remove(i); changed = true; }
+            if (card.automatic && MemoryPolicy.automaticExpired(card.createdAt, now, retentionMillis)) {
+                database.cards.remove(i); changed = true;
+            }
         }
         return changed;
+    }
+
+    private boolean enforceAutomaticPolicy(Database database, ArchiveSettings settings) {
+        boolean changed = pruneExpiredAutomatic(database, settings.retentionMillis());
+        while (estimatedUsedBytes(database) > settings.storageBytes()) {
+            if (!removeOldestAutomatic(database)) break;
+            changed = true;
+        }
+        return changed;
+    }
+
+    private ArchiveSettings archiveSettings() {
+        try { return MorokSettings.archive(account); }
+        catch (RuntimeException unavailable) { return ArchiveSettings.DEFAULT; }
     }
 
     private static int automaticCount(Database database) {
@@ -678,7 +711,8 @@ public final class MorokMemoryStore {
         return true;
     }
 
-    private void copyAttachment(TLRPC.Message message, MemoryCard.Snapshot snapshot, Database database) {
+    private void copyAttachment(TLRPC.Message message, MemoryCard.Snapshot snapshot, Database database,
+            boolean automatic) {
         TLRPC.Document document = MessageObject.getDocument(message);
         boolean photo = message.media instanceof TLRPC.TL_messageMediaPhoto;
         if (document == null && !photo) return;
@@ -693,7 +727,14 @@ public final class MorokMemoryStore {
             if (source == null || !source.isFile() || source.getName().endsWith(".enc")) return;
             long size = source.length();
             snapshot.fileSize = size;
-            if (size > MemoryPolicy.MAX_ATTACHMENT_BYTES) { snapshot.fileState = "too_large"; return; }
+            ArchiveSettings policy = archiveSettings();
+            long attachmentLimit = automatic ? policy.attachmentBytes() : MemoryPolicy.MAX_ATTACHMENT_BYTES;
+            long storageLimit = automatic ? policy.storageBytes() : MemoryPolicy.MAX_ACCOUNT_BYTES;
+            if (size > attachmentLimit) { snapshot.fileState = "too_large"; return; }
+            if (automatic && !policy.allowsAutomaticAttachment(isUnmeteredNetwork())) {
+                snapshot.fileState = "policy_blocked";
+                return;
+            }
             if (document != null && document.size > 0 && size != document.size) return;
             if (!directory.isDirectory() && !directory.mkdirs()) throw new IOException("Storage unavailable");
             byte[] plain;
@@ -706,7 +747,8 @@ public final class MorokMemoryStore {
                     snapshot.blob = version.blob; snapshot.sha256 = hash; snapshot.fileSize = size; snapshot.fileState = "saved"; return;
                 }
             }
-            if (!MemoryPolicy.canCopy(size, usedBytes(), directory.getUsableSpace())) { snapshot.fileState = "storage_error"; return; }
+            if (!MemoryPolicy.canCopy(size, estimatedUsedBytes(database), directory.getUsableSpace(),
+                    attachmentLimit, storageLimit)) { snapshot.fileState = "storage_error"; return; }
             String id = UUID.randomUUID().toString();
             byte[] encrypted = cipher().encrypt(plain, aad("blob/" + id));
             requireActive();
@@ -727,7 +769,7 @@ public final class MorokMemoryStore {
             if (target == null) throw new IOException("Memory version no longer exists");
             if ("saved".equals(target.fileState)) return card;
             TLRPC.Message message = MemoryCapture.restoreCachedMessage(account, card.key, target);
-            copyAttachment(message, target, database);
+            copyAttachment(message, target, database, false);
             write(database);
             return card;
         }, callback);
@@ -765,6 +807,18 @@ public final class MorokMemoryStore {
             if (database.tombstones.size() + database.cards.size() > MemoryPolicy.MAX_TOMBSTONES) throw new IOException("Memory removal limit reached");
             for (MemoryCard card : database.cards) database.tombstones.add(card.key.canonical());
             database.cards.clear(); write(database); MorokMemoryReminderReceiver.cancel(userId); return true;
+        }, callback);
+    }
+
+    /** Explicitly removes only automatic cards outside the selected age/storage policy. */
+    public void cleanAutomaticArchive(Callback<ArchiveCleanupResult> callback) {
+        execute(() -> {
+            Database database = read();
+            int beforeCards = automaticCount(database);
+            long beforeBytes = usedBytes();
+            boolean changed = enforceAutomaticPolicy(database, archiveSettings());
+            if (changed) write(database); else cleanup(database);
+            return new ArchiveCleanupResult(beforeCards - automaticCount(database), beforeBytes, usedBytes());
         }, callback);
     }
 
@@ -810,7 +864,7 @@ public final class MorokMemoryStore {
             cleanup(database);
             MemoryStorageStats stats = new MemoryStorageStats(usedBytes());
             for (MemoryCard card : database.cards) {
-                stats.addCard();
+                stats.addCard(card.automatic);
                 for (MemoryCard.Snapshot snapshot : card.versions) stats.addSnapshot(snapshot.fileState, snapshot.blob);
             }
             return stats;
@@ -821,6 +875,33 @@ public final class MorokMemoryStore {
         long bytes = 0;
         File[] files = directory.listFiles(); if (files != null) for (File file : files) bytes += file.length();
         return bytes;
+    }
+
+    private long estimatedUsedBytes(Database database) {
+        long bytes = fileBytes(index.getBaseFile()) + fileBytes(new File(index.getBaseFile() + ".bak"))
+                + fileBytes(journal.getBaseFile()) + fileBytes(new File(journal.getBaseFile() + ".bak"));
+        HashSet<String> blobs = new HashSet<>();
+        for (MemoryCard card : database.cards) for (MemoryCard.Snapshot snapshot : card.versions) {
+            if ("saved".equals(snapshot.fileState) && safeId(snapshot.blob) && blobs.add(snapshot.blob)) {
+                bytes += fileBytes(new File(directory, snapshot.blob + ".tink"));
+            }
+        }
+        return bytes;
+    }
+
+    private static long fileBytes(File file) { return file.isFile() ? file.length() : 0; }
+
+    private boolean isUnmeteredNetwork() {
+        try {
+            ConnectivityManager manager = (ConnectivityManager) ApplicationLoader.applicationContext
+                    .getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (manager == null) return false;
+            NetworkCapabilities capabilities = manager.getNetworkCapabilities(manager.getActiveNetwork());
+            return capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                    || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
+        } catch (RuntimeException unavailable) {
+            return false;
+        }
     }
 
     static boolean safeId(String value) { return value != null && value.matches("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}"); }

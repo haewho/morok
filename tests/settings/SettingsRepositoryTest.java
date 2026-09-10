@@ -62,7 +62,7 @@ public final class SettingsRepositoryTest {
         repo.saveAppearance(new AppearanceSettings(false, true));
         SettingsRepository restarted = new SettingsRepository(device);
         check(!restarted.appearance().liquidGlass && restarted.appearance().reducedEffects, "restart persistence");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 12, "additive schema migration");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 13, "additive schema migration");
         restarted.resetAppearance();
         check(restarted.appearance().liquidGlass && !restarted.appearance().reducedEffects, "category reset defaults");
         check("keep".equals(device.values.get("future.unrelated")), "reset preserves other settings");
@@ -129,11 +129,25 @@ public final class SettingsRepositoryTest {
         check(firstAccount.interactions().doubleTapReactionsEnabled,
                 "gesture reset restores Telegram behavior");
         ArchiveSettings archiveDefaults = firstAccount.archive();
-        check(!archiveDefaults.enabled && archiveDefaults.chats.isEmpty(), "archive defaults to off with an empty allowlist");
+        check(!archiveDefaults.enabled && archiveDefaults.chats.isEmpty()
+                        && archiveDefaults.retentionDays == 90 && archiveDefaults.storageMib == 256
+                        && archiveDefaults.attachmentMib == 8
+                        && ArchiveSettings.ATTACHMENTS_WIFI.equals(archiveDefaults.attachmentPolicy),
+                "archive defaults to off with bounded Wi-Fi-first retention");
         ArchiveSettings archive = archiveDefaults.withEnabled(true).withChat(99, true).withChat(-1001, true);
+        archive = archive.withRetentionDays(180).withStorageMib(128).withAttachmentMib(4)
+                .withAttachmentPolicy(ArchiveSettings.ATTACHMENTS_ANY);
         firstAccount.saveArchive(archive);
         check(firstAccount.archive().archives(99) && firstAccount.archive().archives(-1001),
                 "archive allowlist survives persistence for both peer namespaces");
+        check(firstAccount.archive().retentionDays == 180 && firstAccount.archive().storageMib == 128
+                        && firstAccount.archive().attachmentMib == 4
+                        && ArchiveSettings.ATTACHMENTS_ANY.equals(firstAccount.archive().attachmentPolicy),
+                "archive retention, storage, attachment and network limits survive restart");
+        check(firstAccount.archive().allowsAutomaticAttachment(false)
+                        && firstAccount.archive().retentionMillis() == 180L * 24 * 60 * 60 * 1000
+                        && firstAccount.archive().storageBytes() == 128L * 1024 * 1024,
+                "archive values expose exact bounded runtime policy");
         check(!firstAccount.archive().archives(100), "archive does not capture a chat outside its allowlist");
         firstAccount.saveArchive(firstAccount.archive().withEnabled(false));
         check(!firstAccount.archive().archives(99) && firstAccount.archive().chats.contains(99L),
@@ -144,6 +158,18 @@ public final class SettingsRepositoryTest {
                 "archive allowlist remains bounded");
         check(new SettingsRepository(accounts.get(second)).archive().chats.isEmpty(),
                 "archive selection is isolated by stable account");
+        ArchiveSettings invalidArchive = new ArchiveSettings(true, java.util.Collections.singleton(7L),
+                7, 999, 99, "metered-magic");
+        check(invalidArchive.retentionDays == ArchiveSettings.DEFAULT_RETENTION_DAYS
+                        && invalidArchive.storageMib == ArchiveSettings.DEFAULT_STORAGE_MIB
+                        && invalidArchive.attachmentMib == ArchiveSettings.DEFAULT_ATTACHMENT_MIB
+                        && ArchiveSettings.ATTACHMENTS_WIFI.equals(invalidArchive.attachmentPolicy),
+                "unknown archive values fail closed to bounded defaults");
+        check(!ArchiveSettings.DEFAULT.allowsAutomaticAttachment(false)
+                        && ArchiveSettings.DEFAULT.allowsAutomaticAttachment(true)
+                        && !ArchiveSettings.DEFAULT.withAttachmentPolicy(ArchiveSettings.ATTACHMENTS_NEVER)
+                        .allowsAutomaticAttachment(true),
+                "attachment policy distinguishes Wi-Fi, metered and disabled capture");
         firstAccount.savePrivacy(PrivacySettings.DEFAULT.withGhostPreset(true));
         check(firstAccount.privacy().hidesTyping(), "ghost preset enables its documented typing policy");
         check(firstAccount.privacy().hidesOnline(), "ghost preset enables its documented online policy");
@@ -327,13 +353,13 @@ public final class SettingsRepositoryTest {
             check(rejected, "invalid unauthenticated identity rejected: " + invalid);
         }
 
-        device.values.put(SettingsRepository.SCHEMA_KEY, 13);
+        device.values.put(SettingsRepository.SCHEMA_KEY, 14);
         int oldWrites = device.writes;
         boolean rejected = false;
         try { restarted.resetAppearance(); }
         catch (IllegalStateException expected) { rejected = true; }
         check(rejected && device.writes == oldWrites, "newer schema cannot be downgraded by reset");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 13, "newer schema kept intact");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 14, "newer schema kept intact");
         System.out.println("PASS: settings defaults, migration, isolation, archive, round-video, safety, interactions, privacy, strict transfer, reviewed app profiles, invalid IDs, downgrade refusal");
     }
 }

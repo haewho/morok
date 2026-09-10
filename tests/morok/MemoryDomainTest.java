@@ -37,6 +37,15 @@ public final class MemoryDomainTest {
         expect(!MemoryPolicy.canCopy(0, 0, 100 * 1024 * 1024), "Empty/truncated original is not retained as a valid file");
         expect(!MemoryPolicy.canCopy(1024, MemoryPolicy.MAX_ACCOUNT_BYTES, 100 * 1024 * 1024), "Account quota prevents disk filling");
         expect(!MemoryPolicy.canCopy(1024, 0, MemoryPolicy.MIN_FREE_BYTES + 1024), "Encryption overhead must preserve free-space reserve");
+        expect(MemoryPolicy.canCopy(4L * 1024 * 1024, 32L * 1024 * 1024, 100L * 1024 * 1024,
+                        4L * 1024 * 1024, 64L * 1024 * 1024),
+                "Configured attachment and automatic-account boundaries allow an exact fit");
+        expect(!MemoryPolicy.canCopy(4L * 1024 * 1024 + 1, 0, 100L * 1024 * 1024,
+                        4L * 1024 * 1024, 64L * 1024 * 1024),
+                "Configured attachment ceiling rejects a larger cached original");
+        expect(!MemoryPolicy.canCopy(1024, 64L * 1024 * 1024, 100L * 1024 * 1024,
+                        4L * 1024 * 1024, 64L * 1024 * 1024),
+                "Configured automatic storage budget refuses additional bytes");
         String editEvent = MemoryJournalPolicy.eventId("edit", first.canonical() + ":revision");
         expect(editEvent.equals(MemoryJournalPolicy.eventId("edit", first.canonical() + ":revision")),
                 "Journal replay identity must be deterministic");
@@ -73,17 +82,22 @@ public final class MemoryDomainTest {
                 "Automatic card remains available through the retention boundary");
         expect(MemoryPolicy.automaticExpired(now - MemoryPolicy.AUTOMATIC_RETENTION_MILLIS - 1, now),
                 "Automatic card expires immediately after the retention boundary");
+        long thirtyDays = 30L * 24 * 60 * 60 * 1000;
+        expect(!MemoryPolicy.automaticExpired(now - thirtyDays, now, thirtyDays)
+                        && MemoryPolicy.automaticExpired(now - thirtyDays - 1, now, thirtyDays),
+                "Selected automatic retention has a precise inclusive boundary");
         MemoryStorageStats stats = new MemoryStorageStats(1234);
-        stats.addCard(); stats.addCard();
+        stats.addCard(true); stats.addCard(false);
         stats.addSnapshot("saved", "shared"); stats.addSnapshot("saved", "shared");
         stats.addSnapshot("not_downloaded", ""); stats.addSnapshot("too_large", "");
         stats.addSnapshot("unavailable", "lost"); stats.addSnapshot("storage_error", "");
-        stats.addSnapshot("none", "");
-        expect(stats.usedBytes == 1234 && stats.cards == 2 && stats.versions == 7,
+        stats.addSnapshot("policy_blocked", ""); stats.addSnapshot("none", "");
+        expect(stats.usedBytes == 1234 && stats.cards == 2 && stats.automaticCards == 1 && stats.versions == 8,
                 "Storage diagnostics count account bytes, cards and every received version");
         expect(stats.savedOriginals == 2 && stats.uniqueBlobs == 1,
                 "Shared encrypted originals are counted once while retaining both references");
-        expect(stats.notDownloaded == 1 && stats.tooLarge == 1 && stats.unavailable == 1 && stats.storageErrors == 1,
+        expect(stats.notDownloaded == 1 && stats.tooLarge == 1 && stats.unavailable == 1
+                        && stats.storageErrors == 1 && stats.policyBlocked == 1,
                 "Storage diagnostics preserve actionable attachment states");
         for (long user : new long[]{0, -1}) {
             try { new MemoryKey(user, "user", 1, 1, 0); throw new AssertionError("Invalid account accepted"); }

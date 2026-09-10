@@ -293,7 +293,8 @@ public class MorokMemoryActivity extends BaseFragment {
     }
 
     private static boolean canRetry(MemoryCard.Snapshot snapshot) {
-        return "not_downloaded".equals(snapshot.fileState) || "storage_error".equals(snapshot.fileState)
+        return "not_downloaded".equals(snapshot.fileState) || "policy_blocked".equals(snapshot.fileState)
+                || "storage_error".equals(snapshot.fileState)
                 || "unavailable".equals(snapshot.fileState);
     }
 
@@ -358,6 +359,7 @@ public class MorokMemoryActivity extends BaseFragment {
                             + "\n" + LocaleController.formatString(R.string.MorokMemoryStorageCards, stats.cards, stats.versions)
                             + "\n" + LocaleController.formatString(R.string.MorokMemoryStorageFiles, stats.savedOriginals, stats.uniqueBlobs)
                             + "\n" + LocaleController.formatString(R.string.MorokMemoryStoragePending, stats.notDownloaded, stats.tooLarge)
+                            + "\n" + LocaleController.formatString(R.string.MorokMemoryStoragePolicyBlocked, stats.policyBlocked)
                             + "\n" + LocaleController.formatString(R.string.MorokMemoryStorageProblems, stats.unavailable, stats.storageErrors)
                             + "\n\n" + t(R.string.MorokMemoryLimits)
                             + (store.hasCaptureGap() ? "\n\n" + t(R.string.MorokMemoryCaptureGap) : ""))
@@ -383,6 +385,7 @@ public class MorokMemoryActivity extends BaseFragment {
             case "saved": return R.string.MorokMemoryFileSaved;
             case "not_downloaded": return R.string.MorokMemoryFileNotDownloaded;
             case "too_large": return R.string.MorokMemoryFileTooLarge;
+            case "policy_blocked": return R.string.MorokMemoryFilePolicyBlocked;
             case "storage_error": return R.string.MorokMemoryFileError;
             case "unavailable": return R.string.MorokMemoryFileUnavailable;
             default: return 0;

@@ -2,7 +2,7 @@ package org.morok.settings;
 
 /** Versioned local-only schema. Unknown newer schemas are readable but never overwritten. */
 public final class SettingsRepository {
-    public static final int SCHEMA_VERSION = 12;
+    public static final int SCHEMA_VERSION = 13;
     public static final String SCHEMA_KEY = "schema_version";
     private final SettingsStore store;
 
@@ -104,14 +104,22 @@ public final class SettingsRepository {
 
     public ArchiveSettings archive() {
         return new ArchiveSettings(store.getBoolean("archive.enabled", false),
-                ArchiveSettings.decodeChats(store.getString("archive.chats", "")));
+                ArchiveSettings.decodeChats(store.getString("archive.chats", "")),
+                number(store.getString("archive.retention_days", ""), ArchiveSettings.DEFAULT_RETENTION_DAYS),
+                number(store.getString("archive.storage_mib", ""), ArchiveSettings.DEFAULT_STORAGE_MIB),
+                number(store.getString("archive.attachment_mib", ""), ArchiveSettings.DEFAULT_ATTACHMENT_MIB),
+                store.getString("archive.attachment_policy", ArchiveSettings.ATTACHMENTS_WIFI));
     }
 
     public void saveArchive(ArchiveSettings settings) {
         checkWritable();
         store.save(SCHEMA_VERSION,
                 new String[] {"archive.enabled"}, new boolean[] {settings.enabled},
-                new String[] {"archive.chats"}, new String[] {settings.encodeChats()});
+                new String[] {"archive.chats", "archive.retention_days", "archive.storage_mib",
+                        "archive.attachment_mib", "archive.attachment_policy"},
+                new String[] {settings.encodeChats(), Integer.toString(settings.retentionDays),
+                        Integer.toString(settings.storageMib), Integer.toString(settings.attachmentMib),
+                        settings.attachmentPolicy});
     }
 
     public void checkWritable() {
@@ -126,5 +134,10 @@ public final class SettingsRepository {
             throw new IllegalArgumentException("An authenticated Telegram user ID is required");
         }
         return "morok_account_user_" + userId;
+    }
+
+    private static int number(String value, int fallback) {
+        try { return Integer.parseInt(value); }
+        catch (NumberFormatException ignored) { return fallback; }
     }
 }

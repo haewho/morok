@@ -6,6 +6,7 @@ import java.util.HashSet;
 public final class MemoryStorageStats {
     public final long usedBytes;
     public int cards;
+    public int automaticCards;
     public int versions;
     public int savedOriginals;
     public int uniqueBlobs;
@@ -13,6 +14,7 @@ public final class MemoryStorageStats {
     public int tooLarge;
     public int unavailable;
     public int storageErrors;
+    public int policyBlocked;
     private final HashSet<String> blobs = new HashSet<>();
 
     public MemoryStorageStats(long usedBytes) {
@@ -20,7 +22,12 @@ public final class MemoryStorageStats {
     }
 
     public void addCard() {
+        addCard(false);
+    }
+
+    public void addCard(boolean automatic) {
         cards++;
+        if (automatic) automaticCards++;
     }
 
     public void addSnapshot(String state, String blob) {
@@ -36,6 +43,8 @@ public final class MemoryStorageStats {
             unavailable++;
         } else if ("storage_error".equals(state)) {
             storageErrors++;
+        } else if ("policy_blocked".equals(state)) {
+            policyBlocked++;
         }
     }
 }

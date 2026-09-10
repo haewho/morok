@@ -17,13 +17,25 @@ public final class MemoryPolicy {
     private MemoryPolicy() { }
 
     public static boolean canCopy(long sourceBytes, long usedBytes, long freeBytes) {
-        return sourceBytes > 0 && sourceBytes <= MAX_ATTACHMENT_BYTES
-                && usedBytes >= 0 && usedBytes + sourceBytes + 64 <= MAX_ACCOUNT_BYTES
+        return canCopy(sourceBytes, usedBytes, freeBytes, MAX_ATTACHMENT_BYTES, MAX_ACCOUNT_BYTES);
+    }
+
+    public static boolean canCopy(long sourceBytes, long usedBytes, long freeBytes,
+            long attachmentLimitBytes, long accountLimitBytes) {
+        return attachmentLimitBytes > 0 && attachmentLimitBytes <= MAX_ATTACHMENT_BYTES
+                && accountLimitBytes > 0 && accountLimitBytes <= MAX_ACCOUNT_BYTES
+                && sourceBytes > 0 && sourceBytes <= attachmentLimitBytes
+                && usedBytes >= 0 && usedBytes + sourceBytes + 64 <= accountLimitBytes
                 && freeBytes - sourceBytes - 64 >= MIN_FREE_BYTES;
     }
 
     public static boolean automaticExpired(long createdAt, long now) {
-        return createdAt >= 0 && now >= createdAt && now - createdAt > AUTOMATIC_RETENTION_MILLIS;
+        return automaticExpired(createdAt, now, AUTOMATIC_RETENTION_MILLIS);
+    }
+
+    public static boolean automaticExpired(long createdAt, long now, long retentionMillis) {
+        return retentionMillis > 0 && retentionMillis <= 365L * 24 * 60 * 60 * 1000
+                && createdAt >= 0 && now >= createdAt && now - createdAt > retentionMillis;
     }
 
     /** Older reordered edits must not replace the newest received revision. */

@@ -41,6 +41,8 @@
     <string name="MorokMemoryFileTooLarge">Original exceeds the 8 MB limit; not saved</string>
     <string name="MorokMemoryFileError">Original could not be saved: storage or key error</string>
     <string name="MorokMemoryFileUnavailable">Retained original is unavailable</string>
+    <string name="MorokMemoryFilePolicyBlocked">Original skipped by automatic archive network policy</string>
+    <string name="MorokMemoryStoragePolicyBlocked">Skipped by automatic network policy: %1$d</string>
     <string name="MorokMemoryRetryFile">Retry from local cache</string>
     <string name="MorokMemoryRetryFileInfo">Checks Telegram’s existing cache only. Memory does not start a download.</string>
     <string name="MorokMemoryRetryFileFailed">The original is not available in the local cache or cannot be retained.</string>

@@ -41,6 +41,8 @@
     <string name="MorokMemoryFileTooLarge">Оригинал превышает лимит 8 МБ; не сохранён</string>
     <string name="MorokMemoryFileError">Не удалось сохранить оригинал: ошибка места или ключа</string>
     <string name="MorokMemoryFileUnavailable">Сохранённый оригинал недоступен</string>
+    <string name="MorokMemoryFilePolicyBlocked">Оригинал пропущен сетевой политикой автоархива</string>
+    <string name="MorokMemoryStoragePolicyBlocked">Пропущено сетевой политикой автоархива: %1$d</string>
     <string name="MorokMemoryRetryFile">Повторить из локального кеша</string>
     <string name="MorokMemoryRetryFileInfo">Проверяется только существующий кеш Telegram. Память не запускает скачивание.</string>
     <string name="MorokMemoryRetryFileFailed">Оригинала нет в локальном кеше либо его не удалось сохранить.</string>
