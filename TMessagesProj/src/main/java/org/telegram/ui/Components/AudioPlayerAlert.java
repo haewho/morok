@@ -70,6 +70,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.exoplayer2.C;
 import com.google.android.gms.cast.framework.CastContext;
 
+import org.morok.media.MorokSleepTimer;
+import org.morok.media.SleepTimerPolicy;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BuildVars;
@@ -2881,6 +2883,16 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
             o.addGap();
         }
 
+        final ItemOptions sleepTimerOptions = buildSleepTimerOptions(o);
+        final int remainingMinutes = MorokSleepTimer.remainingMinutes();
+        final String sleepTimerTitle = remainingMinutes > 0
+                ? LocaleController.formatString(R.string.MorokSleepTimerActive,
+                        LocaleController.formatPluralString("Minutes", remainingMinutes))
+                : getString(R.string.MorokSleepTimer);
+        o.add(R.drawable.msg_mini_autodelete_timer, sleepTimerTitle, () -> o.openSwipeback(sleepTimerOptions));
+        if (o.getLast() != null) o.getLast().setRightIcon(R.drawable.msg_arrowright);
+        o.addGap();
+
         o.addIf(!noforwards, R.drawable.msg_forward, getString(R.string.Forward), () -> {
             o.dismiss();
             onSubItemClick(1);
@@ -2910,6 +2922,36 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         });
         o.setTranslationY(dp(64));
         o.show();
+    }
+
+    private ItemOptions buildSleepTimerOptions(ItemOptions root) {
+        final ItemOptions timer = root.makeSwipeback();
+        timer.add(R.drawable.ic_ab_back, getString(R.string.Back), root::closeSwipeback);
+        timer.addGap();
+        timer.addText(getString(R.string.MorokSleepTimerInfo), 12, dp(220));
+        timer.addGap();
+        for (int minutes : SleepTimerPolicy.PRESET_MINUTES) {
+            final String duration = LocaleController.formatPluralString("Minutes", minutes);
+            timer.add(R.drawable.msg_mini_autodelete_timer, duration, () -> {
+                MorokSleepTimer.scheduleMinutes(minutes);
+                root.dismiss();
+                BulletinFactory.of((FrameLayout) containerView, resourcesProvider)
+                        .createSimpleBulletin(R.raw.timer_3,
+                                LocaleController.formatString(R.string.MorokSleepTimerSet, duration))
+                        .show();
+            });
+        }
+        if (MorokSleepTimer.isActive()) {
+            timer.addGap();
+            timer.add(R.drawable.msg_delete, getString(R.string.MorokSleepTimerCancel), true, () -> {
+                MorokSleepTimer.cancel();
+                root.dismiss();
+                BulletinFactory.of((FrameLayout) containerView, resourcesProvider)
+                        .createSimpleBulletin(R.raw.ic_delete, getString(R.string.MorokSleepTimerCancelled))
+                        .show();
+            });
+        }
+        return timer;
     }
 
     private ItemOptions buildSaveOptions(ItemOptions o, MessageObject messageObject) {

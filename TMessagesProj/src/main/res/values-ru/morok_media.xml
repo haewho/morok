@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokSleepTimer">Таймер остановки</string>
+    <string name="MorokSleepTimerActive">Таймер остановки · осталось %1$s</string>
+    <string name="MorokSleepTimerInfo">Когда время истечёт, MOROK поставит на паузу текущую музыку. Голосовые сообщения и кружочки этот таймер никогда не останавливает. При завершении процесса приложения таймер сбрасывается.</string>
+    <string name="MorokSleepTimerSet">Музыка остановится через %1$s.</string>
+    <string name="MorokSleepTimerCancel">Отменить таймер остановки</string>
+    <string name="MorokSleepTimerCancelled">Таймер остановки отменён.</string>
+</resources>

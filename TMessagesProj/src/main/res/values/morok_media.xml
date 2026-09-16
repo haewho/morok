@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MorokSleepTimer">Sleep timer</string>
+    <string name="MorokSleepTimerActive">Sleep timer · %1$s remaining</string>
+    <string name="MorokSleepTimerInfo">MOROK will pause whichever music track is playing when the timer expires. Voice messages and round videos are never paused by this timer. The timer is cleared if the app process stops.</string>
+    <string name="MorokSleepTimerSet">Music will pause in %1$s.</string>
+    <string name="MorokSleepTimerCancel">Cancel sleep timer</string>
+    <string name="MorokSleepTimerCancelled">Sleep timer cancelled.</string>
+</resources>
