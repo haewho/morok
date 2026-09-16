@@ -469,7 +469,11 @@ public class UserConfig extends BaseController {
                 try {
                     org.morok.templates.MorokReplyTemplateStore.onLogout(morokLogoutUserId);
                 } finally {
-                    org.morok.drafts.MorokSavedDraftStore.onLogout(morokLogoutUserId);
+                    try {
+                        org.morok.drafts.MorokSavedDraftStore.onLogout(morokLogoutUserId);
+                    } finally {
+                        org.morok.media.MorokPlaybackPositionStore.onLogout(morokLogoutUserId);
+                    }
                 }
             }
         }

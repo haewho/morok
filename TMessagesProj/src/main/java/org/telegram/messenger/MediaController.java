@@ -82,6 +82,7 @@ import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.gms.cast.MediaMetadata;
 import com.google.android.gms.common.images.WebImage;
 
+import org.morok.media.MorokPlaybackPositionStore;
 import org.telegram.messenger.audioinfo.AudioInfo;
 import org.telegram.messenger.chromecast.ChromecastController;
 import org.telegram.messenger.chromecast.ChromecastFileServer;
@@ -1015,7 +1016,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
     private int emojiSoundPlayerNum = 0;
     private boolean isStreamingCurrentAudio;
     private int playerNum;
-    private String shouldSavePositionForCurrentAudio;
+    private MorokPlaybackPositionStore.Scope shouldSavePositionForCurrentAudio;
     private long lastSaveTime;
     private float currentPlaybackSpeed = 1.0f;
     private float currentMusicPlaybackSpeed = 1.0f;
@@ -1635,13 +1636,10 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                                     currentPlayingMessageObject.audioProgress = value;
                                     currentPlayingMessageObject.audioProgressSec = (int) (lastProgress / 1000);
                                     currentPlayingMessageObject.bufferedProgress = bufferedValue;
-                                    if (value >= 0 && shouldSavePositionForCurrentAudio != null && SystemClock.elapsedRealtime() - lastSaveTime >= 1000) {
-                                        final String saveFor = shouldSavePositionForCurrentAudio;
+                                    if (value >= 0 && shouldSavePositionForCurrentAudio != null && SystemClock.elapsedRealtime() - lastSaveTime >= 5000) {
+                                        final MorokPlaybackPositionStore.Scope saveFor = shouldSavePositionForCurrentAudio;
                                         lastSaveTime = SystemClock.elapsedRealtime();
-                                        Utilities.globalQueue.postRunnable(() -> {
-                                            SharedPreferences.Editor editor = ApplicationLoader.applicationContext.getSharedPreferences("media_saved_pos", Activity.MODE_PRIVATE).edit();
-                                            editor.putFloat(saveFor, value).commit();
-                                        });
+                                        Utilities.globalQueue.postRunnable(() -> MorokPlaybackPositionStore.save(saveFor, value));
                                     }
                                     NotificationCenter.getInstance(currentPlayingMessageObject.currentAccount).postNotificationName(NotificationCenter.messagePlayingProgressDidChanged, currentPlayingMessageObject.getId(), value);
                                 } catch (Exception e) {
@@ -3615,6 +3613,12 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         return playMessage(messageObject, false);
     }
 
+    private static String playbackPositionIdentity(MessageObject messageObject, String fallbackName) {
+        TLRPC.Document document = messageObject == null ? null : messageObject.getDocument();
+        if (document != null && document.id != 0) return "document:" + document.id;
+        return TextUtils.isEmpty(fallbackName) ? null : "file:" + fallbackName;
+    }
+
     public boolean playMessage(final MessageObject messageObject, boolean silent) {
         if (messageObject == null) {
             return false;
@@ -3869,6 +3873,11 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                             return;
                         }
                         if (playbackState == ExoPlayer.STATE_ENDED || (playbackState == ExoPlayer.STATE_IDLE || playbackState == ExoPlayer.STATE_BUFFERING) && playWhenReady && messageObject.audioProgress >= 0.999f) {
+                            final MorokPlaybackPositionStore.Scope completedPosition = shouldSavePositionForCurrentAudio;
+                            shouldSavePositionForCurrentAudio = null;
+                            if (completedPosition != null) {
+                                Utilities.globalQueue.postRunnable(() -> MorokPlaybackPositionStore.clear(completedPosition));
+                            }
                             messageObject.audioProgress = 1f;
                             NotificationCenter.getInstance(messageObject.currentAccount).postNotificationName(NotificationCenter.messagePlayingProgressDidChanged, messageObject.getId(), 0);
                             final boolean restored = restoreMusicPlaylistState();
@@ -3940,12 +3949,13 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 if (messageObject.isVoice()) {
                     String name = messageObject.getFileName();
                     if (name != null && messageObject.getDuration() >= 5 * 60) {
-                        SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("media_saved_pos", Activity.MODE_PRIVATE);
-                        float pos = preferences.getFloat(name, -1);
+                        MorokPlaybackPositionStore.Scope position = MorokPlaybackPositionStore.scopeFor(
+                                messageObject, playbackPositionIdentity(messageObject, name));
+                        float pos = MorokPlaybackPositionStore.load(position);
                         if (pos > 0 && pos < 0.99f) {
                             messageObject.audioProgress = seekToProgressPending = pos;
                         }
-                        shouldSavePositionForCurrentAudio = name;
+                        shouldSavePositionForCurrentAudio = position;
                     }
                     if (Math.abs(currentPlaybackSpeed - 1.0f) > 0.001f) {
                         audioPlayer.setPlaybackSpeed(Math.round(currentPlaybackSpeed * 10f) / 10f);
@@ -3962,15 +3972,16 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                     }
                     String name = messageObject.getFileName();
                     if (!TextUtils.isEmpty(name) && messageObject.getDuration() >= 10 * 60) {
-                        SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("media_saved_pos", Activity.MODE_PRIVATE);
-                        float pos = preferences.getFloat(name, -1);
+                        MorokPlaybackPositionStore.Scope position = MorokPlaybackPositionStore.scopeFor(
+                                messageObject, playbackPositionIdentity(messageObject, name));
+                        float pos = MorokPlaybackPositionStore.load(position);
                         if (pos > 0 && pos < 0.999f) {
                             messageObject.audioProgress = seekToProgressPending = pos;
                         }
-                        shouldSavePositionForCurrentAudio = name;
-                        if (Math.abs(currentMusicPlaybackSpeed - 1.0f) > 0.001f) {
-                            audioPlayer.setPlaybackSpeed(Math.round(currentMusicPlaybackSpeed * 10f) / 10f);
-                        }
+                        shouldSavePositionForCurrentAudio = position;
+                    }
+                    if (Math.abs(currentMusicPlaybackSpeed - 1.0f) > 0.001f) {
+                        audioPlayer.setPlaybackSpeed(Math.round(currentMusicPlaybackSpeed * 10f) / 10f);
                     }
                 }
                 if (messageObject.forceSeekTo >= 0) {
