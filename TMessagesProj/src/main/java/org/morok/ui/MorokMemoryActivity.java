@@ -69,7 +69,9 @@ import java.util.Locale;
 public class MorokMemoryActivity extends BaseFragment {
     private static final int MENU_STORAGE = 1;
     private static final int MENU_EXPORT = 2;
+    private static final int MENU_IMPORT = 3;
     private static final int REQUEST_EXPORT = 741;
+    private static final int REQUEST_IMPORT = 742;
     private final long expectedUserId;
     private String openCardId;
     private MorokMemoryStore store;
@@ -118,6 +120,7 @@ public class MorokMemoryActivity extends BaseFragment {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         ActionBarMenu menu = actionBar.createMenu();
         menu.addItem(MENU_STORAGE, R.drawable.msg_settings);
+        menu.addItem(MENU_IMPORT, R.drawable.msg_download);
         exportItem = menu.addItem(MENU_EXPORT, R.drawable.msg_share);
         exportItem.setVisibility(View.GONE);
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
@@ -126,6 +129,7 @@ public class MorokMemoryActivity extends BaseFragment {
                     if (selected.isEmpty()) finishFragment(); else clearSelection();
                 } else if (id == MENU_STORAGE) storageInfo();
                 else if (id == MENU_EXPORT) confirmExport();
+                else if (id == MENU_IMPORT) chooseImportSource();
             }
         });
         LinearLayout root = new LinearLayout(context); root.setOrientation(LinearLayout.VERTICAL);
@@ -345,11 +349,15 @@ public class MorokMemoryActivity extends BaseFragment {
     @Override
     public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
         super.onActivityResultFragment(requestCode, resultCode, data);
-        if (requestCode != REQUEST_EXPORT) return;
-        ArrayList<String> ids = pendingExportIds;
-        pendingExportIds = null;
-        if (resultCode != Activity.RESULT_OK || data == null || data.getData() == null || ids == null) return;
-        exportTo(data.getData(), ids);
+        if (requestCode == REQUEST_EXPORT) {
+            ArrayList<String> ids = pendingExportIds;
+            pendingExportIds = null;
+            if (resultCode != Activity.RESULT_OK || data == null || data.getData() == null || ids == null) return;
+            exportTo(data.getData(), ids);
+        } else if (requestCode == REQUEST_IMPORT) {
+            if (resultCode != Activity.RESULT_OK || data == null || data.getData() == null) return;
+            inspectImport(data.getData());
+        }
     }
 
     private void exportTo(Uri destination, ArrayList<String> ids) {
@@ -369,6 +377,60 @@ public class MorokMemoryActivity extends BaseFragment {
             clearSelection();
             toast(LocaleController.formatString(R.string.MorokMemoryExported,
                     result.cards, result.files, AndroidUtilities.formatFileSize(result.bytes)));
+        });
+    }
+
+    private void chooseImportSource() {
+        if (!accountValid() || exporting) return;
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/zip");
+        startActivityForResult(intent, REQUEST_IMPORT);
+    }
+
+    private void inspectImport(Uri source) {
+        if (!accountValid() || exporting || getParentActivity() == null) return;
+        exporting = true;
+        AlertDialog progress = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER);
+        progress.setCanCancel(false);
+        showDialog(progress);
+        store.inspectPortableImport(source, (preview, error) -> {
+            exporting = false;
+            try { progress.dismiss(); } catch (RuntimeException ignored) { }
+            if (!accountValid()) return;
+            if (error != null || preview == null) {
+                toast(t(R.string.MorokMemoryImportError));
+                return;
+            }
+            String message = LocaleController.formatString(R.string.MorokMemoryImportPreview,
+                    preview.cards, preview.files, AndroidUtilities.formatFileSize(preview.bytes));
+            if (preview.duplicateCards > 0) message += "\n\n" + LocaleController.formatString(
+                    R.string.MorokMemoryImportDuplicates, preview.duplicateCards);
+            message += "\n\n" + t(R.string.MorokMemoryImportNotice);
+            showDialog(new AlertDialog.Builder(getParentActivity()).setTitle(t(R.string.MorokMemoryImport))
+                    .setMessage(message).setNegativeButton(t(R.string.Cancel), null)
+                    .setPositiveButton(t(R.string.MorokMemoryImportConfirm),
+                            (dialog, which) -> importFrom(source, preview.token)).create());
+        });
+    }
+
+    private void importFrom(Uri source, String previewToken) {
+        if (!accountValid() || exporting || getParentActivity() == null) return;
+        exporting = true;
+        AlertDialog progress = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER);
+        progress.setCanCancel(false);
+        showDialog(progress);
+        store.importPortable(source, previewToken, (result, error) -> {
+            exporting = false;
+            try { progress.dismiss(); } catch (RuntimeException ignored) { }
+            if (!accountValid()) return;
+            if (error != null || result == null) {
+                toast(t(R.string.MorokMemoryImportError));
+                return;
+            }
+            toast(LocaleController.formatString(R.string.MorokMemoryImportedPortable,
+                    result.cards, result.duplicateCards));
+            refresh();
         });
     }
 
@@ -419,7 +481,7 @@ public class MorokMemoryActivity extends BaseFragment {
             Button file = button(context, t(R.string.MorokMemoryOpenFile)); box.addView(file);
             file.setOnClickListener(v -> openFile(card, card.latest()));
             retry = null;
-        } else if (canRetry(card.latest())) {
+        } else if (canRetry(card, card.latest())) {
             retry = button(context, t(R.string.MorokMemoryRetryFile)); box.addView(retry);
             box.addView(text(context, t(R.string.MorokMemoryRetryFileInfo), 12));
         } else {
@@ -430,9 +492,13 @@ public class MorokMemoryActivity extends BaseFragment {
             thumbnail.setOnClickListener(v -> openThumbnail(card, card.latest()));
             box.addView(text(context, t(R.string.MorokMemoryThumbnailNotOriginal), 12));
         }
-        Button source = button(context, t(R.string.MorokMemoryOpenSource)); box.addView(source);
-        source.setOnClickListener(v -> openSource(card));
-        box.addView(text(context, t(R.string.MorokMemoryOpenSourceInfo), 12));
+        if (card.restored) {
+            box.addView(text(context, t(R.string.MorokMemoryRestoredNoSource), 12));
+        } else {
+            Button source = button(context, t(R.string.MorokMemoryOpenSource)); box.addView(source);
+            source.setOnClickListener(v -> openSource(card));
+            box.addView(text(context, t(R.string.MorokMemoryOpenSourceInfo), 12));
+        }
         Button remove = button(context, t(R.string.MorokMemoryRemove)); box.addView(remove);
         ScrollView scroll = new ScrollView(context); scroll.addView(box);
         AlertDialog editor = new AlertDialog.Builder(context).setTitle(t(R.string.MorokMemoryTitle)).setView(scroll)
@@ -531,7 +597,7 @@ public class MorokMemoryActivity extends BaseFragment {
                             .setMessage(snapshot.text + "\n\n" + snapshotStatus(card, snapshot)).setNegativeButton(t(R.string.Close), null);
                     if ("saved".equals(snapshot.fileState)) {
                         detail.setPositiveButton(t(R.string.MorokMemoryOpenFile), (d, w) -> openFile(card, snapshot));
-                    } else if (canRetry(snapshot)) {
+                    } else if (canRetry(card, snapshot)) {
                         detail.setPositiveButton(t(R.string.MorokMemoryRetryFile), (d, w) -> retryAttachment(card, snapshot, null, null));
                     }
                     if ("saved".equals(snapshot.thumbnailState)) {
@@ -541,11 +607,11 @@ public class MorokMemoryActivity extends BaseFragment {
                 }).create());
     }
 
-    private static boolean canRetry(MemoryCard.Snapshot snapshot) {
-        return "not_downloaded".equals(snapshot.fileState) || "policy_blocked".equals(snapshot.fileState)
+    private static boolean canRetry(MemoryCard card, MemoryCard.Snapshot snapshot) {
+        return !card.restored && ("not_downloaded".equals(snapshot.fileState) || "policy_blocked".equals(snapshot.fileState)
                 || "downloading".equals(snapshot.fileState) || "download_unavailable".equals(snapshot.fileState)
                 || "storage_error".equals(snapshot.fileState)
-                || "unavailable".equals(snapshot.fileState);
+                || "unavailable".equals(snapshot.fileState));
     }
 
     private void retryAttachment(MemoryCard card, MemoryCard.Snapshot snapshot, Runnable success, Runnable failure) {
@@ -637,7 +703,8 @@ public class MorokMemoryActivity extends BaseFragment {
     }
 
     private static String snapshotStatus(MemoryCard card, MemoryCard.Snapshot snapshot) {
-        String value = (card.imported ? t(R.string.MorokMemoryImported) + " · "
+        String value = (card.restored ? t(R.string.MorokMemoryRestored) + " · "
+                : card.imported ? t(R.string.MorokMemoryImported) + " · "
                 : card.automatic ? t(R.string.MorokMemoryAutomatic) + " · " : "")
                 + (card.deletedInTelegram ? t(R.string.MorokMemoryDeleted) : t(R.string.MorokMemoryLocalSnapshot));
         int label = fileStateLabel(snapshot.fileState);

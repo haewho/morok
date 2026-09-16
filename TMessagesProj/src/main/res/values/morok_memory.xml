@@ -79,4 +79,13 @@
     <string name="MorokMemoryExportChoose">Choose destination</string>
     <string name="MorokMemoryExported">Exported %1$d cards and %2$d unique files (%3$s).</string>
     <string name="MorokMemoryExportError">The export could not be completed. Any incomplete destination file was removed when the document provider allowed it.</string>
+    <string name="MorokMemoryImport">Import Memory ZIP</string>
+    <string name="MorokMemoryImportPreview">Verified portable archive: %1$d cards, %2$d unique files (%3$s).</string>
+    <string name="MorokMemoryImportDuplicates">Already restored and skipped: %1$d cards.</string>
+    <string name="MorokMemoryImportNotice">Imported text, notes, tags and verified files will be encrypted for this account. Restored cards are local records and cannot open a Telegram source chat. Old reminders are not activated.</string>
+    <string name="MorokMemoryImportConfirm">Import</string>
+    <string name="MorokMemoryImportedPortable">Imported %1$d cards; skipped %2$d duplicates.</string>
+    <string name="MorokMemoryImportError">The archive was not imported. It may have changed after preview, contain unsafe entries, fail an integrity check or exceed local limits.</string>
+    <string name="MorokMemoryRestored">Restored archive</string>
+    <string name="MorokMemoryRestoredNoSource">This card was restored from a portable archive. It has no trusted link to a Telegram chat in the current account.</string>
 </resources>

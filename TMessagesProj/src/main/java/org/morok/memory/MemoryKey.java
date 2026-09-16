@@ -12,7 +12,8 @@ public final class MemoryKey {
 
     public MemoryKey(long userId, String peerKind, long peerId, int messageId, long topicId) {
         if (userId <= 0 || peerId <= 0 || messageId <= 0 || topicId < 0
-                || !("user".equals(peerKind) || "group".equals(peerKind) || "channel".equals(peerKind))) {
+                || !("user".equals(peerKind) || "group".equals(peerKind) || "channel".equals(peerKind)
+                || "portable".equals(peerKind))) {
             throw new IllegalArgumentException("Invalid Memory identity");
         }
         this.userId = userId;

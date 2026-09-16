@@ -79,4 +79,13 @@
     <string name="MorokMemoryExportChoose">Выбрать место</string>
     <string name="MorokMemoryExported">Экспортировано карточек: %1$d, уникальных файлов: %2$d (%3$s).</string>
     <string name="MorokMemoryExportError">Не удалось завершить экспорт. Незавершённый файл назначения удалён, если это разрешил системный проводник.</string>
+    <string name="MorokMemoryImport">Импорт ZIP Памяти</string>
+    <string name="MorokMemoryImportPreview">Переносимый архив проверен: карточек — %1$d, уникальных файлов — %2$d (%3$s).</string>
+    <string name="MorokMemoryImportDuplicates">Уже восстановлено и будет пропущено карточек: %1$d.</string>
+    <string name="MorokMemoryImportNotice">Текст, заметки, теги и проверенные файлы будут зашифрованы для этого аккаунта. Восстановленные карточки являются локальными записями и не открывают исходный чат Telegram. Старые напоминания не включаются.</string>
+    <string name="MorokMemoryImportConfirm">Импортировать</string>
+    <string name="MorokMemoryImportedPortable">Импортировано карточек: %1$d; пропущено повторов: %2$d.</string>
+    <string name="MorokMemoryImportError">Архив не импортирован. Он мог измениться после предпросмотра, содержать небезопасные записи, не пройти проверку целостности или превышать локальные лимиты.</string>
+    <string name="MorokMemoryRestored">Восстановленный архив</string>
+    <string name="MorokMemoryRestoredNoSource">Карточка восстановлена из переносимого архива. У неё нет доверенной ссылки на чат Telegram текущего аккаунта.</string>
 </resources>

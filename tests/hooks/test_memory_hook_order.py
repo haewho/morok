@@ -58,6 +58,8 @@ expect("MemoryCapture.restoreCachedMessage" in retry and "copyAttachment(message
        "Attachment retry must use the authenticated stored snapshot and existing store transaction")
 expect("loadFile(" not in retry and "download" not in retry.lower(),
        "Attachment retry must remain cache-only and never start a download")
+expect('if (card.restored) throw new IOException("Restored Memory card has no Telegram cache source")' in retry,
+       "A restored portable card must not enter Telegram cache reconstruction even through a direct store call")
 
 expect("enforceAutomaticPolicy(database, archiveSettings())" in store,
        "Every committed Memory index must enforce the selected automatic retention and storage policy")
@@ -106,12 +108,39 @@ expect('put("tl"' not in memory_export and "serializedMessage" not in memory_exp
 expect('put("thumbnailState"' in memory_export and "MemoryExportPolicy.thumbnailEntry" in memory_export,
        "Readable export must identify a thumbnail separately from the original attachment")
 
+import_start = store.index("public void inspectPortableImport(")
+import_end = store.index("private ExportResult writeExport(", import_start)
+memory_import = store[import_start:import_end]
+expect('"content".equals(source.getScheme())' in memory_import
+       and "ZipInputStream" in memory_import and '"memory.json".equals(manifestEntry.getName())' in memory_import,
+       "Portable Memory import must read a user-selected SAF ZIP with a first-entry manifest")
+expect("Unreferenced Memory ZIP entry" in memory_import
+       and "parsed.files != parsed.blobs.size()" in memory_import
+       and "MAX_UNCOMPRESSED_BYTES" in memory_import,
+       "Portable Memory import must reject extra, missing and over-budget ZIP content")
+expect("MessageDigest.isEqual(expectedToken" in memory_import
+       and "source changed after preview" in memory_import,
+       "Portable Memory import must revalidate the previewed semantic archive digest")
+expect("retainBlob(plain, blob.sha256" in memory_import
+       and 'new MemoryKey(userId, "portable"' in memory_import
+       and "card.reminderAt = 0" in memory_import,
+       "Restored bytes must be encrypted under a non-routable local identity without activating old alarms")
+expect("serializedMessage" not in memory_import and "restoreCachedMessage" not in memory_import
+       and "FileLoader" not in memory_import and "loadFile(" not in memory_import,
+       "Portable Memory import must not restore internal TL payloads or touch Telegram download/storage paths")
+
 activity = (root / "TMessagesProj/src/main/java/org/morok/ui/MorokMemoryActivity.java").read_text()
 expect("setOnItemLongClickListener" in activity and "selected.add(card.id)" in activity,
        "Memory cards must support explicit multi-selection")
 expect("Intent.ACTION_CREATE_DOCUMENT" in activity and 'setType("application/zip")' in activity
        and "MorokMemoryExportConfirm" in activity,
        "Memory export must disclose plaintext and let Android choose the destination")
+expect("Intent.ACTION_OPEN_DOCUMENT" in activity and "inspectPortableImport" in activity
+       and "MorokMemoryImportNotice" in activity and "importPortable" in activity,
+       "Memory import must use SAF, verified preview disclosure and an explicit second action")
+expect("if (card.restored)" in activity and "MorokMemoryRestoredNoSource" in activity
+       and "!card.restored" in activity,
+       "Restored cards must hide source navigation and cache-only Telegram retry")
 expect("grantThumbnail" in activity and "MorokMemoryThumbnailNotOriginal" in activity,
        "Memory UI must expose a saved thumbnail with an explicit not-the-original label")
 

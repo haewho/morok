@@ -2,6 +2,7 @@ import org.morok.memory.MemoryKey;
 import org.morok.memory.MemoryJournalPolicy;
 import org.morok.memory.MemoryExportPolicy;
 import org.morok.memory.MemoryFilterPolicy;
+import org.morok.memory.MemoryImportPolicy;
 import org.morok.memory.MemoryPolicy;
 import org.morok.memory.MemoryStorageStats;
 import org.morok.memory.MemoryThumbnailPolicy;
@@ -104,6 +105,28 @@ public final class MemoryDomainTest {
                 "Memory export file names are bounded");
         expect("thumbnails/1-1-preview.jpg".equals(MemoryExportPolicy.thumbnailEntry(0, 0, "preview.jpg")),
                 "Memory export keeps thumbnails in a distinct bounded directory");
+        expect(MemoryImportPolicy.validEntry("attachments/1-1-file.txt", false)
+                        && MemoryImportPolicy.validEntry("thumbnails/1-1-preview.jpg", true),
+                "Portable Memory import accepts only the two bounded export directories");
+        expect(!MemoryImportPolicy.validEntry("../attachments/file.txt", false)
+                        && !MemoryImportPolicy.validEntry("attachments/a/../../file.txt", false)
+                        && !MemoryImportPolicy.validEntry("attachments/.hidden", false)
+                        && !MemoryImportPolicy.validEntry("attachments/file.txt", true),
+                "Portable Memory import rejects traversal, nested and cross-kind entries");
+        expect(MemoryImportPolicy.validMime("application/pdf")
+                        && !MemoryImportPolicy.validMime("text/html; charset=utf-8")
+                        && !MemoryImportPolicy.validMime("../bad"),
+                "Portable Memory import uses bounded canonical MIME values");
+        String archiveToken = "a".repeat(64);
+        String restoredOrigin = MemoryImportPolicy.restoredOrigin(archiveToken,
+                "00000000-0000-0000-0000-000000000001");
+        expect(MemoryImportPolicy.validToken(restoredOrigin)
+                        && restoredOrigin.equals(MemoryImportPolicy.restoredOrigin(archiveToken,
+                        "00000000-0000-0000-0000-000000000001")),
+                "Portable restore identity is deterministic and bounded");
+        expect(MemoryImportPolicy.validPeerKind("portable")
+                        && new MemoryKey(100, "portable", 8, 9, 0).dialogId() == -8,
+                "Restored cards occupy a non-routable local peer namespace");
         expect(MemoryFilterPolicy.hasTag("work, Later", "WORK"),
                 "Tag facets match exact values without case sensitivity");
         expect(!MemoryFilterPolicy.hasTag("homework, later", "work"),

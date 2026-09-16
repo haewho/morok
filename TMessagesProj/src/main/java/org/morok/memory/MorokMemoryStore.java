@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
@@ -46,6 +47,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 /** Serialized, fail-closed local projection. It never writes to Telegram's messages database. */
@@ -71,6 +73,85 @@ public final class MorokMemoryStore {
             this.cards = cards;
             this.files = files;
             this.bytes = bytes;
+        }
+    }
+    public static final class ImportPreview {
+        public final String token;
+        public final int cards;
+        public final int duplicateCards;
+        public final int files;
+        public final long bytes;
+
+        ImportPreview(String token, int cards, int duplicateCards, int files, long bytes) {
+            this.token = token;
+            this.cards = cards;
+            this.duplicateCards = duplicateCards;
+            this.files = files;
+            this.bytes = bytes;
+        }
+    }
+    public static final class ImportResult {
+        public final int cards;
+        public final int duplicateCards;
+        public final int files;
+        public final long bytes;
+
+        ImportResult(int cards, int duplicateCards, int files, long bytes) {
+            this.cards = cards;
+            this.duplicateCards = duplicateCards;
+            this.files = files;
+            this.bytes = bytes;
+        }
+    }
+
+    private static final class PortableImport {
+        final ArrayList<PortableCard> cards = new ArrayList<>();
+        final LinkedHashMap<String, PortableBlob> blobs = new LinkedHashMap<>();
+        String token;
+        int importedCards;
+        int duplicateCards;
+        int files;
+        long bytes;
+    }
+
+    private static final class PortableCard {
+        final String exportId;
+        final String exportedOrigin;
+        final MemoryCard card;
+        boolean included;
+
+        PortableCard(String exportId, String exportedOrigin, MemoryCard card) {
+            this.exportId = exportId;
+            this.exportedOrigin = exportedOrigin;
+            this.card = card;
+        }
+    }
+
+    private static final class PortableBlob {
+        final String entry;
+        final long size;
+        final String sha256;
+        final boolean thumbnail;
+        final String mime;
+        final ArrayList<PortableTarget> targets = new ArrayList<>();
+        boolean needed;
+
+        PortableBlob(String entry, long size, String sha256, boolean thumbnail, String mime) {
+            this.entry = entry;
+            this.size = size;
+            this.sha256 = sha256;
+            this.thumbnail = thumbnail;
+            this.mime = mime;
+        }
+    }
+
+    private static final class PortableTarget {
+        final PortableCard owner;
+        final MemoryCard.Snapshot snapshot;
+
+        PortableTarget(PortableCard owner, MemoryCard.Snapshot snapshot) {
+            this.owner = owner;
+            this.snapshot = snapshot;
         }
     }
     private interface Operation<T> { T run() throws Exception; }
@@ -850,6 +931,7 @@ public final class MorokMemoryStore {
         execute(() -> {
             Database database = read();
             MemoryCard card = find(database, cardId);
+            if (card.restored) throw new IOException("Restored Memory card has no Telegram cache source");
             MemoryCard.Snapshot target = null;
             for (MemoryCard.Snapshot snapshot : card.versions) {
                 if (snapshot.fingerprint.equals(fingerprint)) { target = snapshot; break; }
@@ -883,8 +965,11 @@ public final class MorokMemoryStore {
     public void remove(String id, Callback<Boolean> callback) {
         execute(() -> {
             Database database = read(); MemoryCard card = find(database, id);
-            if (database.tombstones.size() >= MemoryPolicy.MAX_TOMBSTONES) throw new IOException("Memory removal limit reached");
-            database.tombstones.add(card.key.canonical()); database.cards.remove(card); write(database);
+            if (!card.restored) {
+                if (database.tombstones.size() >= MemoryPolicy.MAX_TOMBSTONES) throw new IOException("Memory removal limit reached");
+                database.tombstones.add(card.key.canonical());
+            }
+            database.cards.remove(card); write(database);
             MorokMemoryReminderReceiver.cancelCard(userId, card.id); return true;
         }, callback);
     }
@@ -892,8 +977,10 @@ public final class MorokMemoryStore {
     public void clear(Callback<Boolean> callback) {
         execute(() -> {
             Database database = read();
-            if (database.tombstones.size() + database.cards.size() > MemoryPolicy.MAX_TOMBSTONES) throw new IOException("Memory removal limit reached");
-            for (MemoryCard card : database.cards) database.tombstones.add(card.key.canonical());
+            int tombstonesNeeded = 0;
+            for (MemoryCard card : database.cards) if (!card.restored) tombstonesNeeded++;
+            if (database.tombstones.size() + tombstonesNeeded > MemoryPolicy.MAX_TOMBSTONES) throw new IOException("Memory removal limit reached");
+            for (MemoryCard card : database.cards) if (!card.restored) database.tombstones.add(card.key.canonical());
             database.cards.clear(); write(database); MorokMemoryReminderReceiver.cancel(userId); return true;
         }, callback);
     }
@@ -920,6 +1007,7 @@ public final class MorokMemoryStore {
         final HashSet<Integer> ids = new HashSet<>(messageIds);
         Database database = read(); boolean changed = false;
         for (MemoryCard card : database.cards) {
+            if (card.restored) continue;
             boolean matchingPeer = channelId == 0 ? !"channel".equals(card.key.peerKind)
                     : "channel".equals(card.key.peerKind) && card.key.peerId == channelId;
             if (matchingPeer && ids.contains(card.key.messageId) && !card.deletedInTelegram) {
@@ -938,6 +1026,7 @@ public final class MorokMemoryStore {
     private boolean markDialogDeletedInternal(long dialogId, int maxMessageId) throws Exception {
         Database database = read(); boolean changed = false;
         for (MemoryCard card : database.cards) {
+            if (card.restored) continue;
             if (card.key.dialogId() == dialogId && card.key.messageId <= maxMessageId && !card.deletedInTelegram) {
                 card.deletedInTelegram = true; changed = true;
             }
@@ -987,6 +1076,341 @@ public final class MorokMemoryStore {
         }, callback);
     }
 
+    /** Fully validates a user-selected plaintext ZIP before the UI asks for import confirmation. */
+    public void inspectPortableImport(Uri source, Callback<ImportPreview> callback) {
+        execute(() -> {
+            Database database = read();
+            PortableImport parsed = readPortableImport(source, database, false, null);
+            return new ImportPreview(parsed.token, parsed.cards.size(), parsed.duplicateCards,
+                    parsed.files, parsed.bytes);
+        }, callback);
+    }
+
+    /** Revalidates the exact previewed content and encrypts it into the active account in one index commit. */
+    public void importPortable(Uri source, String previewToken, Callback<ImportResult> callback) {
+        execute(() -> {
+            if (!MemoryImportPolicy.validToken(previewToken)) throw new IOException("Invalid Memory import preview");
+            Database database = read();
+            try {
+                PortableImport parsed = readPortableImport(source, database, true, previewToken);
+                if (parsed.importedCards > 0) write(database); else cleanup(database);
+                return new ImportResult(parsed.importedCards, parsed.duplicateCards, parsed.files, parsed.bytes);
+            } catch (Exception error) {
+                // Any blob written before a provider change or validation failure is unreferenced by the
+                // committed index and is removed before the failure is reported.
+                try { cleanup(read()); } catch (Exception ignored) { }
+                throw error;
+            }
+        }, callback);
+    }
+
+    private PortableImport readPortableImport(Uri source, Database database, boolean retain,
+            String expectedToken) throws Exception {
+        if (source == null || !"content".equals(source.getScheme())) {
+            throw new IOException("Memory import requires a SAF content URI");
+        }
+        requireExportAllowed();
+        InputStream raw = ApplicationLoader.applicationContext.getContentResolver().openInputStream(source);
+        if (raw == null) throw new IOException("Memory import source unavailable");
+        MessageDigest archiveDigest = MessageDigest.getInstance("SHA-256");
+        PortableImport parsed;
+        HashSet<String> seen = new HashSet<>();
+        try (InputStream input = raw; ZipInputStream zip = new ZipInputStream(input)) {
+            ZipEntry manifestEntry = zip.getNextEntry();
+            if (manifestEntry == null || manifestEntry.isDirectory() || !"memory.json".equals(manifestEntry.getName())) {
+                throw new IOException("Portable Memory manifest must be the first ZIP entry");
+            }
+            byte[] manifest = readPortableEntry(zip, MemoryImportPolicy.MAX_MANIFEST_BYTES);
+            zip.closeEntry();
+            updatePortableDigest(archiveDigest, "memory.json", manifest);
+            seen.add("memory.json");
+            parsed = parsePortableManifest(manifest, database);
+            parsed.bytes = manifest.length;
+            if (retain) preparePortableCards(parsed, database, expectedToken, true);
+
+            ZipEntry entry;
+            while ((entry = zip.getNextEntry()) != null) {
+                requireExportAllowed();
+                if (entry.isDirectory() || seen.size() >= MemoryImportPolicy.MAX_ENTRY_COUNT
+                        || !seen.add(entry.getName())) throw new IOException("Invalid or duplicate Memory ZIP entry");
+                PortableBlob blob = parsed.blobs.get(entry.getName());
+                if (blob == null) throw new IOException("Unreferenced Memory ZIP entry");
+                int limit = blob.thumbnail ? MemoryPolicy.MAX_THUMBNAIL_BYTES : (int) MemoryPolicy.MAX_ATTACHMENT_BYTES;
+                byte[] plain = readPortableEntry(zip, limit);
+                zip.closeEntry();
+                updatePortableDigest(archiveDigest, entry.getName(), plain);
+                if (plain.length != blob.size || !blob.sha256.equals(MemoryCapture.hex(
+                        MessageDigest.getInstance("SHA-256").digest(plain)))) {
+                    throw new IOException("Portable Memory attachment integrity check failed");
+                }
+                if (blob.thumbnail && !blob.mime.equals(MemoryThumbnailPolicy.mimeType(plain))) {
+                    throw new IOException("Portable Memory thumbnail type mismatch");
+                }
+                parsed.bytes += plain.length;
+                if (parsed.bytes > MemoryImportPolicy.MAX_UNCOMPRESSED_BYTES) {
+                    throw new IOException("Portable Memory import is too large");
+                }
+                parsed.files++;
+                if (retain && blob.needed) retainPortableBlob(database, blob, plain);
+            }
+        }
+        if (parsed.files != parsed.blobs.size() || seen.size() != parsed.blobs.size() + 1) {
+            throw new IOException("Portable Memory ZIP is incomplete");
+        }
+        parsed.token = MemoryCapture.hex(archiveDigest.digest());
+        if (expectedToken != null && !MessageDigest.isEqual(expectedToken.getBytes(StandardCharsets.US_ASCII),
+                parsed.token.getBytes(StandardCharsets.US_ASCII))) {
+            throw new IOException("Portable Memory source changed after preview");
+        }
+        if (!retain) preparePortableCards(parsed, database, parsed.token, false);
+        requireExportAllowed();
+        return parsed;
+    }
+
+    private PortableImport parsePortableManifest(byte[] bytes, Database database) throws Exception {
+        JSONObject manifest = new JSONObject(new String(bytes, StandardCharsets.UTF_8));
+        if (manifest.getInt("schema") != 1 || !"MOROK Memory".equals(manifest.getString("product"))) {
+            throw new IOException("Unsupported portable Memory manifest");
+        }
+        JSONArray cards = manifest.getJSONArray("cards");
+        if (!MemoryExportPolicy.validSelectionSize(cards.length())) {
+            throw new IOException("Invalid portable Memory card count");
+        }
+        HashSet<String> exportIds = new HashSet<>();
+        HashSet<String> candidateKeys = new HashSet<>();
+        HashSet<Long> occupiedPeers = new HashSet<>();
+        for (MemoryCard existing : database.cards) if ("portable".equals(existing.key.peerKind)) {
+            occupiedPeers.add(existing.key.peerId);
+        }
+        HashMap<String, Long> portablePeers = new HashMap<>();
+        PortableImport parsed = new PortableImport();
+        for (int cardIndex = 0; cardIndex < cards.length(); cardIndex++) {
+            JSONObject value = cards.getJSONObject(cardIndex);
+            String exportId = value.getString("id");
+            if (!safeId(exportId) || !exportIds.add(exportId)) throw new IOException("Invalid portable Memory card ID");
+            String peerKind = value.getString("peerKind");
+            long peerId = value.getLong("peerId");
+            int messageId = value.getInt("messageId");
+            long topicId = value.optLong("topicId");
+            if (!MemoryImportPolicy.validPeerKind(peerKind) || peerId <= 0 || messageId <= 0 || topicId < 0) {
+                throw new IOException("Invalid portable Memory source identity");
+            }
+            String sourcePeer = peerKind + ":" + peerId;
+            Long portablePeer = portablePeers.get(sourcePeer);
+            if (portablePeer == null) {
+                portablePeer = newPortablePeerId(occupiedPeers);
+                portablePeers.put(sourcePeer, portablePeer);
+            }
+            MemoryCard card = new MemoryCard(UUID.randomUUID().toString(),
+                    new MemoryKey(userId, "portable", portablePeer, messageId, topicId));
+            if (!candidateKeys.add(card.key.canonical())) throw new IOException("Duplicate portable Memory source card");
+            card.source = boundedImportString(value.getString("source"), MemoryImportPolicy.MAX_SOURCE_CHARS,
+                    MemoryPolicy.MAX_MESSAGE_BYTES, "source");
+            card.sender = boundedImportString(value.getString("sender"), MemoryImportPolicy.MAX_SENDER_CHARS,
+                    MemoryPolicy.MAX_MESSAGE_BYTES, "sender");
+            card.note = boundedImportString(value.optString("note"), MemoryImportPolicy.MAX_NOTE_CHARS,
+                    MemoryPolicy.MAX_MESSAGE_BYTES, "note");
+            card.tags = boundedImportString(value.optString("tags"), MemoryImportPolicy.MAX_TAGS_CHARS,
+                    MemoryPolicy.MAX_MESSAGE_BYTES, "tags");
+            card.needsReply = value.optBoolean("needsReply");
+            card.completed = value.optBoolean("completed");
+            card.deletedInTelegram = value.optBoolean("deletedInTelegram");
+            card.automatic = false;
+            card.imported = false;
+            card.restored = true;
+            card.createdAt = value.getLong("createdAt");
+            if (card.createdAt < 0) throw new IOException("Invalid portable Memory timestamp");
+            // Restoring data must never arm an old alarm without a fresh explicit user action.
+            card.reminderAt = 0;
+            card.reminderDeliveredAt = 0;
+            String exportedOrigin = value.optString("restoredFrom");
+            if (!exportedOrigin.isEmpty() && !MemoryImportPolicy.validToken(exportedOrigin)) {
+                throw new IOException("Invalid portable Memory origin");
+            }
+            PortableCard portableCard = new PortableCard(exportId, exportedOrigin, card);
+            parsed.cards.add(portableCard);
+            JSONArray versions = value.getJSONArray("versions");
+            if (versions.length() == 0 || versions.length() > MemoryPolicy.MAX_VERSIONS) {
+                throw new IOException("Invalid portable Memory version count");
+            }
+            for (int versionIndex = 0; versionIndex < versions.length(); versionIndex++) {
+                JSONObject version = versions.getJSONObject(versionIndex);
+                MemoryCard.Snapshot snapshot = new MemoryCard.Snapshot();
+                snapshot.text = boundedImportString(version.getString("text"), Integer.MAX_VALUE,
+                        MemoryPolicy.MAX_MESSAGE_BYTES, "text");
+                snapshot.receivedAt = version.getLong("receivedAt");
+                snapshot.editedAt = version.optInt("editedAt");
+                if (snapshot.receivedAt < 0 || snapshot.editedAt < 0) {
+                    throw new IOException("Invalid portable Memory version timestamp");
+                }
+                parsePortableOriginal(parsed, portableCard, snapshot, version);
+                parsePortableThumbnail(parsed, portableCard, snapshot, version);
+                card.versions.add(snapshot);
+            }
+        }
+        return parsed;
+    }
+
+    private void parsePortableOriginal(PortableImport parsed, PortableCard owner, MemoryCard.Snapshot snapshot,
+            JSONObject version) throws Exception {
+        snapshot.fileName = safeImportedName(version.optString("fileName"));
+        snapshot.mime = version.optString("mime", "application/octet-stream");
+        if (!MemoryImportPolicy.validMime(snapshot.mime)) throw new IOException("Invalid portable Memory MIME type");
+        String entry = version.optString("attachment");
+        if (entry.isEmpty()) {
+            snapshot.fileState = "none".equals(version.optString("fileState")) ? "none" : "unavailable";
+            snapshot.fileSize = boundedAbsentSize(version.optLong("fileSize"));
+            return;
+        }
+        if (!MemoryImportPolicy.validEntry(entry, false)) throw new IOException("Invalid portable attachment path");
+        snapshot.fileSize = version.getLong("fileSize");
+        snapshot.sha256 = version.getString("sha256");
+        if (snapshot.fileSize <= 0 || snapshot.fileSize > MemoryPolicy.MAX_ATTACHMENT_BYTES
+                || !MemoryImportPolicy.validToken(snapshot.sha256)) throw new IOException("Invalid portable attachment metadata");
+        snapshot.fileState = "pending_import";
+        addPortableBlob(parsed, owner, snapshot, entry, snapshot.fileSize, snapshot.sha256, false, snapshot.mime);
+    }
+
+    private void parsePortableThumbnail(PortableImport parsed, PortableCard owner, MemoryCard.Snapshot snapshot,
+            JSONObject version) throws Exception {
+        snapshot.thumbnailName = safeImportedName(version.optString("thumbnailName"));
+        snapshot.thumbnailMime = version.optString("thumbnailMime", "image/jpeg");
+        if (!MemoryThumbnailPolicy.supportedMime(snapshot.thumbnailMime)) {
+            throw new IOException("Invalid portable thumbnail MIME type");
+        }
+        String entry = version.optString("thumbnail");
+        if (entry.isEmpty()) {
+            snapshot.thumbnailState = "none".equals(version.optString("thumbnailState")) ? "none" : "unavailable";
+            snapshot.thumbnailSize = boundedAbsentSize(version.optLong("thumbnailSize"));
+            return;
+        }
+        if (!MemoryImportPolicy.validEntry(entry, true)) throw new IOException("Invalid portable thumbnail path");
+        snapshot.thumbnailSize = version.getLong("thumbnailSize");
+        snapshot.thumbnailSha256 = version.getString("thumbnailSha256");
+        if (snapshot.thumbnailSize <= 0 || snapshot.thumbnailSize > MemoryPolicy.MAX_THUMBNAIL_BYTES
+                || !MemoryImportPolicy.validToken(snapshot.thumbnailSha256)) {
+            throw new IOException("Invalid portable thumbnail metadata");
+        }
+        snapshot.thumbnailState = "pending_import";
+        addPortableBlob(parsed, owner, snapshot, entry, snapshot.thumbnailSize,
+                snapshot.thumbnailSha256, true, snapshot.thumbnailMime);
+    }
+
+    private static void addPortableBlob(PortableImport parsed, PortableCard owner, MemoryCard.Snapshot snapshot,
+            String entry, long size, String sha256, boolean thumbnail, String mime) throws IOException {
+        PortableBlob blob = parsed.blobs.get(entry);
+        if (blob == null) {
+            blob = new PortableBlob(entry, size, sha256, thumbnail, mime);
+            parsed.blobs.put(entry, blob);
+        } else if (blob.size != size || !blob.sha256.equals(sha256) || blob.thumbnail != thumbnail
+                || !blob.mime.equals(mime)) {
+            throw new IOException("Conflicting portable Memory attachment metadata");
+        }
+        blob.targets.add(new PortableTarget(owner, snapshot));
+    }
+
+    private void preparePortableCards(PortableImport parsed, Database database, String token,
+            boolean include) throws Exception {
+        if (!MemoryImportPolicy.validToken(token)) throw new IOException("Invalid portable Memory token");
+        HashSet<String> existingOrigins = new HashSet<>();
+        for (MemoryCard card : database.cards) if (card.restored && MemoryImportPolicy.validToken(card.restoredFrom)) {
+            existingOrigins.add(card.restoredFrom);
+        }
+        for (PortableCard portable : parsed.cards) {
+            String origin = portable.exportedOrigin.isEmpty()
+                    ? MemoryImportPolicy.restoredOrigin(token, portable.exportId) : portable.exportedOrigin;
+            portable.card.restoredFrom = origin;
+            for (int i = 0; i < portable.card.versions.size(); i++) {
+                portable.card.versions.get(i).fingerprint = MemoryImportPolicy.restoredOrigin(origin, Integer.toString(i));
+            }
+            if (existingOrigins.contains(origin)) {
+                parsed.duplicateCards++;
+                continue;
+            }
+            parsed.importedCards++;
+            portable.included = include;
+            existingOrigins.add(origin);
+            if (include) {
+                pruneForInsertion(database, false);
+                database.cards.add(portable.card);
+            }
+        }
+        if (include) for (PortableBlob blob : parsed.blobs.values()) {
+            for (PortableTarget target : blob.targets) if (target.owner.included) { blob.needed = true; break; }
+        }
+    }
+
+    private void retainPortableBlob(Database database, PortableBlob blob, byte[] plain) throws Exception {
+        long limit = blob.thumbnail ? MemoryPolicy.MAX_THUMBNAIL_BYTES : MemoryPolicy.MAX_ATTACHMENT_BYTES;
+        String id = retainBlob(plain, blob.sha256, database, limit, MemoryPolicy.MAX_ACCOUNT_BYTES);
+        if (id == null) throw new IOException("Portable Memory storage limit reached");
+        for (PortableTarget target : blob.targets) if (target.owner.included) {
+            if (blob.thumbnail) {
+                target.snapshot.thumbnailBlob = id;
+                target.snapshot.thumbnailState = "saved";
+            } else {
+                target.snapshot.blob = id;
+                target.snapshot.fileState = "saved";
+            }
+        }
+    }
+
+    private static String boundedImportString(String value, int maxChars, int maxBytes, String field)
+            throws IOException {
+        if (!MemoryImportPolicy.validText(value, maxChars, maxBytes)) {
+            throw new IOException("Invalid portable Memory " + field);
+        }
+        return value;
+    }
+
+    private static String safeImportedName(String value) throws IOException {
+        if (value == null || value.length() > 1024) throw new IOException("Invalid portable Memory file name");
+        return MemoryExportPolicy.safeFileName(value);
+    }
+
+    private static long boundedAbsentSize(long value) throws IOException {
+        // Metadata for an omitted oversized original may legitimately exceed this client's retention limit.
+        // It is never allocated or treated as a retained blob.
+        if (value < 0) throw new IOException("Invalid portable Memory absent file size");
+        return value;
+    }
+
+    private static long newPortablePeerId(HashSet<Long> occupied) {
+        long candidate;
+        do {
+            UUID id = UUID.randomUUID();
+            candidate = (id.getMostSignificantBits() ^ id.getLeastSignificantBits()) & Long.MAX_VALUE;
+        } while (candidate == 0 || occupied.contains(candidate));
+        occupied.add(candidate);
+        return candidate;
+    }
+
+    private static byte[] readPortableEntry(ZipInputStream input, int maxBytes) throws IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream(Math.min(maxBytes, 32768));
+        byte[] buffer = new byte[32768];
+        int count;
+        while ((count = input.read(buffer)) != -1) {
+            if (output.size() + count > maxBytes) throw new IOException("Portable Memory entry exceeds its limit");
+            output.write(buffer, 0, count);
+        }
+        return output.toByteArray();
+    }
+
+    private static void updatePortableDigest(MessageDigest digest, String name, byte[] bytes) {
+        byte[] nameBytes = name.getBytes(StandardCharsets.UTF_8);
+        updatePortableLength(digest, nameBytes.length);
+        digest.update(nameBytes);
+        updatePortableLength(digest, bytes.length);
+        digest.update(bytes);
+    }
+
+    private static void updatePortableLength(MessageDigest digest, int value) {
+        digest.update((byte) (value >>> 24));
+        digest.update((byte) (value >>> 16));
+        digest.update((byte) (value >>> 8));
+        digest.update((byte) value);
+    }
+
     private ExportResult writeExport(Uri destination, ArrayList<MemoryCard> cards) throws Exception {
         requireExportAllowed();
         JSONArray exportedCards = new JSONArray();
@@ -1001,6 +1425,9 @@ public final class MorokMemoryStore {
                     .put("deletedInTelegram", card.deletedInTelegram).put("automatic", card.automatic)
                     .put("imported", card.imported).put("createdAt", card.createdAt)
                     .put("reminderAt", card.reminderAt);
+            if (card.restored && MemoryImportPolicy.validToken(card.restoredFrom)) {
+                exported.put("restoredFrom", card.restoredFrom);
+            }
             JSONArray versions = new JSONArray();
             for (int versionIndex = 0; versionIndex < card.versions.size(); versionIndex++) {
                 MemoryCard.Snapshot snapshot = card.versions.get(versionIndex);
