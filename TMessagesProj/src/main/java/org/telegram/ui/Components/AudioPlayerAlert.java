@@ -71,6 +71,7 @@ import com.google.android.exoplayer2.C;
 import com.google.android.gms.cast.framework.CastContext;
 
 import org.morok.media.MorokSleepTimer;
+import org.morok.media.PlaybackSeekPolicy;
 import org.morok.media.SleepTimerPolicy;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
@@ -2893,6 +2894,16 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         if (o.getLast() != null) o.getLast().setRightIcon(R.drawable.msg_arrowright);
         o.addGap();
 
+        o.add(R.drawable.msg_arrow_back, getString(R.string.MorokSeekBackward), () -> {
+            o.dismiss();
+            seekBy(messageObject, PlaybackSeekPolicy.BACKWARD_MILLIS);
+        });
+        o.add(R.drawable.msg_arrow_forward, getString(R.string.MorokSeekForward), () -> {
+            o.dismiss();
+            seekBy(messageObject, PlaybackSeekPolicy.FORWARD_MILLIS);
+        });
+        o.addGap();
+
         o.addIf(!noforwards, R.drawable.msg_forward, getString(R.string.Forward), () -> {
             o.dismiss();
             onSubItemClick(1);
@@ -2922,6 +2933,13 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         });
         o.setTranslationY(dp(64));
         o.show();
+    }
+
+    private void seekBy(MessageObject messageObject, long deltaMillis) {
+        MediaController controller = MediaController.getInstance();
+        long target = PlaybackSeekPolicy.targetMillis(controller.getProgressMs(messageObject),
+                controller.getDuration(), deltaMillis);
+        if (target >= 0) controller.seekToProgressMs(messageObject, target);
     }
 
     private ItemOptions buildSleepTimerOptions(ItemOptions root) {

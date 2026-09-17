@@ -13,9 +13,13 @@ fi
 "${MOROK_JAVA_BIN}javac" -d "$MOROK_TEST_OUTPUT" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/media/SleepTimerPolicy.java" \
   "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/media/PlaybackPositionPolicy.java" \
+  "$MOROK_ROOT/TMessagesProj/src/main/java/org/morok/media/PlaybackSeekPolicy.java" \
   "$MOROK_ROOT/tests/media/SleepTimerPolicyTest.java" \
-  "$MOROK_ROOT/tests/media/PlaybackPositionPolicyTest.java"
+  "$MOROK_ROOT/tests/media/PlaybackPositionPolicyTest.java" \
+  "$MOROK_ROOT/tests/media/PlaybackSeekPolicyTest.java"
 "${MOROK_JAVA_BIN}java" -cp "$MOROK_TEST_OUTPUT" SleepTimerPolicyTest
 "${MOROK_JAVA_BIN}java" -cp "$MOROK_TEST_OUTPUT" PlaybackPositionPolicyTest
+"${MOROK_JAVA_BIN}java" -cp "$MOROK_TEST_OUTPUT" PlaybackSeekPolicyTest
 python3 "$MOROK_ROOT/tests/media/test_sleep_timer_integration.py"
 python3 "$MOROK_ROOT/tests/media/test_playback_position_integration.py"
+python3 "$MOROK_ROOT/tests/media/test_playback_seek_integration.py"

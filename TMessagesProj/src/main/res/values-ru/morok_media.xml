@@ -6,4 +6,6 @@
     <string name="MorokSleepTimerSet">Музыка остановится через %1$s.</string>
     <string name="MorokSleepTimerCancel">Отменить таймер остановки</string>
     <string name="MorokSleepTimerCancelled">Таймер остановки отменён.</string>
+    <string name="MorokSeekBackward">Назад на 15 секунд</string>
+    <string name="MorokSeekForward">Вперёд на 30 секунд</string>
 </resources>
