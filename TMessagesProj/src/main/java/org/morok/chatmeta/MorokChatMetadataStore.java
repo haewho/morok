@@ -34,6 +34,7 @@ public final class MorokChatMetadataStore {
 
     public static final int MAX_ENTRIES = 256;
     public static final int MAX_DATABASE_BYTES = 1024 * 1024;
+    private static final int MAX_PRELOAD_CALLBACKS = 64;
     private static final long MIN_FREE_BYTES = 8L * 1024 * 1024;
     private static final String REVOCATIONS = "morok_chat_metadata_revocations_v1";
     private static final ExecutorService QUEUE = Executors.newSingleThreadExecutor(r -> new Thread(r, "morok-chat-metadata"));
@@ -44,6 +45,10 @@ public final class MorokChatMetadataStore {
     private final File directory;
     private final AtomicFile databaseFile;
     private volatile boolean revoked;
+    /** Immutable-after-publication snapshot. UI readers never decrypt or touch disk. */
+    private volatile HashMap<Long, ChatMetadata> cache;
+    private boolean preloadRunning;
+    private final ArrayList<Callback<Boolean>> preloadCallbacks = new ArrayList<>();
     private Aead cipher;
 
     private MorokChatMetadataStore(int account, long userId) {
@@ -78,7 +83,7 @@ public final class MorokChatMetadataStore {
     public static synchronized void onLogout(long userId) {
         if (userId <= 0) return;
         MorokChatMetadataStore old = INSTANCES.remove(userId);
-        if (old != null) old.revoked = true;
+        if (old != null) old.revoke();
         if (!revocations().edit().putBoolean(Long.toString(userId), true).commit()) {
             try { deleteKey(userId); }
             catch (Exception error) { throw new IllegalStateException("Cannot revoke chat metadata key", error); }
@@ -116,6 +121,18 @@ public final class MorokChatMetadataStore {
         if (!isActive()) throw new IOException("Account session changed");
     }
 
+    private synchronized void revoke() {
+        revoked = true;
+        cache = null;
+        preloadRunning = false;
+        preloadCallbacks.clear();
+    }
+
+    private synchronized void publishCache(HashMap<Long, ChatMetadata> entries) throws IOException {
+        requireActive();
+        cache = new HashMap<>(entries);
+    }
+
     private synchronized Aead cipher() throws Exception {
         requireActive();
         if (Build.VERSION.SDK_INT < 23) throw new IOException("Android 6 or later is required");
@@ -144,8 +161,13 @@ public final class MorokChatMetadataStore {
     }
 
     private HashMap<Long, ChatMetadata> read() throws Exception {
+        HashMap<Long, ChatMetadata> cached = cache;
+        if (cached != null) return new HashMap<>(cached);
         HashMap<Long, ChatMetadata> entries = new HashMap<>();
-        if (!databaseFile.getBaseFile().exists() && !new File(databaseFile.getBaseFile() + ".bak").exists()) return entries;
+        if (!databaseFile.getBaseFile().exists() && !new File(databaseFile.getBaseFile() + ".bak").exists()) {
+            publishCache(entries);
+            return entries;
+        }
         byte[] encrypted;
         try (FileInputStream input = databaseFile.openRead()) { encrypted = readBounded(input, MAX_DATABASE_BYTES + 256); }
         byte[] plain = cipher().decrypt(encrypted, aad());
@@ -160,6 +182,7 @@ public final class MorokChatMetadataStore {
                     value.getString("note"), value.getLong("updated"));
             if (entries.put(metadata.dialogId, metadata) != null) throw new IOException("Duplicate chat metadata identity");
         }
+        publishCache(entries);
         return entries;
     }
 
@@ -179,6 +202,7 @@ public final class MorokChatMetadataStore {
         byte[] encrypted = cipher().encrypt(plain, aad());
         requireActive();
         writeAtomic(databaseFile, encrypted);
+        publishCache(entries);
     }
 
     private <T> void execute(Operation<T> operation, Callback<T> callback) {
@@ -200,6 +224,44 @@ public final class MorokChatMetadataStore {
             ChatMetadata value = read().get(dialogId);
             return value == null ? ChatMetadata.empty(dialogId) : value;
         }, callback);
+    }
+
+    /** Returns null until the encrypted index has been loaded; never performs I/O. */
+    public ChatMetadata getCached(long dialogId) {
+        if (!isActive()) return null;
+        HashMap<Long, ChatMetadata> snapshot = cache;
+        if (snapshot == null) return null;
+        ChatMetadata value = snapshot.get(dialogId);
+        return value == null ? ChatMetadata.empty(dialogId) : value;
+    }
+
+    /** Coalesces visible-row warmups into one background decrypt. */
+    public void preload(Callback<Boolean> callback) {
+        boolean start;
+        synchronized (this) {
+            if (cache != null) {
+                if (callback != null) AndroidUtilities.runOnUIThread(() -> {
+                    if (isActive()) callback.done(true, null);
+                });
+                return;
+            }
+            if (callback != null && preloadCallbacks.size() < MAX_PRELOAD_CALLBACKS) preloadCallbacks.add(callback);
+            start = !preloadRunning;
+            preloadRunning = true;
+        }
+        if (!start) return;
+        execute(() -> {
+            read();
+            return true;
+        }, (value, error) -> {
+            ArrayList<Callback<Boolean>> callbacks;
+            synchronized (MorokChatMetadataStore.this) {
+                preloadRunning = false;
+                callbacks = new ArrayList<>(preloadCallbacks);
+                preloadCallbacks.clear();
+            }
+            for (Callback<Boolean> waiting : callbacks) waiting.done(value, error);
+        });
     }
 
     public void save(long dialogId, String alias, String note, Callback<ChatMetadata> callback) {

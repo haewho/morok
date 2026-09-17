@@ -280,6 +280,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             ((ForumBubbleDrawable) messageObject.topicIconDrawable[0]).setColor(topic.icon_color);
         }
         currentDialogId = dialog_id;
+        clearMorokLocalAlias();
         lastDialogChangedTime = System.currentTimeMillis();
         message = messageObject;
         isDialogCell = false;
@@ -317,6 +318,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
     public void setCurrentDialogId(long dialogId) {
         currentDialogId = dialogId;
+        clearMorokLocalAlias();
     }
 
     public void setIsTransitionSupport(boolean isTransitionSupport) {
@@ -398,6 +400,8 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     private int currentAccount;
     private CustomDialog customDialog;
     private long currentDialogId;
+    private String morokLocalAlias;
+    private int morokLocalAliasGeneration;
     private String customMessage;
     private int currentDialogFolderId;
     private long currentDialogCommunityId;
@@ -745,6 +749,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             lastStatusDrawableParams = -1;
         }
         currentDialogId = dialog.id;
+        clearMorokLocalAlias();
         lastDialogChangedTime = System.currentTimeMillis();
         isDialogCell = true;
         if (dialog instanceof TLRPC.TL_dialogCommunity) {
@@ -775,6 +780,57 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         checkGroupCall();
         checkChatTheme();
         checkTtl();
+        loadMorokLocalAlias();
+    }
+
+    private void clearMorokLocalAlias() {
+        morokLocalAliasGeneration++;
+        morokLocalAlias = null;
+    }
+
+    private boolean isMorokLocalAliasAvailable() {
+        return isDialogCell && !isTopic && customDialog == null && currentDialogId != 0
+                && currentDialogFolderId == 0 && currentDialogCommunityId == 0
+                && !insideCommunityList && encryptedChat == null
+                && (dialogsType == DialogsActivity.DIALOGS_TYPE_DEFAULT
+                    || dialogsType == DialogsActivity.DIALOGS_TYPE_FOLDER1
+                    || dialogsType == DialogsActivity.DIALOGS_TYPE_FOLDER2)
+                && (user != null || chat != null) && !UserObject.isService(currentDialogId)
+                && !UserObject.isUserSelf(user) && !UserObject.isReplyUser(user)
+                && !UserObject.isAnonymous(user);
+    }
+
+    private void loadMorokLocalAlias() {
+        if (!isMorokLocalAliasAvailable() || !UserConfig.getInstance(currentAccount).isClientActivated()) return;
+        final int generation = morokLocalAliasGeneration;
+        final long expectedDialogId = currentDialogId;
+        final long expectedUserId = UserConfig.getInstance(currentAccount).getClientUserId();
+        try {
+            org.morok.chatmeta.MorokChatMetadataStore store =
+                    org.morok.chatmeta.MorokChatMetadataStore.forAccount(currentAccount);
+            org.morok.chatmeta.ChatMetadata cached = store.getCached(expectedDialogId);
+            if (cached != null) {
+                applyMorokLocalAlias(cached.alias, generation, expectedDialogId, expectedUserId);
+                return;
+            }
+            store.preload((loaded, error) -> {
+                if (error != null || !Boolean.TRUE.equals(loaded)) return;
+                org.morok.chatmeta.ChatMetadata value = store.getCached(expectedDialogId);
+                if (value != null) applyMorokLocalAlias(value.alias, generation, expectedDialogId, expectedUserId);
+            });
+        } catch (RuntimeException ignored) { /* Keep Telegram's title when local encrypted storage is unavailable. */ }
+    }
+
+    private void applyMorokLocalAlias(String alias, int generation, long expectedDialogId, long expectedUserId) {
+        if (generation != morokLocalAliasGeneration || currentDialogId != expectedDialogId
+                || UserConfig.getInstance(currentAccount).getClientUserId() != expectedUserId
+                || !isMorokLocalAliasAvailable()) return;
+        String value = TextUtils.isEmpty(alias) ? null : alias;
+        if (TextUtils.equals(morokLocalAlias, value)) return;
+        morokLocalAlias = value;
+        if (getMeasuredWidth() != 0 && getMeasuredHeight() != 0) buildLayout();
+        else updateLayout = true;
+        invalidate();
     }
 
     protected boolean drawLock2() {
@@ -782,6 +838,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     }
 
     public void setDialog(CustomDialog dialog) {
+        clearMorokLocalAlias();
         customDialog = dialog;
         messageId = 0;
         update(0);
@@ -845,6 +902,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             lastStatusDrawableParams = -1;
         }
         currentDialogId = dialog_id;
+        clearMorokLocalAlias();
         lastDialogChangedTime = System.currentTimeMillis();
         message = messageObject;
         useMeForMyMessages = useMe;
@@ -869,6 +927,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             lastStatusDrawableParams = -1;
         }
         currentDialogId = dialog_id;
+        clearMorokLocalAlias();
         lastDialogChangedTime = System.currentTimeMillis();
         message = messageObject;
         useMeForMyMessages = useMe;
@@ -2253,6 +2312,11 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                     nameString = getString(R.string.HiddenName);
                 }
             }
+        }
+
+        if (isMorokLocalAliasAvailable() && !TextUtils.isEmpty(morokLocalAlias)) {
+            // Keep Telegram's avatar, trust/status badges, message preview, ordering and search identity.
+            nameString = morokLocalAlias;
         }
 
         int timeWidth;

@@ -17,6 +17,7 @@ import org.morok.chatmeta.ChatMetadata;
 import org.morok.chatmeta.MorokChatMetadataStore;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -136,6 +137,7 @@ public final class MorokChatMetadataActivity extends BaseFragment {
                 return;
             }
             if (aliasChanged != null) aliasChanged.changed(value.alias);
+            NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.dialogsNeedReload);
             toast(text(R.string.MorokChatMetadataSaved));
             finishFragment();
         });
