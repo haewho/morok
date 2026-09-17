@@ -62,7 +62,7 @@ public final class SettingsRepositoryTest {
         repo.saveAppearance(new AppearanceSettings(false, true));
         SettingsRepository restarted = new SettingsRepository(device);
         check(!restarted.appearance().liquidGlass && restarted.appearance().reducedEffects, "restart persistence");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 13, "additive schema migration");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 14, "additive schema migration");
         restarted.resetAppearance();
         check(restarted.appearance().liquidGlass && !restarted.appearance().reducedEffects, "category reset defaults");
         check("keep".equals(device.values.get("future.unrelated")), "reset preserves other settings");
@@ -120,13 +120,27 @@ public final class SettingsRepositoryTest {
         InteractionSettings interactionDefaults = firstAccount.interactions();
         check(interactionDefaults.doubleTapReactionsEnabled,
                 "double-tap reactions default to Telegram behavior");
+        check(InteractionSettings.MESSAGE_SWIPE_REPLY.equals(interactionDefaults.messageSwipeAction),
+                "message swipe defaults to Telegram reply behavior");
         firstAccount.saveInteractions(interactionDefaults.withDoubleTapReactionsEnabled(false));
         check(!new SettingsRepository(accounts.get(first)).interactions().doubleTapReactionsEnabled,
                 "account gesture setting survives restart");
         check(new SettingsRepository(accounts.get(second)).interactions().doubleTapReactionsEnabled,
                 "account gesture setting is isolated by stable identity");
+        firstAccount.saveInteractions(firstAccount.interactions()
+                .withMessageSwipeAction(InteractionSettings.MESSAGE_SWIPE_REMEMBER));
+        check(InteractionSettings.MESSAGE_SWIPE_REMEMBER.equals(
+                        new SettingsRepository(accounts.get(first)).interactions().messageSwipeAction),
+                "message swipe action survives restart");
+        check(InteractionSettings.MESSAGE_SWIPE_REPLY.equals(
+                        new SettingsRepository(accounts.get(second)).interactions().messageSwipeAction),
+                "message swipe action is isolated by stable identity");
+        firstAccount.saveInteractions(firstAccount.interactions().withMessageSwipeAction("future-action"));
+        check(InteractionSettings.MESSAGE_SWIPE_REPLY.equals(firstAccount.interactions().messageSwipeAction),
+                "unknown message swipe actions fail to Telegram reply behavior");
         firstAccount.resetInteractions();
-        check(firstAccount.interactions().doubleTapReactionsEnabled,
+        check(firstAccount.interactions().doubleTapReactionsEnabled
+                        && InteractionSettings.MESSAGE_SWIPE_REPLY.equals(firstAccount.interactions().messageSwipeAction),
                 "gesture reset restores Telegram behavior");
         ArchiveSettings archiveDefaults = firstAccount.archive();
         check(!archiveDefaults.enabled && archiveDefaults.chats.isEmpty()
@@ -353,13 +367,13 @@ public final class SettingsRepositoryTest {
             check(rejected, "invalid unauthenticated identity rejected: " + invalid);
         }
 
-        device.values.put(SettingsRepository.SCHEMA_KEY, 14);
+        device.values.put(SettingsRepository.SCHEMA_KEY, 15);
         int oldWrites = device.writes;
         boolean rejected = false;
         try { restarted.resetAppearance(); }
         catch (IllegalStateException expected) { rejected = true; }
         check(rejected && device.writes == oldWrites, "newer schema cannot be downgraded by reset");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 14, "newer schema kept intact");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 15, "newer schema kept intact");
         System.out.println("PASS: settings defaults, migration, isolation, archive, round-video, safety, interactions, privacy, strict transfer, reviewed app profiles, invalid IDs, downgrade refusal");
     }
 }

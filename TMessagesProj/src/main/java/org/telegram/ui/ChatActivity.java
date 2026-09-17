@@ -1069,6 +1069,7 @@ public class ChatActivity extends BaseFragment implements
     private boolean postponedScrollIsCanceled;
     private ChatActivityTextSelectionHelper textSelectionHelper;
     private View slidingView;
+    private String slidingMorokAction = org.morok.settings.InteractionSettings.MESSAGE_SWIPE_REPLY;
 
     private final float[] tmpOverlayPos = new float[2];
     private float[] computeArticleOverlayPos(View overlay) {
@@ -5026,7 +5027,15 @@ public class ChatActivity extends BaseFragment implements
                 }
 
                 int alpha = (int) (iconProgress * 0xFF);
-                Drawable replyIconDrawable = getThemedDrawable(Theme.key_drawable_replyIcon);
+                final boolean rememberAction = org.morok.settings.InteractionSettings.MESSAGE_SWIPE_REMEMBER.equals(slidingMorokAction);
+                Drawable replyIconDrawable;
+                if (rememberAction) {
+                    replyIconDrawable = getContext().getResources().getDrawable(R.drawable.outline_saved_24).mutate();
+                    replyIconDrawable.setColorFilter(new PorterDuffColorFilter(
+                            getThemedColor(Theme.key_chat_serviceText), PorterDuff.Mode.MULTIPLY));
+                } else {
+                    replyIconDrawable = getThemedDrawable(Theme.key_drawable_replyIcon);
+                }
                 replyIconDrawable.setAlpha(alpha);
                 replyIconDrawable.setBounds((int) (x - replyIconDrawable.getIntrinsicWidth() / 2 * scale), (int) (y - replyIconDrawable.getIntrinsicHeight() / 2 * scale), (int) (x + replyIconDrawable.getIntrinsicWidth() / 2 * scale), (int) (y + replyIconDrawable.getIntrinsicHeight() / 2 * scale));
                 replyIconDrawable.draw(canvas);
@@ -5048,8 +5057,16 @@ public class ChatActivity extends BaseFragment implements
                         }
                         slidingView = view;
                         MessageObject message = getSlidingMessageObject();
+                        slidingMorokAction = org.morok.interactions.MorokInteractionGate.messageSwipeAction(currentAccount);
+                        final boolean rememberAction = org.morok.settings.InteractionSettings.MESSAGE_SWIPE_REMEMBER.equals(slidingMorokAction);
+                        if (org.morok.settings.InteractionSettings.MESSAGE_SWIPE_DISABLED.equals(slidingMorokAction)
+                                || rememberAction && !org.morok.history.MemoryCapture.isAllowed(message)) {
+                            slidingViewSetOffset(0);
+                            slidingView = null;
+                            return;
+                        }
                         boolean allowReplyOnOpenTopic = canSendMessageToTopic(message);
-                        if (
+                        if (!rememberAction && (
                             chatMode != 0 && chatMode != MODE_QUICK_REPLIES && chatMode != MODE_SUGGESTIONS && (chatMode != MODE_SAVED || threadMessageId != getUserConfig().getClientUserId()) ||
                             threadMessageObjects != null && threadMessageObjects.contains(message) ||
                             getMessageType(message) == 1 && (message.getDialogId() == mergeDialogId || message.needDrawBluredPreview()) ||
@@ -5057,7 +5074,7 @@ public class ChatActivity extends BaseFragment implements
                             currentChat != null && ChatObject.isForum(currentChat) && !allowReplyOnOpenTopic ||
                             hasTextSelection() ||
                             message.isEphemeral() && message.isOut()
-                        ) {
+                        )) {
                             slidingViewSetOffset(0);
                             slidingView = null;
                             return;
@@ -5106,38 +5123,44 @@ public class ChatActivity extends BaseFragment implements
                 } else if (slidingView != null && (e == null || e.getPointerId(0) == startedTrackingPointerId && (e.getAction() == MotionEvent.ACTION_CANCEL || e.getAction() == MotionEvent.ACTION_UP || e.getAction() == MotionEvent.ACTION_POINTER_UP))) {
                     if (e != null && e.getAction() != MotionEvent.ACTION_CANCEL && Math.abs(getSlidingNonAnimationTranslationX(false)) >= AndroidUtilities.dp(50)) {
                         MessageObject message = getSlidingMessageObject();
-                        final boolean allowReplyOnOpenTopic = canSendMessageToTopic(message);
-                        if (
-                            bottomChannelButtonsLayout != null && bottomChannelButtonsLayout.getVisibility() == View.VISIBLE && !(bottomOverlayChatWaitsReply && allowReplyOnOpenTopic || message.wasJustSent) ||
-                            currentChat != null && (
-                                ChatObject.isNotInChat(currentChat) && !isThreadChat() ||
-                                ChatObject.isChannel(currentChat) && !ChatObject.canPost(currentChat) && !currentChat.megagroup ||
-                                !ChatObject.canSendMessages(currentChat)
-                            )
-                        ) {
-                            if (message.getGroupId() != 0) {
-                                MessageObject.GroupedMessages group = getGroup(message.getGroupId());
-                                if (group != null && group.captionMessage != null) {
-                                    message = group.captionMessage;
-                                }
+                        if (org.morok.settings.InteractionSettings.MESSAGE_SWIPE_REMEMBER.equals(slidingMorokAction)) {
+                            if (org.morok.history.MemoryCapture.isAllowed(message)) {
+                                org.morok.ui.MorokMemoryActivity.remember(ChatActivity.this, message);
                             }
-                            replyingMessageObject = message;
-                            Bundle args = new Bundle();
-                            args.putBoolean("onlySelect", true);
-                            args.putInt("dialogsType", DialogsActivity.DIALOGS_TYPE_FORWARD);
-                            args.putBoolean("quote", true);
-                            args.putBoolean("reply_to", true);
-                            final long author = DialogObject.getPeerDialogId(message.getFromPeer());
-                            if (author != 0 && author != getDialogId() && author != getUserConfig().getClientUserId() && author > 0) {
-                                args.putLong("reply_to_author", author);
-                            }
-                            args.putInt("messagesCount", 1);
-                            args.putBoolean("canSelectTopics", true);
-                            final DialogsActivity fragment = new DialogsActivity(args);
-                            fragment.setDelegate(ChatActivity.this);
-                            presentFragment(fragment);
                         } else {
-                            showFieldPanelForReply(getSlidingMessageObject());
+                            final boolean allowReplyOnOpenTopic = canSendMessageToTopic(message);
+                            if (
+                                bottomChannelButtonsLayout != null && bottomChannelButtonsLayout.getVisibility() == View.VISIBLE && !(bottomOverlayChatWaitsReply && allowReplyOnOpenTopic || message.wasJustSent) ||
+                                currentChat != null && (
+                                    ChatObject.isNotInChat(currentChat) && !isThreadChat() ||
+                                    ChatObject.isChannel(currentChat) && !ChatObject.canPost(currentChat) && !currentChat.megagroup ||
+                                    !ChatObject.canSendMessages(currentChat)
+                                )
+                            ) {
+                                if (message.getGroupId() != 0) {
+                                    MessageObject.GroupedMessages group = getGroup(message.getGroupId());
+                                    if (group != null && group.captionMessage != null) {
+                                        message = group.captionMessage;
+                                    }
+                                }
+                                replyingMessageObject = message;
+                                Bundle args = new Bundle();
+                                args.putBoolean("onlySelect", true);
+                                args.putInt("dialogsType", DialogsActivity.DIALOGS_TYPE_FORWARD);
+                                args.putBoolean("quote", true);
+                                args.putBoolean("reply_to", true);
+                                final long author = DialogObject.getPeerDialogId(message.getFromPeer());
+                                if (author != 0 && author != getDialogId() && author != getUserConfig().getClientUserId() && author > 0) {
+                                    args.putLong("reply_to_author", author);
+                                }
+                                args.putInt("messagesCount", 1);
+                                args.putBoolean("canSelectTopics", true);
+                                final DialogsActivity fragment = new DialogsActivity(args);
+                                fragment.setDelegate(ChatActivity.this);
+                                presentFragment(fragment);
+                            } else {
+                                showFieldPanelForReply(getSlidingMessageObject());
+                            }
                         }
                     }
                     endTrackingX = slidingViewGetOffsetX();

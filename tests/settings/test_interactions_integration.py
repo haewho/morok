@@ -23,6 +23,7 @@ select_reaction = chat.index("selectReaction(view, messageObject", on_double_tap
 assert on_double_tap < on_guard < select_reaction
 
 assert "return MorokSettings.interactions(accountSlot).doubleTapReactionsEnabled" in gate
+assert "return MorokSettings.interactions(accountSlot).messageSwipeAction" in gate
 assert "catch (RuntimeException unavailableSettings)" in gate
 assert "return true;" in gate
 for forbidden in ("ConnectionsManager", "sendRequest", "selectReaction", "MediaDataController"):
@@ -31,9 +32,22 @@ for forbidden in ("ConnectionsManager", "sendRequest", "selectReaction", "MediaD
 assert "new ReactionsDoubleTapManageActivity()" in screen
 assert "picker.setCurrentAccount(currentAccount)" in screen
 assert "withDoubleTapReactionsEnabled" in screen
+assert "withMessageSwipeAction" in screen
 assert "new SwipeGestureSettingsView(content.getContext(), currentAccount)" in screen
 assert "new MorokInteractionsActivity(currentAccount)" in settings_screen
 assert "setInteractions" not in profiles
 assert "interactions." not in profile_codec
+
+swipe_action = "MorokInteractionGate.messageSwipeAction(currentAccount)"
+assert chat.count(swipe_action) == 1
+swipe_start = chat.index(swipe_action)
+memory_gate = chat.index("MemoryCapture.isAllowed(message)", swipe_start)
+tracking_start = chat.index("startedTrackingSlidingView = true", swipe_start)
+assert swipe_start < memory_gate < tracking_start
+remember = chat.index("MorokMemoryActivity.remember(ChatActivity.this, message)", tracking_start)
+reply = chat.index("showFieldPanelForReply(getSlidingMessageObject())", remember)
+assert remember < reply
+assert "MESSAGE_SWIPE_DISABLED" in chat
+assert "R.drawable.outline_saved_24" in chat
 
 print("PASS: account-local double-tap gate, upstream reaction/swipe routing and profile-isolation invariants")

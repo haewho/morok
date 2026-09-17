@@ -68,6 +68,10 @@ public final class MorokInteractionsActivity extends BaseFragment {
         info(R.string.MorokInteractionsDoubleTapInfo);
         action(R.string.MorokInteractionsChooseReaction, quickReactionLabel(), this::openReactionPicker);
         info(R.string.MorokInteractionsChooseReactionInfo);
+        header(R.string.MorokInteractionsMessageSwipeHeader);
+        action(R.string.MorokInteractionsMessageSwipe, messageSwipeLabel(settings.messageSwipeAction),
+                this::chooseMessageSwipeAction);
+        info(R.string.MorokInteractionsMessageSwipeInfo);
         header(R.string.MorokInteractionsChatListHeader);
         SwipeGestureSettingsView swipe = new SwipeGestureSettingsView(content.getContext(), currentAccount);
         swipe.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
@@ -106,6 +110,33 @@ public final class MorokInteractionsActivity extends BaseFragment {
         String reaction = MediaDataController.getInstance(currentAccount).getDoubleTapReaction();
         if (reaction == null || reaction.isEmpty()) return text(R.string.MorokInteractionsTelegramDefault);
         return reaction.startsWith("animated_") ? text(R.string.MorokInteractionsCustomEmoji) : reaction;
+    }
+
+    private String messageSwipeLabel(String action) {
+        if (InteractionSettings.MESSAGE_SWIPE_REMEMBER.equals(action)) {
+            return text(R.string.MorokInteractionsMessageSwipeRemember);
+        }
+        if (InteractionSettings.MESSAGE_SWIPE_DISABLED.equals(action)) {
+            return text(R.string.MorokInteractionsDisabled);
+        }
+        return text(R.string.MorokInteractionsMessageSwipeReply);
+    }
+
+    private void chooseMessageSwipeAction() {
+        CharSequence[] labels = {
+                text(R.string.MorokInteractionsMessageSwipeReply),
+                text(R.string.MorokInteractionsMessageSwipeRemember),
+                text(R.string.MorokInteractionsDisabled)
+        };
+        String[] values = {
+                InteractionSettings.MESSAGE_SWIPE_REPLY,
+                InteractionSettings.MESSAGE_SWIPE_REMEMBER,
+                InteractionSettings.MESSAGE_SWIPE_DISABLED
+        };
+        showDialog(new AlertDialog.Builder(getContext())
+                .setTitle(text(R.string.MorokInteractionsMessageSwipe))
+                .setItems(labels, (dialog, which) -> apply(
+                        settings().withMessageSwipeAction(values[which]))).create());
     }
 
     private void confirmReset() {

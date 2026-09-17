@@ -11,7 +11,7 @@
 - `org.morok.drafts` — отдельные bounded encrypted снимки plain-text редактора по account/dialog/topic и чистая проверка восстановления; штатная синхронизация Telegram drafts не подменяется.
 - `org.morok.proxy` — проверка и выбор узлов через штатный `ConnectionsManager`; никакого второго сетевого стека.
 - `org.morok.safety` — локальный confirmation gate перед исходящим private-call `initiateCall` и единая read-only политика secure-window; сетевых или auth-операций здесь нет.
-- `org.morok.interactions` — read-only account-local gate для жестов; выбор самой быстрой реакции остаётся в штатном `MediaDataController`.
+- `org.morok.interactions` — read-only account-local gate для жестов; выбор самой быстрой реакции остаётся в штатном `MediaDataController`, а свайп сообщения маршрутизируется в upstream reply, локальную Memory queue или не перехватывается.
 - `org.morok.diagnostics` — неизменяемый обезличенный снимок локальных состояний и агрегированных счётчиков для явного копирования.
 - `org.morok.integration` — собственное имя, сохраняемое при загрузке облачных language packs.
 - `org.morok.ui` — обычные Telegram `BaseFragment`, встроенные в навигацию приложения.
@@ -22,7 +22,7 @@
 
 Защита окна и подтверждение личных звонков описаны в [SAFETY](SAFETY.md). Они opt-in и используют штатные Android/Telegram границы: `FLAG_SECURE`, permission gate и `VoIPHelper`.
 
-Настройка реакции по двойному нажатию описана в [INTERACTIONS](INTERACTIONS.md). Она может отключить только chat-message double tap и переиспользует штатный picker Telegram.
+Настройки реакции по двойному нажатию и свайпа сообщения описаны в [INTERACTIONS](INTERACTIONS.md). Они переиспользуют штатные reaction/reply paths, а локальное сохранение проходит существующую Memory eligibility.
 
 Единый read-only экран диагностики и точный состав копируемого отчёта описаны в [DIAGNOSTICS](DIAGNOSTICS.md).
 

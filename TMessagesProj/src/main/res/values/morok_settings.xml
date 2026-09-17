@@ -168,6 +168,11 @@
     <string name="MorokInteractionsDoubleTapInfo">When off, double tapping a chat message does not add or remove a reaction. Long-press reactions and media double-tap gestures keep their Telegram behavior.</string>
     <string name="MorokInteractionsChooseReaction">Choose quick reaction</string>
     <string name="MorokInteractionsChooseReactionInfo">Opens Telegram’s existing per-account reaction picker. Choosing an emoji does not enable MOROK’s double-tap switch.</string>
+    <string name="MorokInteractionsMessageSwipeHeader">Message swipe</string>
+    <string name="MorokInteractionsMessageSwipe">Swipe a message</string>
+    <string name="MorokInteractionsMessageSwipeReply">Reply</string>
+    <string name="MorokInteractionsMessageSwipeRemember">Remember locally</string>
+    <string name="MorokInteractionsMessageSwipeInfo">Reply uses Telegram’s existing composer path. Remember locally accepts only messages allowed by Memory policy; secret, expiring and protected content stays excluded. Disabled leaves horizontal movement to the surrounding interface.</string>
     <string name="MorokInteractionsChatListHeader">Chat list swipe</string>
     <string name="MorokInteractionsChatListInfo">Uses Telegram’s existing device-wide selector for pin, read, archive, mute, delete or folders. Folder availability depends on the current account.</string>
     <string name="MorokInteractionsTelegramDefault">Telegram default</string>
@@ -176,8 +181,8 @@
     <string name="MorokInteractionsEnabled">Enabled</string>
     <string name="MorokInteractionsDisabled">Disabled</string>
     <string name="MorokInteractionsReset">Reset MOROK gesture settings</string>
-    <string name="MorokInteractionsResetInfo">Restore Telegram’s double-tap reaction behavior for this account? The selected quick-reaction emoji and device-wide chat-list swipe action will stay unchanged.</string>
-    <string name="MorokInteractionsFooter">This switch is stored locally for the current account. App profiles do not change it.</string>
+    <string name="MorokInteractionsResetInfo">Restore Telegram’s double-tap reaction and message-swipe behavior for this account? The selected quick-reaction emoji and device-wide chat-list swipe action will stay unchanged.</string>
+    <string name="MorokInteractionsFooter">These controls are stored locally for the current account. App profiles do not change them.</string>
     <string name="MorokInteractionsSaveError">The gesture setting could not be saved. Settings from a newer MOROK version are left unchanged.</string>
     <string name="MorokSafetyHeader">Safety</string>
     <string name="MorokSafetyTitle">Safety and screen privacy</string>

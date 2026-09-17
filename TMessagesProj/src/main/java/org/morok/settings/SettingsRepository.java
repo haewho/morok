@@ -2,7 +2,7 @@ package org.morok.settings;
 
 /** Versioned local-only schema. Unknown newer schemas are readable but never overwritten. */
 public final class SettingsRepository {
-    public static final int SCHEMA_VERSION = 13;
+    public static final int SCHEMA_VERSION = 14;
     public static final String SCHEMA_KEY = "schema_version";
     private final SettingsStore store;
 
@@ -62,15 +62,18 @@ public final class SettingsRepository {
     }
 
     public InteractionSettings interactions() {
-        return new InteractionSettings(store.getBoolean("interactions.double_tap_reactions", true));
+        return new InteractionSettings(store.getBoolean("interactions.double_tap_reactions", true),
+                store.getString("interactions.message_swipe_action", InteractionSettings.MESSAGE_SWIPE_REPLY));
     }
 
     public void saveInteractions(InteractionSettings settings) {
         if (settings == null) throw new IllegalArgumentException("Interaction settings are required");
         checkWritable();
-        store.saveBooleans(SCHEMA_VERSION,
+        store.save(SCHEMA_VERSION,
                 new String[] {"interactions.double_tap_reactions"},
-                new boolean[] {settings.doubleTapReactionsEnabled});
+                new boolean[] {settings.doubleTapReactionsEnabled},
+                new String[] {"interactions.message_swipe_action"},
+                new String[] {settings.messageSwipeAction});
     }
 
     public void resetInteractions() {
