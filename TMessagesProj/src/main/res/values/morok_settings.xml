@@ -147,6 +147,8 @@
     <string name="MorokAppProfilesAppearance">Appearance</string>
     <string name="MorokAppProfilesAutoplayVideo">Autoplay videos</string>
     <string name="MorokAppProfilesAutoplayGifs">Autoplay GIFs</string>
+    <string name="MorokAppProfilesAnimatedStickersChat">Animated stickers in chats</string>
+    <string name="MorokAppProfilesAnimatedStickersKeyboard">Animated stickers in keyboard</string>
     <string name="MorokAppProfilesPrivacy">Privacy behavior</string>
     <string name="MorokAppProfilesNotificationContent">Notification message content</string>
     <string name="MorokAppProfilesShown">Shown</string>

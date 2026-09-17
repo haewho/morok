@@ -34,7 +34,7 @@ public final class AppProfilePresets {
             throw new IllegalArgumentException("Unknown app profile preset");
         }
         SettingsProfile settings = new SettingsProfile(appearance, current.settings.roundVideo, privacy);
-        return new AppProfileState(settings, autoplay, autoplay, notificationContent,
+        return new AppProfileState(settings, autoplay, autoplay, autoplay, autoplay, notificationContent,
                 AppProfileState.NETWORK_KEEP);
     }
 
@@ -50,6 +50,8 @@ public final class AppProfilePresets {
     private static boolean sameManagedState(AppProfileState first, AppProfileState second) {
         return first.autoplayVideos == second.autoplayVideos
                 && first.autoplayGifs == second.autoplayGifs
+                && first.animatedStickersChat == second.animatedStickersChat
+                && first.animatedStickersKeyboard == second.animatedStickersKeyboard
                 && first.notificationContent == second.notificationContent
                 && first.settings.appearance.liquidGlass == second.settings.appearance.liquidGlass
                 && first.settings.appearance.reducedEffects == second.settings.appearance.reducedEffects

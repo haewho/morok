@@ -271,11 +271,13 @@ public final class SettingsRepositoryTest {
         check(encodedProfile.equals(SettingsProfileCodec.encode(decodedProfile)),
                 "settings transfer format has deterministic canonical output");
 
-        AppProfileState profileCurrent = new AppProfileState(profile, true, false, true,
+        AppProfileState profileCurrent = new AppProfileState(profile, true, false, true, false, true,
                 AppProfileState.NETWORK_KEEP);
         AppProfileState normal = AppProfilePresets.create(AppProfilePresets.NORMAL, profileCurrent);
         check(normal.settings.appearance.liquidGlass && !normal.settings.appearance.reducedEffects
-                        && normal.autoplayVideos && normal.autoplayGifs && normal.notificationContent
+                        && normal.autoplayVideos && normal.autoplayGifs
+                        && normal.animatedStickersChat && normal.animatedStickersKeyboard
+                        && normal.notificationContent
                         && !normal.settings.privacy.ghostPreset,
                 "Normal restores Telegram-like appearance, autoplay and standard privacy");
         check(normal.settings.roundVideo.enhanced
@@ -284,15 +286,19 @@ public final class SettingsRepositoryTest {
         AppProfileState stealth = AppProfilePresets.create(AppProfilePresets.STEALTH, profileCurrent);
         check(!stealth.settings.appearance.liquidGlass && !stealth.settings.appearance.reducedEffects
                         && stealth.settings.privacy.ghostPreset && !stealth.autoplayVideos
-                        && !stealth.autoplayGifs && !stealth.notificationContent,
+                        && !stealth.autoplayGifs && !stealth.animatedStickersChat
+                        && !stealth.animatedStickersKeyboard && !stealth.notificationContent,
                 "Stealth enables the documented local privacy set and hides notification content");
         AppProfileState work = AppProfilePresets.create(AppProfilePresets.WORK, profileCurrent);
         check(work.settings.appearance.liquidGlass && !work.autoplayVideos && !work.autoplayGifs
+                        && !work.animatedStickersChat && !work.animatedStickersKeyboard
                         && work.notificationContent && !work.settings.privacy.ghostPreset,
                 "Work keeps normal appearance and notification content while stopping autoplay");
         AppProfileState saver = AppProfilePresets.create(AppProfilePresets.SAVER, profileCurrent);
         check(!saver.settings.appearance.liquidGlass && saver.settings.appearance.reducedEffects
-                        && !saver.autoplayVideos && !saver.autoplayGifs && saver.notificationContent,
+                        && !saver.autoplayVideos && !saver.autoplayGifs
+                        && !saver.animatedStickersChat && !saver.animatedStickersKeyboard
+                        && saver.notificationContent,
                 "Saver combines minimum effects with disabled autoplay");
         check(AppProfileState.NETWORK_KEEP.equals(normal.networkPolicy)
                         && AppProfileState.NETWORK_KEEP.equals(stealth.networkPolicy)
@@ -314,11 +320,29 @@ public final class SettingsRepositoryTest {
                 "local app profile round-trips all managed policy");
         check(encodedAppProfile.equals(AppProfileStateCodec.encode(decodedAppProfile)),
                 "local app profile format has deterministic canonical output");
+        AppProfileState mixedStickerState = AppProfileStateCodec.decode(
+                AppProfileStateCodec.encode(profileCurrent));
+        check(mixedStickerState.animatedStickersChat
+                        && !mixedStickerState.animatedStickersKeyboard,
+                "current app profile schema preserves independent chat and keyboard sticker flags");
+        String legacyAppProfile = encodedAppProfile.replace("format=2", "format=1")
+                .replace("autoplay.stickers_chat=false\n", "")
+                .replace("autoplay.stickers_keyboard=false\n", "");
+        AppProfileState migratedLegacy = AppProfileStateCodec.decode(legacyAppProfile);
+        check(!migratedLegacy.animatedStickersChat && !migratedLegacy.animatedStickersKeyboard
+                        && AppProfilePresets.detect(migratedLegacy) == AppProfilePresets.STEALTH,
+                "version 1 app profiles migrate sticker animation from their GIF policy");
+        check(AppProfileStateCodec.encode(migratedLegacy).contains("format=2\n")
+                        && AppProfileStateCodec.encode(migratedLegacy).contains("autoplay.stickers_chat=false\n")
+                        && AppProfileStateCodec.encode(migratedLegacy).contains("autoplay.stickers_keyboard=false\n"),
+                "migrated app profiles write the complete current schema");
         String[] invalidAppProfiles = {
-                encodedAppProfile.replace("format=1", "format=2"),
+                encodedAppProfile.replace("format=2", "format=3"),
                 encodedAppProfile.replace("autoplay.videos=false\n", ""),
+                encodedAppProfile.replace("autoplay.stickers_chat=false\n", ""),
                 encodedAppProfile.replace("network.policy=keep\n\n", "network.policy=keep\nunknown=x\n\n"),
                 encodedAppProfile.replace("autoplay.gifs=false", "autoplay.gifs=1"),
+                encodedAppProfile.replace("autoplay.stickers_keyboard=false", "autoplay.stickers_keyboard=1"),
                 encodedAppProfile.replace("network.policy=keep", "network.policy=proxy"),
                 encodedAppProfile.replace("notifications.content=false\n", "notifications.content=false\nnotifications.content=false\n"),
                 "NOT_MOROK\n" + encodedAppProfile

@@ -5,11 +5,9 @@ import java.util.Map;
 
 /** Strict private persistence format for custom/previous local app profiles. */
 public final class AppProfileStateCodec {
-    public static final int FORMAT_VERSION = 1;
+    public static final int FORMAT_VERSION = 2;
     public static final int MAX_CHARACTERS = 24 * 1024;
     public static final String MAGIC = "MOROK_LOCAL_APP_PROFILE";
-    private static final int HEADER_FIELDS = 5;
-
     private AppProfileStateCodec() {}
 
     public static String encode(AppProfileState state) {
@@ -18,6 +16,8 @@ public final class AppProfileStateCodec {
         append(output, "format", Integer.toString(FORMAT_VERSION));
         append(output, "autoplay.videos", bool(state.autoplayVideos));
         append(output, "autoplay.gifs", bool(state.autoplayGifs));
+        append(output, "autoplay.stickers_chat", bool(state.animatedStickersChat));
+        append(output, "autoplay.stickers_keyboard", bool(state.animatedStickersKeyboard));
         append(output, "notifications.content", bool(state.notificationContent));
         append(output, "network.policy", state.networkPolicy);
         output.append('\n').append(SettingsProfileCodec.encode(state.settings));
@@ -33,7 +33,7 @@ public final class AppProfileStateCodec {
         int body = normalized.indexOf("\n\n");
         if (body < 0) throw new IllegalArgumentException("Missing app profile body");
         String[] lines = normalized.substring(0, body).split("\n", -1);
-        if (lines.length != HEADER_FIELDS + 1 || !MAGIC.equals(lines[0])) {
+        if (lines.length < 2 || !MAGIC.equals(lines[0])) {
             throw new IllegalArgumentException("Invalid app profile header");
         }
         Map<String, String> values = new LinkedHashMap<>();
@@ -44,24 +44,34 @@ public final class AppProfileStateCodec {
                 throw new IllegalArgumentException("Invalid app profile field");
             }
         }
-        if (values.size() != HEADER_FIELDS || !values.keySet().equals(knownKeys())) {
-            throw new IllegalArgumentException("Unknown or incomplete app profile");
-        }
         int format;
         try { format = Integer.parseInt(values.get("format")); }
         catch (NumberFormatException error) { throw new IllegalArgumentException("Invalid app profile version", error); }
-        if (format != FORMAT_VERSION) throw new IllegalArgumentException("Unsupported app profile version");
+        if (format != 1 && format != FORMAT_VERSION) {
+            throw new IllegalArgumentException("Unsupported app profile version");
+        }
+        if (!values.keySet().equals(knownKeys(format))) {
+            throw new IllegalArgumentException("Unknown or incomplete app profile");
+        }
         String network = values.get("network.policy");
         SettingsProfile settings = SettingsProfileCodec.decode(normalized.substring(body + 2));
+        boolean gifs = booleanValue(values, "autoplay.gifs");
+        boolean stickersChat = format == 1 ? gifs : booleanValue(values, "autoplay.stickers_chat");
+        boolean stickersKeyboard = format == 1 ? gifs : booleanValue(values, "autoplay.stickers_keyboard");
         return new AppProfileState(settings, booleanValue(values, "autoplay.videos"),
-                booleanValue(values, "autoplay.gifs"), booleanValue(values, "notifications.content"), network);
+                gifs, stickersChat, stickersKeyboard,
+                booleanValue(values, "notifications.content"), network);
     }
 
-    private static java.util.Set<String> knownKeys() {
+    private static java.util.Set<String> knownKeys(int format) {
         java.util.LinkedHashSet<String> keys = new java.util.LinkedHashSet<>();
         keys.add("format");
         keys.add("autoplay.videos");
         keys.add("autoplay.gifs");
+        if (format >= 2) {
+            keys.add("autoplay.stickers_chat");
+            keys.add("autoplay.stickers_keyboard");
+        }
         keys.add("notifications.content");
         keys.add("network.policy");
         return keys;

@@ -22,6 +22,8 @@ public final class MorokAppProfiles {
         return new AppProfileState(MorokSettings.exportProfile(accountSlot),
                 LiteMode.isEnabledSetting(LiteMode.FLAG_AUTOPLAY_VIDEOS),
                 LiteMode.isEnabledSetting(LiteMode.FLAG_AUTOPLAY_GIFS),
+                LiteMode.isEnabledSetting(LiteMode.FLAG_ANIMATED_STICKERS_CHAT),
+                LiteMode.isEnabledSetting(LiteMode.FLAG_ANIMATED_STICKERS_KEYBOARD),
                 preferences.getBoolean(CURRENT_NOTIFICATION_CONTENT, true), AppProfileState.NETWORK_KEEP);
     }
 
@@ -69,6 +71,8 @@ public final class MorokAppProfiles {
         MorokSettings.applyProfile(accountSlot, state.settings);
         LiteMode.toggleFlag(LiteMode.FLAG_AUTOPLAY_VIDEOS, state.autoplayVideos);
         LiteMode.toggleFlag(LiteMode.FLAG_AUTOPLAY_GIFS, state.autoplayGifs);
+        LiteMode.toggleFlag(LiteMode.FLAG_ANIMATED_STICKERS_CHAT, state.animatedStickersChat);
+        LiteMode.toggleFlag(LiteMode.FLAG_ANIMATED_STICKERS_KEYBOARD, state.animatedStickersKeyboard);
         if (!preferences(accountSlot).edit()
                 .putBoolean(CURRENT_NOTIFICATION_CONTENT, state.notificationContent).commit()) {
             throw new IllegalStateException("Could not save notification privacy profile");

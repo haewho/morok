@@ -16,7 +16,13 @@ assert "authenticatedUserId(accountSlot)" in manager
 assert "public static long authenticatedUserId" in settings
 assert manager.index("putString(PREVIOUS") < manager.index("applyState(accountSlot, target")
 assert "NotificationsController.getInstance(accountSlot).showNotifications()" in manager
+for flag in ("FLAG_AUTOPLAY_VIDEOS", "FLAG_AUTOPLAY_GIFS",
+             "FLAG_ANIMATED_STICKERS_CHAT", "FLAG_ANIMATED_STICKERS_KEYBOARD"):
+    assert f"LiteMode.isEnabledSetting(LiteMode.{flag})" in manager
+    assert f"LiteMode.toggleFlag(LiteMode.{flag}" in manager
 assert "setPositiveButton(text(R.string.MorokAppProfilesApply)" in screen
+assert "state.animatedStickersChat" in screen
+assert "state.animatedStickersKeyboard" in screen
 assert "MorokAppProfilesNetworkKept" in screen
 assert "MorokAppProfilesPreviewFooter" in screen
 print("PASS: app-profile notification, stable-account, previous-state, preview and no-network invariants")

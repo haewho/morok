@@ -147,6 +147,8 @@
     <string name="MorokAppProfilesAppearance">Оформление</string>
     <string name="MorokAppProfilesAutoplayVideo">Автовоспроизведение видео</string>
     <string name="MorokAppProfilesAutoplayGifs">Автовоспроизведение GIF</string>
+    <string name="MorokAppProfilesAnimatedStickersChat">Анимированные стикеры в чатах</string>
+    <string name="MorokAppProfilesAnimatedStickersKeyboard">Анимированные стикеры в клавиатуре</string>
     <string name="MorokAppProfilesPrivacy">Поведение приватности</string>
     <string name="MorokAppProfilesNotificationContent">Текст сообщений в уведомлениях</string>
     <string name="MorokAppProfilesShown">Показывается</string>
