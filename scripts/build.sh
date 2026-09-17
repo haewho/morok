@@ -29,6 +29,7 @@ case "$morok_variant" in
     *) printf '%s\n' 'Usage: scripts/build.sh [debug|release]' >&2; exit 2 ;;
 esac
 python3 scripts/check_upstream.py
+python3 scripts/prepare_apk_output.py TMessagesProj_App/build "$morok_variant"
 ./gradlew morokPreflight "$morok_task" --no-daemon --max-workers=2 \
     -Dorg.gradle.jvmargs='-Xmx3g -XX:MaxMetaspaceSize=768m' \
     -Pandroid.injected.build.abi=arm64-v8a

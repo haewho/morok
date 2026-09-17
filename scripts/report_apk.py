@@ -10,6 +10,8 @@ import subprocess
 import sys
 import zipfile
 
+from apk_zip_layout import max_inter_entry_gap
+
 root = Path(__file__).resolve().parent.parent
 variant = sys.argv[1] if len(sys.argv) == 2 else 'debug'
 if variant not in ('debug', 'release'):
@@ -33,6 +35,9 @@ with zipfile.ZipFile(apk) as archive:
     abis = sorted({p.split('/')[1] for p in archive.namelist() if p.startswith('lib/') and p.endswith('.so')})
 if abis != ['arm64-v8a']:
     raise SystemExit(f'Expected only arm64-v8a, found {abis}; review packaging.')
+max_zip_gap = max_inter_entry_gap(apk)
+if max_zip_gap > 64 * 1024:
+    raise SystemExit(f'APK contains an excessive {max_zip_gap}-byte gap between ZIP entries; rebuild from compact output.')
 out = root / 'artifacts'
 out.mkdir(exist_ok=True)
 target = out / f'MOROK-{package["versionName"]}-{variant}-arm64.apk'
@@ -40,7 +45,8 @@ shutil.copy2(apk, target)
 digest = hashlib.sha256(target.read_bytes()).hexdigest()
 lock = json.loads((root / 'upstream.lock.json').read_text())
 report = {'apk': target.name, 'sha256': digest, 'bytes': target.stat().st_size,
-          'package': package, 'abis': abis, 'upstream': lock['commit'],
+          'package': package, 'abis': abis, 'maxZipEntryGapBytes': max_zip_gap,
+          'upstream': lock['commit'],
           'commit': subprocess.check_output(['git', '-C', str(root), 'rev-parse', 'HEAD'], text=True).strip(),
           'workingTreeModified': bool(subprocess.check_output(['git', '-C', str(root), 'status', '--porcelain'], text=True).strip()),
           'signature': [line for line in certs.splitlines() if not line.startswith('WARNING:')],

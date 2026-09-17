@@ -5,6 +5,7 @@
 | Файл / символ | Событие и порядок | Поток / инвариант | Проверка |
 |---|---|---|---|
 | `settings.gradle`, `build.gradle`, `gradle/morok-config.gradle` | Выбор основного APK-модуля и чтение локальной конфигурации до module evaluation | Gradle; нет зависимости от чужих API/Firebase/signing fixtures | Полный build, morokPreflight, отказ release без credentials |
+| `scripts/build.sh` → `prepare_apk_output.py` / `report_apk.py` | До assemble удаляются только прежние конечные APK выбранного варианта; после assemble проверяется структура ZIP | Gradle/host; caches и результаты компиляции сохраняются, другой вариант не затрагивается, разрыв между ZIP-записями больше 64 KiB отклоняется | 7 build-script/layout checks, полный debug build, повторная сборка того же commit |
 | `TMessagesProj/build.gradle`, `gradle/morok-library.gradle` | Генерация собственных BuildConfig fields и res directory | Gradle; Java/JNI namespace сохранён, ABI arm64 | Java/C++ build, APK abi report |
 | `TMessagesProj_App/build.gradle`, `gradle/morok-app.gradle` | Собственная подпись/package/account type и проверка release до pre-build | Gradle; debug key локальный, release key постоянный, без подмены identity | apksigner/aapt2 и release validation |
 | `BuildVars` fields / `getSmsHash` / `isBetaApp` | Инициализация приложения | API/Google/SMS поля только из своей конфигурации; чужой APK updater/passkeys identity отключены | BuildConfig+APK audit; авторизация требует device test |
