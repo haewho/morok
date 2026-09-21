@@ -1064,7 +1064,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         int height;
         if (isForumCell() && !isTransitionSupport && !collapsed) {
             int heightDp = useForceThreeLines || SharedConfig.useThreeLinesLayout ? 86 : 91;
-            if (usesMorokDialogListDensity()) heightDp = MorokAppearance.dialogListHeight(heightDp);
+            if (usesMorokDialogListGeometry()) heightDp = MorokAppearance.dialogListHeight(heightDp);
             height = dp(heightDp);
             if (useSeparator) {
                 height += 1;
@@ -1080,7 +1080,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
     private int getCollapsedHeight() {
         int heightDp = useForceThreeLines || SharedConfig.useThreeLinesLayout ? heightThreeLines : heightDefault;
-        if (usesMorokDialogListDensity()) heightDp = MorokAppearance.dialogListHeight(heightDp);
+        if (usesMorokDialogListGeometry()) heightDp = MorokAppearance.dialogListHeight(heightDp);
         int height = dp(heightDp);
         if (useSeparator || true) {
             height += 1;
@@ -1094,11 +1094,20 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         return height;
     }
 
-    private boolean usesMorokDialogListDensity() {
+    private boolean usesMorokDialogListGeometry() {
         return isDialogCell && customDialog == null
                 && (dialogsType == DialogsActivity.DIALOGS_TYPE_DEFAULT
                     || dialogsType == DialogsActivity.DIALOGS_TYPE_FOLDER1
                     || dialogsType == DialogsActivity.DIALOGS_TYPE_FOLDER2);
+    }
+
+    private void setDialogAvatarRect(int avatarLeft, int avatarTop, int upstreamSizeDp) {
+        int sizeDp = usesMorokDialogListGeometry()
+                ? MorokAppearance.dialogListAvatarSize(upstreamSizeDp) : upstreamSizeDp;
+        int inset = dp(upstreamSizeDp - sizeDp) / 2;
+        int size = dp(sizeDp);
+        storyParams.originalAvatarRect.set(avatarLeft + inset, avatarTop + inset,
+                avatarLeft + inset + size, avatarTop + inset + size);
     }
 
     private void checkTwoLinesForName() {
@@ -2517,7 +2526,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 avatarLeft = dp(avatarStart);
                 thumbLeft = avatarLeft + dp(56 + 13);
             }
-            storyParams.originalAvatarRect.set(avatarLeft, avatarTop, avatarLeft + dp(56), avatarTop + dp(56));
+            setDialogAvatarRect(avatarLeft, avatarTop, 56);
             for (int i = 0; i < thumbImage.length; ++i) {
                 thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + dp(31) + (twoLinesForName ? dp(20) : 0) - (!(useForceThreeLines || SharedConfig.useThreeLinesLayout) && tags != null && !tags.isEmpty() ? dp(9) : 0), dp(18), dp(18));
             }
@@ -2540,7 +2549,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 avatarLeft = dp(avatarStart);
                 thumbLeft = avatarLeft + dp(56 + 11);
             }
-            storyParams.originalAvatarRect.set(avatarLeft, avatarTop, avatarLeft + dp(52), avatarTop + dp(52));
+            setDialogAvatarRect(avatarLeft, avatarTop, 52);
             for (int i = 0; i < thumbImage.length; ++i) {
                 thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + dp(30) + (twoLinesForName ? dp(20) : 0) - (!(useForceThreeLines || SharedConfig.useThreeLinesLayout) && tags != null && !tags.isEmpty() ? dp(9) : 0), dp(thumbSize), dp(thumbSize));
             }
@@ -4774,12 +4783,14 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 avatarImage.draw(canvas);
                 canvas.restore();
             } else if (drawCommunityAvatar) {
+                int communitySize = usesMorokDialogListGeometry()
+                        ? MorokAppearance.dialogListAvatarSize(48) : 48;
                 DrawableUtils.setBounds(avatarImage,
                     storyParams.originalAvatarRect.centerX() + dpf2(1),
                     storyParams.originalAvatarRect.centerY(),
-                    dp(48), dp(48), Gravity.CENTER);
+                    dp(communitySize), dp(communitySize), Gravity.CENTER);
                 DrawableUtils.drawCommunityCardDrawable(canvas, Theme.dialogs_communityCardsDrawable,
-                    avatarImage.getCenterX(), avatarImage.getCenterY(), dp(48));
+                    avatarImage.getCenterX(), avatarImage.getCenterY(), dp(communitySize));
                 avatarImage.draw(canvas);
             } else {
                 storyParams.drawHiddenStoriesAsSegments = isShareToStoryCell || currentDialogFolderId != 0;

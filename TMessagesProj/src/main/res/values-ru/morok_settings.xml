@@ -21,10 +21,15 @@
     <string name="MorokDialogListDensityCompact">Компактная</string>
     <string name="MorokDialogListDensityStandard">Стандартная</string>
     <string name="MorokDialogListDensityComfortable">Просторная</string>
+    <string name="MorokDialogListAvatarSize">Размер аватаров списка</string>
+    <string name="MorokDialogListAvatarSizeInfo">Меняет размер обычных аватаров вокруг их штатного центра. Рамки историй и значки статуса используют те же границы; текст, порядок и поиск сохраняются.</string>
+    <string name="MorokDialogListAvatarSmall">Маленькие</string>
+    <string name="MorokDialogListAvatarStandard">Стандартные</string>
+    <string name="MorokDialogListAvatarLarge">Большие</string>
     <string name="MorokThemes">Темы и оформление чатов</string>
     <string name="MorokPowerSettings">Энергосбережение и эффекты</string>
     <string name="MorokResetAppearance">Сбросить оформление Морока</string>
-    <string name="MorokResetAppearanceInfo">Разрешить штатное стекло, вернуть исходный режим анимаций и стандартную плотность списка? Тема Telegram и настройки энергосбережения сохранятся.</string>
+    <string name="MorokResetAppearanceInfo">Разрешить штатное стекло, вернуть исходный режим анимаций, стандартную плотность списка и стандартные аватары? Тема Telegram и настройки энергосбережения сохранятся.</string>
     <string name="MorokDeviceSettingsInfo">Оформление общее для всех аккаунтов на устройстве. Изменения сохраняются локально и применяются без повторного открытия чатов.</string>
     <string name="MorokLocalTools">Локальные инструменты</string>
     <string name="MorokMemoryShortcut">Память Морока</string>

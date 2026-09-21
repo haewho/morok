@@ -6,7 +6,7 @@ import java.util.Map;
 
 /** Strict, deterministic and secret-free text format for explicit settings transfer. */
 public final class SettingsProfileCodec {
-    public static final int FORMAT_VERSION = 2;
+    public static final int FORMAT_VERSION = 3;
     public static final int MAX_CHARACTERS = 16 * 1024;
     public static final String MAGIC = "MOROK_SETTINGS_PROFILE";
 
@@ -14,6 +14,7 @@ public final class SettingsProfileCodec {
     private static final String GLASS = "appearance.liquid_glass";
     private static final String EFFECTS = "appearance.reduced_effects";
     private static final String DENSITY = "appearance.dialog_list_density";
+    private static final String AVATAR_SIZE = "appearance.dialog_list_avatar_size";
     private static final String ROUND_ENABLED = "camera.round_video_enhanced";
     private static final String ROUND_PROFILE = "camera.round_video_profile";
     private static final String GHOST = "privacy.ghost_preset";
@@ -26,6 +27,7 @@ public final class SettingsProfileCodec {
     private static final String DELAY_SEND = "privacy.delay_ghost_sends";
     private static final int V1_FIELD_COUNT = 13;
     private static final int V2_FIELD_COUNT = 14;
+    private static final int V3_FIELD_COUNT = 15;
 
     private SettingsProfileCodec() {}
 
@@ -36,6 +38,7 @@ public final class SettingsProfileCodec {
         append(result, GLASS, bool(profile.appearance.liquidGlass));
         append(result, EFFECTS, bool(profile.appearance.reducedEffects));
         append(result, DENSITY, profile.appearance.dialogListDensity);
+        append(result, AVATAR_SIZE, profile.appearance.dialogListAvatarSize);
         append(result, ROUND_ENABLED, bool(profile.roundVideo.enhanced));
         append(result, ROUND_PROFILE, profile.roundVideo.profile);
         append(result, GHOST, bool(profile.privacy.ghostPreset));
@@ -71,8 +74,8 @@ public final class SettingsProfileCodec {
         int version;
         try { version = Integer.parseInt(required(values, FORMAT)); }
         catch (NumberFormatException error) { throw new IllegalArgumentException("Invalid profile version", error); }
-        if (version != 1 && version != FORMAT_VERSION) throw new IllegalArgumentException("Unsupported profile version");
-        int fieldCount = version == 1 ? V1_FIELD_COUNT : V2_FIELD_COUNT;
+        if (version < 1 || version > FORMAT_VERSION) throw new IllegalArgumentException("Unsupported profile version");
+        int fieldCount = version == 1 ? V1_FIELD_COUNT : version == 2 ? V2_FIELD_COUNT : V3_FIELD_COUNT;
         if (values.size() != fieldCount || !values.keySet().equals(knownKeys(version))) {
             throw new IllegalArgumentException("Unknown or incomplete profile");
         }
@@ -80,7 +83,10 @@ public final class SettingsProfileCodec {
         if (!RoundVideoSettings.isValidProfile(roundProfile)) throw new IllegalArgumentException("Invalid round-video profile");
         String density = version == 1 ? AppearanceSettings.DENSITY_STANDARD : required(values, DENSITY);
         if (!AppearanceSettings.validDensity(density)) throw new IllegalArgumentException("Invalid dialog-list density");
-        AppearanceSettings appearance = new AppearanceSettings(booleanValue(values, GLASS), booleanValue(values, EFFECTS), density);
+        String avatarSize = version < 3 ? AppearanceSettings.AVATAR_STANDARD : required(values, AVATAR_SIZE);
+        if (!AppearanceSettings.validAvatarSize(avatarSize)) throw new IllegalArgumentException("Invalid dialog-list avatar size");
+        AppearanceSettings appearance = new AppearanceSettings(booleanValue(values, GLASS),
+                booleanValue(values, EFFECTS), density, avatarSize);
         RoundVideoSettings roundVideo = new RoundVideoSettings(booleanValue(values, ROUND_ENABLED), roundProfile);
         PrivacySettings privacy = new PrivacySettings(booleanValue(values, GHOST), booleanValue(values, TYPING),
                 booleanValue(values, ONLINE), booleanValue(values, CONTENT_READ), booleanValue(values, READ),
@@ -114,6 +120,7 @@ public final class SettingsProfileCodec {
         keys.add(GLASS);
         keys.add(EFFECTS);
         if (version >= 2) keys.add(DENSITY);
+        if (version >= 3) keys.add(AVATAR_SIZE);
         keys.add(ROUND_ENABLED);
         keys.add(ROUND_PROFILE);
         keys.add(GHOST);

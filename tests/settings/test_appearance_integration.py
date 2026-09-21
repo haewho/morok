@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Source invariants for device-wide dialog-list density and live relayout."""
+"""Source invariants for device-wide dialog-list geometry and live relayout."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -18,15 +18,27 @@ assert 'DENSITY_COMPACT = "compact"' in appearance
 assert 'DENSITY_STANDARD = "standard"' in appearance
 assert 'DENSITY_COMFORTABLE = "comfortable"' in appearance
 assert 'return -8' in appearance and 'return 8' in appearance
-assert 'appearance.dialog_list_density' in repository and 'SCHEMA_VERSION = 15' in repository
-assert 'FORMAT_VERSION = 2' in codec and 'version != 1' in codec
+assert 'AVATAR_SMALL = "small"' in appearance and 'AVATAR_LARGE = "large"' in appearance
+assert 'dialogListAvatarSizeOffsetDp' in appearance and 'return -4' in appearance and 'return 4' in appearance
+assert 'appearance.dialog_list_density' in repository and 'appearance.dialog_list_avatar_size' in repository
+assert 'SCHEMA_VERSION = 16' in repository
+assert 'FORMAT_VERSION = 3' in codec and 'version < 1 || version > FORMAT_VERSION' in codec
 assert 'version == 1 ? AppearanceSettings.DENSITY_STANDARD' in codec
-assert 'densityChanged' in policy and 'view.requestLayout()' in policy
-assert 'usesMorokDialogListDensity()' in cell
+assert 'version < 3 ? AppearanceSettings.AVATAR_STANDARD' in codec
+assert 'geometryChanged' in policy and 'view.requestLayout()' in policy
+assert 'dialogListHeightDp(upstreamDp)' in policy and 'dialogListAvatarSizeDp(upstreamDp)' in policy
+assert 'Math.max(44, Math.min(60' in appearance
+assert 'dialogListAvatarSizeOffsetDp() / 2' in appearance
+assert 'usesMorokDialogListGeometry()' in cell
 assert 'MorokAppearance.dialogListHeight(heightDp)' in cell
+assert 'setDialogAvatarRect(avatarLeft, avatarTop, 56)' in cell
+assert 'setDialogAvatarRect(avatarLeft, avatarTop, 52)' in cell
+assert 'MorokAppearance.dialogListAvatarSize(48)' in cell
 assert 'DIALOGS_TYPE_DEFAULT' in cell and 'DIALOGS_TYPE_FOLDER1' in cell and 'DIALOGS_TYPE_FOLDER2' in cell
 assert 'DIALOG_DENSITY' in screen and 'showDialogDensity(context)' in screen
-assert 'MorokDialogListDensity' in transfer
+assert 'DIALOG_AVATAR_SIZE' in screen and 'showDialogAvatarSize(context)' in screen
+assert 'MorokDialogListDensity' in transfer and 'MorokDialogListAvatarSize' in transfer
 assert 'withDialogListDensity(current.settings.appearance.dialogListDensity)' in profiles
+assert 'withDialogListAvatarSize(current.settings.appearance.dialogListAvatarSize)' in profiles
 
-print("PASS: dialog-list density is bounded, live, transferable and limited to ordinary dialog lists")
+print("PASS: dialog-list density and avatar size are bounded, live, transferable and list-limited")

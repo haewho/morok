@@ -159,6 +159,7 @@ public final class MorokProfilesActivity extends BaseFragment {
         line(result, R.string.MorokLiquidGlass, enabled(state.settings.appearance.liquidGlass));
         line(result, R.string.MorokReducedEffects, enabled(state.settings.appearance.reducedEffects));
         line(result, R.string.MorokDialogListDensity, densityName(state.settings.appearance));
+        line(result, R.string.MorokDialogListAvatarSize, avatarSizeName(state.settings.appearance));
         line(result, R.string.MorokAppProfilesAutoplayVideo, enabled(state.autoplayVideos));
         line(result, R.string.MorokAppProfilesAutoplayGifs, enabled(state.autoplayGifs));
         line(result, R.string.MorokAppProfilesAnimatedStickersChat, enabled(state.animatedStickersChat));
@@ -201,6 +202,16 @@ public final class MorokProfilesActivity extends BaseFragment {
             return text(R.string.MorokDialogListDensityComfortable);
         }
         return text(R.string.MorokDialogListDensityStandard);
+    }
+
+    private static String avatarSizeName(org.morok.settings.AppearanceSettings appearance) {
+        if (org.morok.settings.AppearanceSettings.AVATAR_SMALL.equals(appearance.dialogListAvatarSize)) {
+            return text(R.string.MorokDialogListAvatarSmall);
+        }
+        if (org.morok.settings.AppearanceSettings.AVATAR_LARGE.equals(appearance.dialogListAvatarSize)) {
+            return text(R.string.MorokDialogListAvatarLarge);
+        }
+        return text(R.string.MorokDialogListAvatarStandard);
     }
 
     private static String privacyName(PrivacySettings privacy) {

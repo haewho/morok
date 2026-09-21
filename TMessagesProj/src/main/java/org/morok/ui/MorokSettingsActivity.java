@@ -43,7 +43,7 @@ public final class MorokSettingsActivity extends BaseFragment {
     private static final int MEMORY = 6, PROXY = 7, PRIVACY = 8, ROUND_VIDEO = 9, ARCHIVE = 10;
     private static final int TRANSFER = 11, APPEARANCE_MODE = 12, APP_PROFILES = 13, SAFETY = 14,
             INTERACTIONS = 15, DIAGNOSTICS = 16, CHAT_METADATA = 17, REPLY_TEMPLATES = 18, UPDATE = 19;
-    private static final int DIALOG_DENSITY = 20;
+    private static final int DIALOG_DENSITY = 20, DIALOG_AVATAR_SIZE = 21;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -124,6 +124,9 @@ public final class MorokSettingsActivity extends BaseFragment {
                 case DIALOG_DENSITY:
                     showDialogDensity(context);
                     break;
+                case DIALOG_AVATAR_SIZE:
+                    showDialogAvatarSize(context);
+                    break;
                 case THEMES:
                     presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC));
                     break;
@@ -195,6 +198,8 @@ public final class MorokSettingsActivity extends BaseFragment {
         if (query.isEmpty()) add(INFO, 0, R.string.MorokReducedEffectsInfo);
         add(ACTION, DIALOG_DENSITY, R.string.MorokDialogListDensity);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListDensityInfo);
+        add(ACTION, DIALOG_AVATAR_SIZE, R.string.MorokDialogListAvatarSize);
+        if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListAvatarSizeInfo);
         add(ACTION, THEMES, R.string.MorokThemes);
         add(ACTION, POWER, R.string.MorokPowerSettings);
         add(ACTION, RESET, R.string.MorokResetAppearance);
@@ -264,7 +269,8 @@ public final class MorokSettingsActivity extends BaseFragment {
         showDialog(new AlertDialog.Builder(context).setTitle(text(title)).setMessage(text(preview))
                 .setPositiveButton(text(R.string.ApplyTheme),
                         (dialog, which) -> apply(AppearanceMode.settings(mode).withDialogListDensity(
-                                MorokSettings.appearance().dialogListDensity)))
+                                MorokSettings.appearance().dialogListDensity).withDialogListAvatarSize(
+                                MorokSettings.appearance().dialogListAvatarSize)))
                 .setNegativeButton(text(R.string.Cancel), null).create());
     }
 
@@ -291,6 +297,31 @@ public final class MorokSettingsActivity extends BaseFragment {
             return text(R.string.MorokDialogListDensityComfortable);
         }
         return text(R.string.MorokDialogListDensityStandard);
+    }
+
+    private void showDialogAvatarSize(Context context) {
+        CharSequence[] labels = {
+                text(R.string.MorokDialogListAvatarSmall),
+                text(R.string.MorokDialogListAvatarStandard),
+                text(R.string.MorokDialogListAvatarLarge)
+        };
+        showDialog(new AlertDialog.Builder(context).setTitle(text(R.string.MorokDialogListAvatarSize))
+                .setItems(labels, (dialog, which) -> {
+                    String size = which == 0 ? AppearanceSettings.AVATAR_SMALL
+                            : which == 2 ? AppearanceSettings.AVATAR_LARGE
+                            : AppearanceSettings.AVATAR_STANDARD;
+                    apply(MorokSettings.appearance().withDialogListAvatarSize(size));
+                }).create());
+    }
+
+    private static String dialogAvatarSizeLabel(AppearanceSettings settings) {
+        if (AppearanceSettings.AVATAR_SMALL.equals(settings.dialogListAvatarSize)) {
+            return text(R.string.MorokDialogListAvatarSmall);
+        }
+        if (AppearanceSettings.AVATAR_LARGE.equals(settings.dialogListAvatarSize)) {
+            return text(R.string.MorokDialogListAvatarLarge);
+        }
+        return text(R.string.MorokDialogListAvatarStandard);
     }
 
     private static String appearanceModeLabel(AppearanceSettings settings) {
@@ -353,6 +384,8 @@ public final class MorokSettingsActivity extends BaseFragment {
                     cell.setTextAndValue(row.title, appearanceModeLabel(MorokSettings.appearance()), true);
                 } else if (row.id == DIALOG_DENSITY) {
                     cell.setTextAndValue(row.title, dialogDensityLabel(MorokSettings.appearance()), true);
+                } else if (row.id == DIALOG_AVATAR_SIZE) {
+                    cell.setTextAndValue(row.title, dialogAvatarSizeLabel(MorokSettings.appearance()), true);
                 } else if (row.id == ROUND_VIDEO) {
                     cell.setTextAndValue(row.title, text(MorokSettings.roundVideo().enhanced
                             ? R.string.MorokRoundVideoEnabledStatus : R.string.MorokPrivacyOffStatus), true);

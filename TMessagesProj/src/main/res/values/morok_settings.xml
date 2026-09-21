@@ -21,10 +21,15 @@
     <string name="MorokDialogListDensityCompact">Compact</string>
     <string name="MorokDialogListDensityStandard">Standard</string>
     <string name="MorokDialogListDensityComfortable">Comfortable</string>
+    <string name="MorokDialogListAvatarSize">Chat list avatar size</string>
+    <string name="MorokDialogListAvatarSizeInfo">Changes ordinary chat-list avatars around their existing center. Story rings and status badges follow the same bounds; text, ordering and search stay unchanged.</string>
+    <string name="MorokDialogListAvatarSmall">Small</string>
+    <string name="MorokDialogListAvatarStandard">Standard</string>
+    <string name="MorokDialogListAvatarLarge">Large</string>
     <string name="MorokThemes">Themes and chat appearance</string>
     <string name="MorokPowerSettings">Power saving and effects</string>
     <string name="MorokResetAppearance">Reset MOROK appearance</string>
-    <string name="MorokResetAppearanceInfo">Allow native glass, restore the default animation policy and standard chat-list density? Your Telegram theme and power saving preferences will be kept.</string>
+    <string name="MorokResetAppearanceInfo">Allow native glass, restore the default animation policy, standard chat-list density and standard avatars? Your Telegram theme and power saving preferences will be kept.</string>
     <string name="MorokDeviceSettingsInfo">Appearance applies to all accounts on this device. Changes are saved locally and applied without reopening chats.</string>
     <string name="MorokLocalTools">Local tools</string>
     <string name="MorokMemoryShortcut">MOROK Memory</string>

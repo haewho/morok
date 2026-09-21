@@ -30,7 +30,12 @@ public final class MorokAppearance {
 
     /** Applies the device density only to Telegram's ordinary dialog-list row heights. */
     public static int dialogListHeight(int upstreamDp) {
-        return Math.max(56, upstreamDp + MorokSettings.appearance().dialogListHeightOffsetDp());
+        return MorokSettings.appearance().dialogListHeightDp(upstreamDp);
+    }
+
+    /** Keeps the avatar centered while applying a bounded size to ordinary dialog-list rows. */
+    public static int dialogListAvatarSize(int upstreamDp) {
+        return MorokSettings.appearance().dialogListAvatarSizeDp(upstreamDp);
     }
 
     public static synchronized void register(BlurredBackgroundDrawable drawable) {
@@ -46,7 +51,8 @@ public final class MorokAppearance {
     /** Refreshes render caches after an already-persisted settings-profile import. Runs on the UI thread. */
     public static void refreshAfterImport(AppearanceSettings previous, AppearanceSettings settings, Activity activity) {
         final boolean animationChanged = previous.reducedEffects != settings.reducedEffects;
-        final boolean densityChanged = !previous.dialogListDensity.equals(settings.dialogListDensity);
+        final boolean geometryChanged = !previous.dialogListDensity.equals(settings.dialogListDensity)
+                || !previous.dialogListAvatarSize.equals(settings.dialogListAvatarSize);
         // Refresh existing drawables; no Activity/Fragment recreation or draft/scroll reset.
         for (BlurredBackgroundDrawable drawable : drawableSnapshot()) {
             if (drawable != null) {
@@ -59,7 +65,7 @@ public final class MorokAppearance {
             SvgHelper.SvgDrawable.updateLiteValues();
             Theme.reloadWallpaper(true);
         }
-        if (activity != null) refreshTree(activity.getWindow().getDecorView(), densityChanged);
+        if (activity != null) refreshTree(activity.getWindow().getDecorView(), geometryChanged);
     }
 
     private static synchronized ArrayList<BlurredBackgroundDrawable> drawableSnapshot() {

@@ -2,7 +2,7 @@ package org.morok.settings;
 
 /** Versioned local-only schema. Unknown newer schemas are readable but never overwritten. */
 public final class SettingsRepository {
-    public static final int SCHEMA_VERSION = 15;
+    public static final int SCHEMA_VERSION = 16;
     public static final String SCHEMA_KEY = "schema_version";
     private final SettingsStore store;
 
@@ -13,7 +13,8 @@ public final class SettingsRepository {
     public AppearanceSettings appearance() {
         return new AppearanceSettings(store.getBoolean("appearance.liquid_glass", true),
                 store.getBoolean("appearance.reduced_effects", false),
-                store.getString("appearance.dialog_list_density", AppearanceSettings.DENSITY_STANDARD));
+                store.getString("appearance.dialog_list_density", AppearanceSettings.DENSITY_STANDARD),
+                store.getString("appearance.dialog_list_avatar_size", AppearanceSettings.AVATAR_STANDARD));
     }
 
     public void saveAppearance(AppearanceSettings settings) {
@@ -22,8 +23,8 @@ public final class SettingsRepository {
         store.save(SCHEMA_VERSION,
                 new String[] {"appearance.liquid_glass", "appearance.reduced_effects"},
                 new boolean[] {settings.liquidGlass, settings.reducedEffects},
-                new String[] {"appearance.dialog_list_density"},
-                new String[] {settings.dialogListDensity});
+                new String[] {"appearance.dialog_list_density", "appearance.dialog_list_avatar_size"},
+                new String[] {settings.dialogListDensity, settings.dialogListAvatarSize});
     }
 
     public void resetAppearance() {

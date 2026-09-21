@@ -184,6 +184,10 @@ public final class MorokSettingsTransferActivity extends BaseFragment {
             addChange(changes, text(R.string.MorokDialogListDensity), densityLabel(currentAppearance),
                     densityLabel(profile.appearance));
         }
+        if (!currentAppearance.dialogListAvatarSize.equals(profile.appearance.dialogListAvatarSize)) {
+            addChange(changes, text(R.string.MorokDialogListAvatarSize), avatarSizeLabel(currentAppearance),
+                    avatarSizeLabel(profile.appearance));
+        }
         addBooleanChange(changes, R.string.MorokRoundVideoEnhanced, currentRound.enhanced, profile.roundVideo.enhanced);
         if (!currentRound.profile.equals(profile.roundVideo.profile)) {
             addChange(changes, text(R.string.MorokRoundVideoQuality), profileLabel(currentRound), profileLabel(profile.roundVideo));
@@ -261,6 +265,16 @@ public final class MorokSettingsTransferActivity extends BaseFragment {
             return text(R.string.MorokDialogListDensityComfortable);
         }
         return text(R.string.MorokDialogListDensityStandard);
+    }
+
+    private static String avatarSizeLabel(AppearanceSettings settings) {
+        if (AppearanceSettings.AVATAR_SMALL.equals(settings.dialogListAvatarSize)) {
+            return text(R.string.MorokDialogListAvatarSmall);
+        }
+        if (AppearanceSettings.AVATAR_LARGE.equals(settings.dialogListAvatarSize)) {
+            return text(R.string.MorokDialogListAvatarLarge);
+        }
+        return text(R.string.MorokDialogListAvatarStandard);
     }
 
     private void showMessage(int message) {
