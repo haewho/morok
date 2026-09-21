@@ -44,6 +44,7 @@ public final class SettingsRepositoryTest {
                         && repo.appearance().dialogListHeightOffsetDp() == 0
                         && AppearanceSettings.AVATAR_STANDARD.equals(repo.appearance().dialogListAvatarSize)
                         && repo.appearance().dialogListAvatarSizeOffsetDp() == 0
+                        && !repo.appearance().dialogListTimestampSeconds
                         && repo.appearance().dialogListHeightDp(70) == 70
                         && repo.appearance().dialogListAvatarSizeDp(52) == 52,
                 "fresh install defaults");
@@ -67,17 +68,18 @@ public final class SettingsRepositoryTest {
 
         device.values.put("future.unrelated", "keep");
         repo.saveAppearance(new AppearanceSettings(false, true, AppearanceSettings.DENSITY_COMPACT,
-                AppearanceSettings.AVATAR_LARGE));
+                AppearanceSettings.AVATAR_LARGE, true));
         SettingsRepository restarted = new SettingsRepository(device);
         check(!restarted.appearance().liquidGlass && restarted.appearance().reducedEffects
                         && AppearanceSettings.DENSITY_COMPACT.equals(restarted.appearance().dialogListDensity)
                         && restarted.appearance().dialogListHeightOffsetDp() == -8
                         && AppearanceSettings.AVATAR_LARGE.equals(restarted.appearance().dialogListAvatarSize)
                         && restarted.appearance().dialogListAvatarSizeOffsetDp() == 4
+                        && restarted.appearance().dialogListTimestampSeconds
                         && restarted.appearance().dialogListHeightDp(70) == 64
                         && restarted.appearance().dialogListAvatarSizeDp(52) == 56,
                 "restart persistence");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 16, "additive schema migration");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 17, "additive schema migration");
         check(AppearanceSettings.DENSITY_STANDARD.equals(
                         new AppearanceSettings(true, false, "future-density").dialogListDensity),
                 "unknown density fails to the upstream-sized standard mode");
@@ -88,7 +90,8 @@ public final class SettingsRepositoryTest {
         restarted.resetAppearance();
         check(restarted.appearance().liquidGlass && !restarted.appearance().reducedEffects
                         && AppearanceSettings.DENSITY_STANDARD.equals(restarted.appearance().dialogListDensity)
-                        && AppearanceSettings.AVATAR_STANDARD.equals(restarted.appearance().dialogListAvatarSize),
+                        && AppearanceSettings.AVATAR_STANDARD.equals(restarted.appearance().dialogListAvatarSize)
+                        && !restarted.appearance().dialogListTimestampSeconds,
                 "category reset defaults");
         check("keep".equals(device.values.get("future.unrelated")), "reset preserves other settings");
 
@@ -273,7 +276,7 @@ public final class SettingsRepositoryTest {
                 .withHideStoryViews(true).withMarkReadOnReply(true).withDelayGhostSends(true)
                 .withNormalBehaviorForChat(123456789, true);
         SettingsProfile profile = new SettingsProfile(new AppearanceSettings(false, true,
-                AppearanceSettings.DENSITY_COMFORTABLE, AppearanceSettings.AVATAR_LARGE),
+                AppearanceSettings.DENSITY_COMFORTABLE, AppearanceSettings.AVATAR_LARGE, true),
                 new RoundVideoSettings(true, RoundVideoSettings.PROFILE_HIGH), transferablePrivacy);
         String encodedProfile = SettingsProfileCodec.encode(profile);
         SettingsProfile decodedProfile = SettingsProfileCodec.decode(encodedProfile);
@@ -282,6 +285,7 @@ public final class SettingsRepositoryTest {
                         && decodedProfile.appearance.dialogListHeightOffsetDp() == 8
                         && AppearanceSettings.AVATAR_LARGE.equals(decodedProfile.appearance.dialogListAvatarSize)
                         && decodedProfile.appearance.dialogListAvatarSizeOffsetDp() == 4
+                        && decodedProfile.appearance.dialogListTimestampSeconds
                         && decodedProfile.appearance.dialogListHeightDp(70) == 78
                         && decodedProfile.appearance.dialogListAvatarSizeDp(58) == 60,
                 "settings profile round-trips appearance");
@@ -302,7 +306,13 @@ public final class SettingsRepositoryTest {
                 "profile import preserves destination chat exceptions while applying global policy");
         check(encodedProfile.equals(SettingsProfileCodec.encode(decodedProfile)),
                 "settings transfer format has deterministic canonical output");
-        String version2SettingsProfile = encodedProfile.replace("format=3", "format=2")
+        String version3SettingsProfile = encodedProfile.replace("format=4", "format=3")
+                .replace("appearance.dialog_list_timestamp_seconds=true\n", "");
+        SettingsProfile migratedVersion3 = SettingsProfileCodec.decode(version3SettingsProfile);
+        check(AppearanceSettings.AVATAR_LARGE.equals(migratedVersion3.appearance.dialogListAvatarSize)
+                        && !migratedVersion3.appearance.dialogListTimestampSeconds,
+                "version 3 transfer profiles preserve geometry and migrate timestamp seconds off");
+        String version2SettingsProfile = version3SettingsProfile.replace("format=3", "format=2")
                 .replace("appearance.dialog_list_avatar_size=large\n", "");
         SettingsProfile migratedVersion2 = SettingsProfileCodec.decode(version2SettingsProfile);
         check(AppearanceSettings.DENSITY_COMFORTABLE.equals(migratedVersion2.appearance.dialogListDensity)
@@ -312,12 +322,12 @@ public final class SettingsRepositoryTest {
                 .replace("appearance.dialog_list_density=comfortable\n", "");
         SettingsProfile migratedSettingsProfile = SettingsProfileCodec.decode(legacySettingsProfile);
         check(AppearanceSettings.DENSITY_STANDARD.equals(migratedSettingsProfile.appearance.dialogListDensity)
-                        && SettingsProfileCodec.encode(migratedSettingsProfile).contains("format=3\n")
+                        && SettingsProfileCodec.encode(migratedSettingsProfile).contains("format=4\n")
                         && SettingsProfileCodec.encode(migratedSettingsProfile)
                         .contains("appearance.dialog_list_density=standard\n")
                         && SettingsProfileCodec.encode(migratedSettingsProfile)
                         .contains("appearance.dialog_list_avatar_size=standard\n"),
-                "version 1 transfer profiles migrate geometry to standard and rewrite version 3");
+                "version 1 transfer profiles migrate appearance defaults and rewrite version 4");
 
         AppProfileState profileCurrent = new AppProfileState(profile, true, false, true, false, true,
                 AppProfileState.NETWORK_KEEP);
@@ -325,6 +335,7 @@ public final class SettingsRepositoryTest {
         check(normal.settings.appearance.liquidGlass && !normal.settings.appearance.reducedEffects
                         && AppearanceSettings.DENSITY_COMFORTABLE.equals(normal.settings.appearance.dialogListDensity)
                         && AppearanceSettings.AVATAR_LARGE.equals(normal.settings.appearance.dialogListAvatarSize)
+                        && normal.settings.appearance.dialogListTimestampSeconds
                         && normal.autoplayVideos && normal.autoplayGifs
                         && normal.animatedStickersChat && normal.animatedStickersKeyboard
                         && normal.notificationContent
@@ -337,6 +348,7 @@ public final class SettingsRepositoryTest {
         check(!stealth.settings.appearance.liquidGlass && !stealth.settings.appearance.reducedEffects
                         && AppearanceSettings.DENSITY_COMFORTABLE.equals(stealth.settings.appearance.dialogListDensity)
                         && AppearanceSettings.AVATAR_LARGE.equals(stealth.settings.appearance.dialogListAvatarSize)
+                        && stealth.settings.appearance.dialogListTimestampSeconds
                         && stealth.settings.privacy.ghostPreset && !stealth.autoplayVideos
                         && !stealth.autoplayGifs && !stealth.animatedStickersChat
                         && !stealth.animatedStickersKeyboard && !stealth.notificationContent,
@@ -414,10 +426,12 @@ public final class SettingsRepositoryTest {
         check(oversizedAppProfileRejected, "oversized local app profile is rejected before parsing");
 
         String[] invalidProfiles = {
-                encodedProfile.replace("format=3", "format=4"),
+                encodedProfile.replace("format=4", "format=5"),
                 encodedProfile.replace("appearance.liquid_glass=false\n", ""),
                 encodedProfile.replace("appearance.dialog_list_density=comfortable", "appearance.dialog_list_density=tiny"),
                 encodedProfile.replace("appearance.dialog_list_avatar_size=large", "appearance.dialog_list_avatar_size=huge"),
+                encodedProfile.replace("appearance.dialog_list_timestamp_seconds=true",
+                        "appearance.dialog_list_timestamp_seconds=1"),
                 encodedProfile + "privacy.hide_read=true\n",
                 encodedProfile.replace("privacy.hide_read=true", "privacy.hide_read=1"),
                 encodedProfile.replace("camera.round_video_profile=high", "camera.round_video_profile=ultra"),
@@ -445,13 +459,13 @@ public final class SettingsRepositoryTest {
             check(rejected, "invalid unauthenticated identity rejected: " + invalid);
         }
 
-        device.values.put(SettingsRepository.SCHEMA_KEY, 17);
+        device.values.put(SettingsRepository.SCHEMA_KEY, 18);
         int oldWrites = device.writes;
         boolean rejected = false;
         try { restarted.resetAppearance(); }
         catch (IllegalStateException expected) { rejected = true; }
         check(rejected && device.writes == oldWrites, "newer schema cannot be downgraded by reset");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 17, "newer schema kept intact");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 18, "newer schema kept intact");
         System.out.println("PASS: settings defaults, migration, isolation, archive, round-video, safety, interactions, privacy, strict transfer, reviewed app profiles, invalid IDs, downgrade refusal");
     }
 }

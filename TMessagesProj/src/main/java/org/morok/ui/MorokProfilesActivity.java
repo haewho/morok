@@ -160,6 +160,8 @@ public final class MorokProfilesActivity extends BaseFragment {
         line(result, R.string.MorokReducedEffects, enabled(state.settings.appearance.reducedEffects));
         line(result, R.string.MorokDialogListDensity, densityName(state.settings.appearance));
         line(result, R.string.MorokDialogListAvatarSize, avatarSizeName(state.settings.appearance));
+        line(result, R.string.MorokDialogListTimestampSeconds,
+                enabled(state.settings.appearance.dialogListTimestampSeconds));
         line(result, R.string.MorokAppProfilesAutoplayVideo, enabled(state.autoplayVideos));
         line(result, R.string.MorokAppProfilesAutoplayGifs, enabled(state.autoplayGifs));
         line(result, R.string.MorokAppProfilesAnimatedStickersChat, enabled(state.animatedStickersChat));

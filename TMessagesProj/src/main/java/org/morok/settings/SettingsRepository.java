@@ -2,7 +2,7 @@ package org.morok.settings;
 
 /** Versioned local-only schema. Unknown newer schemas are readable but never overwritten. */
 public final class SettingsRepository {
-    public static final int SCHEMA_VERSION = 16;
+    public static final int SCHEMA_VERSION = 17;
     public static final String SCHEMA_KEY = "schema_version";
     private final SettingsStore store;
 
@@ -14,15 +14,18 @@ public final class SettingsRepository {
         return new AppearanceSettings(store.getBoolean("appearance.liquid_glass", true),
                 store.getBoolean("appearance.reduced_effects", false),
                 store.getString("appearance.dialog_list_density", AppearanceSettings.DENSITY_STANDARD),
-                store.getString("appearance.dialog_list_avatar_size", AppearanceSettings.AVATAR_STANDARD));
+                store.getString("appearance.dialog_list_avatar_size", AppearanceSettings.AVATAR_STANDARD),
+                store.getBoolean("appearance.dialog_list_timestamp_seconds", false));
     }
 
     public void saveAppearance(AppearanceSettings settings) {
         checkWritable();
         // Migrations are additive: defaults are read without rewriting unrelated preferences.
         store.save(SCHEMA_VERSION,
-                new String[] {"appearance.liquid_glass", "appearance.reduced_effects"},
-                new boolean[] {settings.liquidGlass, settings.reducedEffects},
+                new String[] {"appearance.liquid_glass", "appearance.reduced_effects",
+                        "appearance.dialog_list_timestamp_seconds"},
+                new boolean[] {settings.liquidGlass, settings.reducedEffects,
+                        settings.dialogListTimestampSeconds},
                 new String[] {"appearance.dialog_list_density", "appearance.dialog_list_avatar_size"},
                 new String[] {settings.dialogListDensity, settings.dialogListAvatarSize});
     }

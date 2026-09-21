@@ -6,7 +6,7 @@ import java.util.Map;
 
 /** Strict, deterministic and secret-free text format for explicit settings transfer. */
 public final class SettingsProfileCodec {
-    public static final int FORMAT_VERSION = 3;
+    public static final int FORMAT_VERSION = 4;
     public static final int MAX_CHARACTERS = 16 * 1024;
     public static final String MAGIC = "MOROK_SETTINGS_PROFILE";
 
@@ -15,6 +15,7 @@ public final class SettingsProfileCodec {
     private static final String EFFECTS = "appearance.reduced_effects";
     private static final String DENSITY = "appearance.dialog_list_density";
     private static final String AVATAR_SIZE = "appearance.dialog_list_avatar_size";
+    private static final String TIMESTAMP_SECONDS = "appearance.dialog_list_timestamp_seconds";
     private static final String ROUND_ENABLED = "camera.round_video_enhanced";
     private static final String ROUND_PROFILE = "camera.round_video_profile";
     private static final String GHOST = "privacy.ghost_preset";
@@ -28,6 +29,7 @@ public final class SettingsProfileCodec {
     private static final int V1_FIELD_COUNT = 13;
     private static final int V2_FIELD_COUNT = 14;
     private static final int V3_FIELD_COUNT = 15;
+    private static final int V4_FIELD_COUNT = 16;
 
     private SettingsProfileCodec() {}
 
@@ -39,6 +41,7 @@ public final class SettingsProfileCodec {
         append(result, EFFECTS, bool(profile.appearance.reducedEffects));
         append(result, DENSITY, profile.appearance.dialogListDensity);
         append(result, AVATAR_SIZE, profile.appearance.dialogListAvatarSize);
+        append(result, TIMESTAMP_SECONDS, bool(profile.appearance.dialogListTimestampSeconds));
         append(result, ROUND_ENABLED, bool(profile.roundVideo.enhanced));
         append(result, ROUND_PROFILE, profile.roundVideo.profile);
         append(result, GHOST, bool(profile.privacy.ghostPreset));
@@ -75,7 +78,8 @@ public final class SettingsProfileCodec {
         try { version = Integer.parseInt(required(values, FORMAT)); }
         catch (NumberFormatException error) { throw new IllegalArgumentException("Invalid profile version", error); }
         if (version < 1 || version > FORMAT_VERSION) throw new IllegalArgumentException("Unsupported profile version");
-        int fieldCount = version == 1 ? V1_FIELD_COUNT : version == 2 ? V2_FIELD_COUNT : V3_FIELD_COUNT;
+        int fieldCount = version == 1 ? V1_FIELD_COUNT : version == 2 ? V2_FIELD_COUNT
+                : version == 3 ? V3_FIELD_COUNT : V4_FIELD_COUNT;
         if (values.size() != fieldCount || !values.keySet().equals(knownKeys(version))) {
             throw new IllegalArgumentException("Unknown or incomplete profile");
         }
@@ -85,8 +89,9 @@ public final class SettingsProfileCodec {
         if (!AppearanceSettings.validDensity(density)) throw new IllegalArgumentException("Invalid dialog-list density");
         String avatarSize = version < 3 ? AppearanceSettings.AVATAR_STANDARD : required(values, AVATAR_SIZE);
         if (!AppearanceSettings.validAvatarSize(avatarSize)) throw new IllegalArgumentException("Invalid dialog-list avatar size");
+        boolean timestampSeconds = version >= 4 && booleanValue(values, TIMESTAMP_SECONDS);
         AppearanceSettings appearance = new AppearanceSettings(booleanValue(values, GLASS),
-                booleanValue(values, EFFECTS), density, avatarSize);
+                booleanValue(values, EFFECTS), density, avatarSize, timestampSeconds);
         RoundVideoSettings roundVideo = new RoundVideoSettings(booleanValue(values, ROUND_ENABLED), roundProfile);
         PrivacySettings privacy = new PrivacySettings(booleanValue(values, GHOST), booleanValue(values, TYPING),
                 booleanValue(values, ONLINE), booleanValue(values, CONTENT_READ), booleanValue(values, READ),
@@ -121,6 +126,7 @@ public final class SettingsProfileCodec {
         keys.add(EFFECTS);
         if (version >= 2) keys.add(DENSITY);
         if (version >= 3) keys.add(AVATAR_SIZE);
+        if (version >= 4) keys.add(TIMESTAMP_SECONDS);
         keys.add(ROUND_ENABLED);
         keys.add(ROUND_PROFILE);
         keys.add(GHOST);

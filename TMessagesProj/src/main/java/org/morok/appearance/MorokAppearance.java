@@ -6,12 +6,15 @@ import android.view.ViewGroup;
 
 import org.morok.settings.AppearanceSettings;
 import org.morok.settings.MorokSettings;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Cells.DialogCell;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.WeakHashMap;
 
 /** Live appearance policy. All mutations and drawable registration run on the UI thread. */
@@ -38,6 +41,20 @@ public final class MorokAppearance {
         return MorokSettings.appearance().dialogListAvatarSizeDp(upstreamDp);
     }
 
+    /** Adds seconds only where Telegram itself selected the recent-message clock formatter. */
+    public static String dialogListDate(long dateSeconds) {
+        String upstream = LocaleController.stringForMessageListDate(dateSeconds);
+        if (!MorokSettings.appearance().dialogListTimestampSeconds) return upstream;
+        try {
+            Date date = new Date(dateSeconds * 1000L);
+            String clock = LocaleController.getInstance().getFormatterDay().format(date);
+            return upstream.equals(clock)
+                    ? LocaleController.getInstance().getFormatterDayWithSeconds().format(date) : upstream;
+        } catch (RuntimeException ignored) {
+            return upstream;
+        }
+    }
+
     public static synchronized void register(BlurredBackgroundDrawable drawable) {
         drawables.put(drawable, Boolean.TRUE);
     }
@@ -53,6 +70,8 @@ public final class MorokAppearance {
         final boolean animationChanged = previous.reducedEffects != settings.reducedEffects;
         final boolean geometryChanged = !previous.dialogListDensity.equals(settings.dialogListDensity)
                 || !previous.dialogListAvatarSize.equals(settings.dialogListAvatarSize);
+        final boolean timestampChanged = previous.dialogListTimestampSeconds
+                != settings.dialogListTimestampSeconds;
         // Refresh existing drawables; no Activity/Fragment recreation or draft/scroll reset.
         for (BlurredBackgroundDrawable drawable : drawableSnapshot()) {
             if (drawable != null) {
@@ -65,19 +84,24 @@ public final class MorokAppearance {
             SvgHelper.SvgDrawable.updateLiteValues();
             Theme.reloadWallpaper(true);
         }
-        if (activity != null) refreshTree(activity.getWindow().getDecorView(), geometryChanged);
+        if (activity != null) refreshTree(activity.getWindow().getDecorView(), geometryChanged, timestampChanged);
     }
 
     private static synchronized ArrayList<BlurredBackgroundDrawable> drawableSnapshot() {
         return new ArrayList<>(drawables.keySet());
     }
 
-    private static void refreshTree(View view, boolean requestLayout) {
+    private static void refreshTree(View view, boolean requestLayout, boolean rebuildTimestamp) {
+        if (rebuildTimestamp && view instanceof DialogCell) {
+            ((DialogCell) view).refreshMorokDialogListTimestamp();
+        }
         view.invalidate();
         if (requestLayout) view.requestLayout();
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;
-            for (int i = 0; i < group.getChildCount(); i++) refreshTree(group.getChildAt(i), requestLayout);
+            for (int i = 0; i < group.getChildCount(); i++) {
+                refreshTree(group.getChildAt(i), requestLayout, rebuildTimestamp);
+            }
         }
     }
 }

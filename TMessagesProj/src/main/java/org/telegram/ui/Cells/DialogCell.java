@@ -1101,6 +1101,22 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                     || dialogsType == DialogsActivity.DIALOGS_TYPE_FOLDER2);
     }
 
+    private boolean forceMorokTimestampLayout;
+
+    public void refreshMorokDialogListTimestamp() {
+        if (!usesMorokDialogListGeometry()) return;
+        forceMorokTimestampLayout = true;
+        if (getMeasuredWidth() != 0 && getMeasuredHeight() != 0) buildLayout();
+        else updateLayout = true;
+        requestLayout();
+        invalidate();
+    }
+
+    private String dialogListDate(long date) {
+        return usesMorokDialogListGeometry()
+                ? MorokAppearance.dialogListDate(date) : LocaleController.stringForMessageListDate(date);
+    }
+
     private void setDialogAvatarRect(int avatarLeft, int avatarTop, int upstreamSizeDp) {
         int sizeDp = usesMorokDialogListGeometry()
                 ? MorokAppearance.dialogListAvatarSize(upstreamSizeDp) : upstreamSizeDp;
@@ -1316,9 +1332,12 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         if (isTransitionSupport) {
             return;
         }
+        boolean forceTimestampLayout = forceMorokTimestampLayout;
+        forceMorokTimestampLayout = false;
         if (isDialogCell) {
             boolean needUpdate = updateHelper.update();
-            if (!needUpdate && currentDialogFolderId == 0 && currentDialogCommunityId == 0 && encryptedChat == null) {
+            if (!forceTimestampLayout && !needUpdate && currentDialogFolderId == 0
+                    && currentDialogCommunityId == 0 && encryptedChat == null) {
                 return;
             }
         }
@@ -1482,7 +1501,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 }
             }
 
-            timeString = LocaleController.stringForMessageListDate(customDialog.date);
+            timeString = dialogListDate(customDialog.date);
 
             if (customDialog.unread_count != 0) {
                 drawCount = true;
@@ -2158,11 +2177,11 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             if (!TextUtils.isEmpty(customMessage)) {
                 timeString = "";
             } else if (draftMessage != null) {
-                timeString = LocaleController.stringForMessageListDate(draftMessage.date);
+                timeString = dialogListDate(draftMessage.date);
             } else if (lastMessageDate != 0) {
-                timeString = LocaleController.stringForMessageListDate(lastMessageDate);
+                timeString = dialogListDate(lastMessageDate);
             } else if (message != null) {
-                timeString = LocaleController.stringForMessageListDate(message.messageOwner.date);
+                timeString = dialogListDate(message.messageOwner.date);
             }
 
             if (message == null || isSavedDialog) {

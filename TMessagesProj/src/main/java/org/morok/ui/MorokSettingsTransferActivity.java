@@ -188,6 +188,9 @@ public final class MorokSettingsTransferActivity extends BaseFragment {
             addChange(changes, text(R.string.MorokDialogListAvatarSize), avatarSizeLabel(currentAppearance),
                     avatarSizeLabel(profile.appearance));
         }
+        addBooleanChange(changes, R.string.MorokDialogListTimestampSeconds,
+                currentAppearance.dialogListTimestampSeconds,
+                profile.appearance.dialogListTimestampSeconds);
         addBooleanChange(changes, R.string.MorokRoundVideoEnhanced, currentRound.enhanced, profile.roundVideo.enhanced);
         if (!currentRound.profile.equals(profile.roundVideo.profile)) {
             addChange(changes, text(R.string.MorokRoundVideoQuality), profileLabel(currentRound), profileLabel(profile.roundVideo));

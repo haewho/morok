@@ -43,7 +43,7 @@ public final class MorokSettingsActivity extends BaseFragment {
     private static final int MEMORY = 6, PROXY = 7, PRIVACY = 8, ROUND_VIDEO = 9, ARCHIVE = 10;
     private static final int TRANSFER = 11, APPEARANCE_MODE = 12, APP_PROFILES = 13, SAFETY = 14,
             INTERACTIONS = 15, DIAGNOSTICS = 16, CHAT_METADATA = 17, REPLY_TEMPLATES = 18, UPDATE = 19;
-    private static final int DIALOG_DENSITY = 20, DIALOG_AVATAR_SIZE = 21;
+    private static final int DIALOG_DENSITY = 20, DIALOG_AVATAR_SIZE = 21, DIALOG_TIMESTAMP_SECONDS = 22;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -127,6 +127,9 @@ public final class MorokSettingsActivity extends BaseFragment {
                 case DIALOG_AVATAR_SIZE:
                     showDialogAvatarSize(context);
                     break;
+                case DIALOG_TIMESTAMP_SECONDS:
+                    apply(settings.withDialogListTimestampSeconds(!settings.dialogListTimestampSeconds));
+                    break;
                 case THEMES:
                     presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC));
                     break;
@@ -200,6 +203,8 @@ public final class MorokSettingsActivity extends BaseFragment {
         if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListDensityInfo);
         add(ACTION, DIALOG_AVATAR_SIZE, R.string.MorokDialogListAvatarSize);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListAvatarSizeInfo);
+        add(CHECK, DIALOG_TIMESTAMP_SECONDS, R.string.MorokDialogListTimestampSeconds);
+        if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListTimestampSecondsInfo);
         add(ACTION, THEMES, R.string.MorokThemes);
         add(ACTION, POWER, R.string.MorokPowerSettings);
         add(ACTION, RESET, R.string.MorokResetAppearance);
@@ -270,7 +275,8 @@ public final class MorokSettingsActivity extends BaseFragment {
                 .setPositiveButton(text(R.string.ApplyTheme),
                         (dialog, which) -> apply(AppearanceMode.settings(mode).withDialogListDensity(
                                 MorokSettings.appearance().dialogListDensity).withDialogListAvatarSize(
-                                MorokSettings.appearance().dialogListAvatarSize)))
+                                MorokSettings.appearance().dialogListAvatarSize).withDialogListTimestampSeconds(
+                                MorokSettings.appearance().dialogListTimestampSeconds)))
                 .setNegativeButton(text(R.string.Cancel), null).create());
     }
 
@@ -377,7 +383,9 @@ public final class MorokSettingsActivity extends BaseFragment {
                         Theme.key_switchTrack, Theme.key_switchTrackChecked,
                         Theme.key_windowBackgroundWhite, Theme.key_windowBackgroundWhite);
                 ((TextCheckCell) holder.itemView).setTextAndCheck(row.title,
-                        row.id == GLASS ? settings.liquidGlass : settings.reducedEffects, false);
+                        row.id == GLASS ? settings.liquidGlass
+                                : row.id == REDUCED ? settings.reducedEffects
+                                : settings.dialogListTimestampSeconds, false);
             } else {
                 TextSettingsCell cell = (TextSettingsCell) holder.itemView;
                 if (row.id == APPEARANCE_MODE) {

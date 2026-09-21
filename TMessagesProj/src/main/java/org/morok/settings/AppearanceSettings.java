@@ -9,44 +9,60 @@ public final class AppearanceSettings {
     public static final String AVATAR_STANDARD = "standard";
     public static final String AVATAR_LARGE = "large";
     public static final AppearanceSettings DEFAULT = new AppearanceSettings(
-            true, false, DENSITY_STANDARD, AVATAR_STANDARD);
+            true, false, DENSITY_STANDARD, AVATAR_STANDARD, false);
 
     public final boolean liquidGlass;
     public final boolean reducedEffects;
     public final String dialogListDensity;
     public final String dialogListAvatarSize;
+    public final boolean dialogListTimestampSeconds;
 
     public AppearanceSettings(boolean liquidGlass, boolean reducedEffects) {
-        this(liquidGlass, reducedEffects, DENSITY_STANDARD, AVATAR_STANDARD);
+        this(liquidGlass, reducedEffects, DENSITY_STANDARD, AVATAR_STANDARD, false);
     }
 
     public AppearanceSettings(boolean liquidGlass, boolean reducedEffects, String dialogListDensity) {
-        this(liquidGlass, reducedEffects, dialogListDensity, AVATAR_STANDARD);
+        this(liquidGlass, reducedEffects, dialogListDensity, AVATAR_STANDARD, false);
     }
 
     public AppearanceSettings(boolean liquidGlass, boolean reducedEffects, String dialogListDensity,
                               String dialogListAvatarSize) {
+        this(liquidGlass, reducedEffects, dialogListDensity, dialogListAvatarSize, false);
+    }
+
+    public AppearanceSettings(boolean liquidGlass, boolean reducedEffects, String dialogListDensity,
+                              String dialogListAvatarSize, boolean dialogListTimestampSeconds) {
         this.liquidGlass = liquidGlass;
         this.reducedEffects = reducedEffects;
         this.dialogListDensity = validDensity(dialogListDensity) ? dialogListDensity : DENSITY_STANDARD;
         this.dialogListAvatarSize = validAvatarSize(dialogListAvatarSize)
                 ? dialogListAvatarSize : AVATAR_STANDARD;
+        this.dialogListTimestampSeconds = dialogListTimestampSeconds;
     }
 
     public AppearanceSettings withLiquidGlass(boolean enabled) {
-        return new AppearanceSettings(enabled, reducedEffects, dialogListDensity, dialogListAvatarSize);
+        return new AppearanceSettings(enabled, reducedEffects, dialogListDensity, dialogListAvatarSize,
+                dialogListTimestampSeconds);
     }
 
     public AppearanceSettings withReducedEffects(boolean enabled) {
-        return new AppearanceSettings(liquidGlass, enabled, dialogListDensity, dialogListAvatarSize);
+        return new AppearanceSettings(liquidGlass, enabled, dialogListDensity, dialogListAvatarSize,
+                dialogListTimestampSeconds);
     }
 
     public AppearanceSettings withDialogListDensity(String density) {
-        return new AppearanceSettings(liquidGlass, reducedEffects, density, dialogListAvatarSize);
+        return new AppearanceSettings(liquidGlass, reducedEffects, density, dialogListAvatarSize,
+                dialogListTimestampSeconds);
     }
 
     public AppearanceSettings withDialogListAvatarSize(String size) {
-        return new AppearanceSettings(liquidGlass, reducedEffects, dialogListDensity, size);
+        return new AppearanceSettings(liquidGlass, reducedEffects, dialogListDensity, size,
+                dialogListTimestampSeconds);
+    }
+
+    public AppearanceSettings withDialogListTimestampSeconds(boolean enabled) {
+        return new AppearanceSettings(liquidGlass, reducedEffects, dialogListDensity,
+                dialogListAvatarSize, enabled);
     }
 
     public int dialogListHeightOffsetDp() {

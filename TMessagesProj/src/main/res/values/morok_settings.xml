@@ -26,10 +26,12 @@
     <string name="MorokDialogListAvatarSmall">Small</string>
     <string name="MorokDialogListAvatarStandard">Standard</string>
     <string name="MorokDialogListAvatarLarge">Large</string>
+    <string name="MorokDialogListTimestampSeconds">Seconds in recent timestamps</string>
+    <string name="MorokDialogListTimestampSecondsInfo">Adds seconds only when Telegram already shows a clock for a recent chat. Weekdays and calendar dates keep Telegram’s locale-aware format.</string>
     <string name="MorokThemes">Themes and chat appearance</string>
     <string name="MorokPowerSettings">Power saving and effects</string>
     <string name="MorokResetAppearance">Reset MOROK appearance</string>
-    <string name="MorokResetAppearanceInfo">Allow native glass, restore the default animation policy, standard chat-list density and standard avatars? Your Telegram theme and power saving preferences will be kept.</string>
+    <string name="MorokResetAppearanceInfo">Allow native glass, restore the default animation policy, standard chat-list geometry and timestamps without seconds? Your Telegram theme and power saving preferences will be kept.</string>
     <string name="MorokDeviceSettingsInfo">Appearance applies to all accounts on this device. Changes are saved locally and applied without reopening chats.</string>
     <string name="MorokLocalTools">Local tools</string>
     <string name="MorokMemoryShortcut">MOROK Memory</string>
