@@ -16,10 +16,15 @@
     <string name="MorokLiquidGlassLegacyInfo">Эта версия Android не поддерживает преломление стекла Telegram: нужен Android 13. Включено — доступное штатное размытие, выключено — сплошные поверхности новых стеклянных панелей. Часть прежних эффектов пока не охвачена.</string>
     <string name="MorokReducedEffects">Минимум анимаций</string>
     <string name="MorokReducedEffectsInfo">Уменьшает анимации эмодзи, стикеров, фонов чата, частиц и звонков, которыми управляет энергосбережение Telegram. Переходы между экранами и воспроизведение медиа настраиваются отдельно.</string>
+    <string name="MorokDialogListDensity">Плотность списка чатов</string>
+    <string name="MorokDialogListDensityInfo">Меняет только высоту обычных строк в основном списке и пользовательских папках. Аватары, размер текста, превью сообщений, порядок и поиск сохраняются.</string>
+    <string name="MorokDialogListDensityCompact">Компактная</string>
+    <string name="MorokDialogListDensityStandard">Стандартная</string>
+    <string name="MorokDialogListDensityComfortable">Просторная</string>
     <string name="MorokThemes">Темы и оформление чатов</string>
     <string name="MorokPowerSettings">Энергосбережение и эффекты</string>
     <string name="MorokResetAppearance">Сбросить оформление Морока</string>
-    <string name="MorokResetAppearanceInfo">Разрешить штатное стекло и вернуть исходный режим анимаций? Тема Telegram и настройки энергосбережения сохранятся.</string>
+    <string name="MorokResetAppearanceInfo">Разрешить штатное стекло, вернуть исходный режим анимаций и стандартную плотность списка? Тема Telegram и настройки энергосбережения сохранятся.</string>
     <string name="MorokDeviceSettingsInfo">Оформление общее для всех аккаунтов на устройстве. Изменения сохраняются локально и применяются без повторного открытия чатов.</string>
     <string name="MorokLocalTools">Локальные инструменты</string>
     <string name="MorokMemoryShortcut">Память Морока</string>

@@ -28,6 +28,11 @@ public final class MorokAppearance {
         return MorokSettings.appearance().reducedEffects;
     }
 
+    /** Applies the device density only to Telegram's ordinary dialog-list row heights. */
+    public static int dialogListHeight(int upstreamDp) {
+        return Math.max(56, upstreamDp + MorokSettings.appearance().dialogListHeightOffsetDp());
+    }
+
     public static synchronized void register(BlurredBackgroundDrawable drawable) {
         drawables.put(drawable, Boolean.TRUE);
     }
@@ -41,6 +46,7 @@ public final class MorokAppearance {
     /** Refreshes render caches after an already-persisted settings-profile import. Runs on the UI thread. */
     public static void refreshAfterImport(AppearanceSettings previous, AppearanceSettings settings, Activity activity) {
         final boolean animationChanged = previous.reducedEffects != settings.reducedEffects;
+        final boolean densityChanged = !previous.dialogListDensity.equals(settings.dialogListDensity);
         // Refresh existing drawables; no Activity/Fragment recreation or draft/scroll reset.
         for (BlurredBackgroundDrawable drawable : drawableSnapshot()) {
             if (drawable != null) {
@@ -53,18 +59,19 @@ public final class MorokAppearance {
             SvgHelper.SvgDrawable.updateLiteValues();
             Theme.reloadWallpaper(true);
         }
-        if (activity != null) invalidateTree(activity.getWindow().getDecorView());
+        if (activity != null) refreshTree(activity.getWindow().getDecorView(), densityChanged);
     }
 
     private static synchronized ArrayList<BlurredBackgroundDrawable> drawableSnapshot() {
         return new ArrayList<>(drawables.keySet());
     }
 
-    private static void invalidateTree(View view) {
+    private static void refreshTree(View view, boolean requestLayout) {
         view.invalidate();
+        if (requestLayout) view.requestLayout();
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;
-            for (int i = 0; i < group.getChildCount(); i++) invalidateTree(group.getChildAt(i));
+            for (int i = 0; i < group.getChildCount(); i++) refreshTree(group.getChildAt(i), requestLayout);
         }
     }
 }

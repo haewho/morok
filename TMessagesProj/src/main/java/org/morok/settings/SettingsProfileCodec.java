@@ -6,13 +6,14 @@ import java.util.Map;
 
 /** Strict, deterministic and secret-free text format for explicit settings transfer. */
 public final class SettingsProfileCodec {
-    public static final int FORMAT_VERSION = 1;
+    public static final int FORMAT_VERSION = 2;
     public static final int MAX_CHARACTERS = 16 * 1024;
     public static final String MAGIC = "MOROK_SETTINGS_PROFILE";
 
     private static final String FORMAT = "format";
     private static final String GLASS = "appearance.liquid_glass";
     private static final String EFFECTS = "appearance.reduced_effects";
+    private static final String DENSITY = "appearance.dialog_list_density";
     private static final String ROUND_ENABLED = "camera.round_video_enhanced";
     private static final String ROUND_PROFILE = "camera.round_video_profile";
     private static final String GHOST = "privacy.ghost_preset";
@@ -23,7 +24,8 @@ public final class SettingsProfileCodec {
     private static final String STORY = "privacy.hide_story_views";
     private static final String READ_REPLY = "privacy.mark_read_on_reply";
     private static final String DELAY_SEND = "privacy.delay_ghost_sends";
-    private static final int FIELD_COUNT = 13;
+    private static final int V1_FIELD_COUNT = 13;
+    private static final int V2_FIELD_COUNT = 14;
 
     private SettingsProfileCodec() {}
 
@@ -33,6 +35,7 @@ public final class SettingsProfileCodec {
         append(result, FORMAT, Integer.toString(FORMAT_VERSION));
         append(result, GLASS, bool(profile.appearance.liquidGlass));
         append(result, EFFECTS, bool(profile.appearance.reducedEffects));
+        append(result, DENSITY, profile.appearance.dialogListDensity);
         append(result, ROUND_ENABLED, bool(profile.roundVideo.enhanced));
         append(result, ROUND_PROFILE, profile.roundVideo.profile);
         append(result, GHOST, bool(profile.privacy.ghostPreset));
@@ -61,18 +64,23 @@ public final class SettingsProfileCodec {
             if (separator <= 0 || separator == line.length() - 1) throw new IllegalArgumentException("Invalid profile field");
             String key = line.substring(0, separator);
             String value = line.substring(separator + 1);
-            if (!isKnownKey(key) || values.put(key, value) != null) {
+            if (values.put(key, value) != null) {
                 throw new IllegalArgumentException("Unknown or duplicate profile field");
             }
         }
-        if (values.size() != FIELD_COUNT) throw new IllegalArgumentException("Incomplete profile");
         int version;
         try { version = Integer.parseInt(required(values, FORMAT)); }
         catch (NumberFormatException error) { throw new IllegalArgumentException("Invalid profile version", error); }
-        if (version != FORMAT_VERSION) throw new IllegalArgumentException("Unsupported profile version");
+        if (version != 1 && version != FORMAT_VERSION) throw new IllegalArgumentException("Unsupported profile version");
+        int fieldCount = version == 1 ? V1_FIELD_COUNT : V2_FIELD_COUNT;
+        if (values.size() != fieldCount || !values.keySet().equals(knownKeys(version))) {
+            throw new IllegalArgumentException("Unknown or incomplete profile");
+        }
         String roundProfile = required(values, ROUND_PROFILE);
         if (!RoundVideoSettings.isValidProfile(roundProfile)) throw new IllegalArgumentException("Invalid round-video profile");
-        AppearanceSettings appearance = new AppearanceSettings(booleanValue(values, GLASS), booleanValue(values, EFFECTS));
+        String density = version == 1 ? AppearanceSettings.DENSITY_STANDARD : required(values, DENSITY);
+        if (!AppearanceSettings.validDensity(density)) throw new IllegalArgumentException("Invalid dialog-list density");
+        AppearanceSettings appearance = new AppearanceSettings(booleanValue(values, GLASS), booleanValue(values, EFFECTS), density);
         RoundVideoSettings roundVideo = new RoundVideoSettings(booleanValue(values, ROUND_ENABLED), roundProfile);
         PrivacySettings privacy = new PrivacySettings(booleanValue(values, GHOST), booleanValue(values, TYPING),
                 booleanValue(values, ONLINE), booleanValue(values, CONTENT_READ), booleanValue(values, READ),
@@ -100,10 +108,22 @@ public final class SettingsProfileCodec {
         return value;
     }
 
-    private static boolean isKnownKey(String key) {
-        return FORMAT.equals(key) || GLASS.equals(key) || EFFECTS.equals(key)
-                || ROUND_ENABLED.equals(key) || ROUND_PROFILE.equals(key) || GHOST.equals(key)
-                || TYPING.equals(key) || ONLINE.equals(key) || CONTENT_READ.equals(key)
-                || READ.equals(key) || STORY.equals(key) || READ_REPLY.equals(key) || DELAY_SEND.equals(key);
+    private static java.util.Set<String> knownKeys(int version) {
+        java.util.LinkedHashSet<String> keys = new java.util.LinkedHashSet<>();
+        keys.add(FORMAT);
+        keys.add(GLASS);
+        keys.add(EFFECTS);
+        if (version >= 2) keys.add(DENSITY);
+        keys.add(ROUND_ENABLED);
+        keys.add(ROUND_PROFILE);
+        keys.add(GHOST);
+        keys.add(TYPING);
+        keys.add(ONLINE);
+        keys.add(CONTENT_READ);
+        keys.add(READ);
+        keys.add(STORY);
+        keys.add(READ_REPLY);
+        keys.add(DELAY_SEND);
+        return keys;
     }
 }

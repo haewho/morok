@@ -43,6 +43,7 @@ public final class MorokSettingsActivity extends BaseFragment {
     private static final int MEMORY = 6, PROXY = 7, PRIVACY = 8, ROUND_VIDEO = 9, ARCHIVE = 10;
     private static final int TRANSFER = 11, APPEARANCE_MODE = 12, APP_PROFILES = 13, SAFETY = 14,
             INTERACTIONS = 15, DIAGNOSTICS = 16, CHAT_METADATA = 17, REPLY_TEMPLATES = 18, UPDATE = 19;
+    private static final int DIALOG_DENSITY = 20;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -120,6 +121,9 @@ public final class MorokSettingsActivity extends BaseFragment {
                 case REDUCED:
                     apply(settings.withReducedEffects(!settings.reducedEffects));
                     break;
+                case DIALOG_DENSITY:
+                    showDialogDensity(context);
+                    break;
                 case THEMES:
                     presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC));
                     break;
@@ -189,6 +193,8 @@ public final class MorokSettingsActivity extends BaseFragment {
         }
         add(CHECK, REDUCED, R.string.MorokReducedEffects);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokReducedEffectsInfo);
+        add(ACTION, DIALOG_DENSITY, R.string.MorokDialogListDensity);
+        if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListDensityInfo);
         add(ACTION, THEMES, R.string.MorokThemes);
         add(ACTION, POWER, R.string.MorokPowerSettings);
         add(ACTION, RESET, R.string.MorokResetAppearance);
@@ -257,8 +263,34 @@ public final class MorokSettingsActivity extends BaseFragment {
         }
         showDialog(new AlertDialog.Builder(context).setTitle(text(title)).setMessage(text(preview))
                 .setPositiveButton(text(R.string.ApplyTheme),
-                        (dialog, which) -> apply(AppearanceMode.settings(mode)))
+                        (dialog, which) -> apply(AppearanceMode.settings(mode).withDialogListDensity(
+                                MorokSettings.appearance().dialogListDensity)))
                 .setNegativeButton(text(R.string.Cancel), null).create());
+    }
+
+    private void showDialogDensity(Context context) {
+        CharSequence[] labels = {
+                text(R.string.MorokDialogListDensityCompact),
+                text(R.string.MorokDialogListDensityStandard),
+                text(R.string.MorokDialogListDensityComfortable)
+        };
+        showDialog(new AlertDialog.Builder(context).setTitle(text(R.string.MorokDialogListDensity))
+                .setItems(labels, (dialog, which) -> {
+                    String density = which == 0 ? AppearanceSettings.DENSITY_COMPACT
+                            : which == 2 ? AppearanceSettings.DENSITY_COMFORTABLE
+                            : AppearanceSettings.DENSITY_STANDARD;
+                    apply(MorokSettings.appearance().withDialogListDensity(density));
+                }).create());
+    }
+
+    private static String dialogDensityLabel(AppearanceSettings settings) {
+        if (AppearanceSettings.DENSITY_COMPACT.equals(settings.dialogListDensity)) {
+            return text(R.string.MorokDialogListDensityCompact);
+        }
+        if (AppearanceSettings.DENSITY_COMFORTABLE.equals(settings.dialogListDensity)) {
+            return text(R.string.MorokDialogListDensityComfortable);
+        }
+        return text(R.string.MorokDialogListDensityStandard);
     }
 
     private static String appearanceModeLabel(AppearanceSettings settings) {
@@ -319,6 +351,8 @@ public final class MorokSettingsActivity extends BaseFragment {
                 TextSettingsCell cell = (TextSettingsCell) holder.itemView;
                 if (row.id == APPEARANCE_MODE) {
                     cell.setTextAndValue(row.title, appearanceModeLabel(MorokSettings.appearance()), true);
+                } else if (row.id == DIALOG_DENSITY) {
+                    cell.setTextAndValue(row.title, dialogDensityLabel(MorokSettings.appearance()), true);
                 } else if (row.id == ROUND_VIDEO) {
                     cell.setTextAndValue(row.title, text(MorokSettings.roundVideo().enhanced
                             ? R.string.MorokRoundVideoEnabledStatus : R.string.MorokPrivacyOffStatus), true);

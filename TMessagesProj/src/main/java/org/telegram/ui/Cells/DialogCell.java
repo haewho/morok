@@ -59,6 +59,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.math.MathUtils;
 
+import org.morok.appearance.MorokAppearance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.ChatObject;
@@ -1062,7 +1063,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     private int computeHeight() {
         int height;
         if (isForumCell() && !isTransitionSupport && !collapsed) {
-            height = dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 86 : 91);
+            int heightDp = useForceThreeLines || SharedConfig.useThreeLinesLayout ? 86 : 91;
+            if (usesMorokDialogListDensity()) heightDp = MorokAppearance.dialogListHeight(heightDp);
+            height = dp(heightDp);
             if (useSeparator) {
                 height += 1;
             }
@@ -1076,7 +1079,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     }
 
     private int getCollapsedHeight() {
-        int height = dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? heightThreeLines : heightDefault);
+        int heightDp = useForceThreeLines || SharedConfig.useThreeLinesLayout ? heightThreeLines : heightDefault;
+        if (usesMorokDialogListDensity()) heightDp = MorokAppearance.dialogListHeight(heightDp);
+        int height = dp(heightDp);
         if (useSeparator || true) {
             height += 1;
         }
@@ -1087,6 +1092,13 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             height += dp(isForumCell() ? addForumHeightForTags : addHeightForTags);
         }
         return height;
+    }
+
+    private boolean usesMorokDialogListDensity() {
+        return isDialogCell && customDialog == null
+                && (dialogsType == DialogsActivity.DIALOGS_TYPE_DEFAULT
+                    || dialogsType == DialogsActivity.DIALOGS_TYPE_FOLDER1
+                    || dialogsType == DialogsActivity.DIALOGS_TYPE_FOLDER2);
     }
 
     private void checkTwoLinesForName() {

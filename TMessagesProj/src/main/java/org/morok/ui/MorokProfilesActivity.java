@@ -158,6 +158,7 @@ public final class MorokProfilesActivity extends BaseFragment {
         line(result, R.string.MorokAppProfilesAppearance, appearanceName(AppearanceMode.detect(state.settings.appearance)));
         line(result, R.string.MorokLiquidGlass, enabled(state.settings.appearance.liquidGlass));
         line(result, R.string.MorokReducedEffects, enabled(state.settings.appearance.reducedEffects));
+        line(result, R.string.MorokDialogListDensity, densityName(state.settings.appearance));
         line(result, R.string.MorokAppProfilesAutoplayVideo, enabled(state.autoplayVideos));
         line(result, R.string.MorokAppProfilesAutoplayGifs, enabled(state.autoplayGifs));
         line(result, R.string.MorokAppProfilesAnimatedStickersChat, enabled(state.animatedStickersChat));
@@ -190,6 +191,16 @@ public final class MorokProfilesActivity extends BaseFragment {
         if (mode == AppearanceMode.SOLID) return text(R.string.MorokAppearanceModeSolid);
         if (mode == AppearanceMode.MINIMAL) return text(R.string.MorokAppearanceModeMinimal);
         return text(R.string.MorokAppearanceModeCustom);
+    }
+
+    private static String densityName(org.morok.settings.AppearanceSettings appearance) {
+        if (org.morok.settings.AppearanceSettings.DENSITY_COMPACT.equals(appearance.dialogListDensity)) {
+            return text(R.string.MorokDialogListDensityCompact);
+        }
+        if (org.morok.settings.AppearanceSettings.DENSITY_COMFORTABLE.equals(appearance.dialogListDensity)) {
+            return text(R.string.MorokDialogListDensityComfortable);
+        }
+        return text(R.string.MorokDialogListDensityStandard);
     }
 
     private static String privacyName(PrivacySettings privacy) {

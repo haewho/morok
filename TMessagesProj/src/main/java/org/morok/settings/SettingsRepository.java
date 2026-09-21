@@ -2,7 +2,7 @@ package org.morok.settings;
 
 /** Versioned local-only schema. Unknown newer schemas are readable but never overwritten. */
 public final class SettingsRepository {
-    public static final int SCHEMA_VERSION = 14;
+    public static final int SCHEMA_VERSION = 15;
     public static final String SCHEMA_KEY = "schema_version";
     private final SettingsStore store;
 
@@ -12,15 +12,18 @@ public final class SettingsRepository {
 
     public AppearanceSettings appearance() {
         return new AppearanceSettings(store.getBoolean("appearance.liquid_glass", true),
-                store.getBoolean("appearance.reduced_effects", false));
+                store.getBoolean("appearance.reduced_effects", false),
+                store.getString("appearance.dialog_list_density", AppearanceSettings.DENSITY_STANDARD));
     }
 
     public void saveAppearance(AppearanceSettings settings) {
         checkWritable();
         // Migrations are additive: defaults are read without rewriting unrelated preferences.
-        store.saveBooleans(SCHEMA_VERSION,
+        store.save(SCHEMA_VERSION,
                 new String[] {"appearance.liquid_glass", "appearance.reduced_effects"},
-                new boolean[] {settings.liquidGlass, settings.reducedEffects});
+                new boolean[] {settings.liquidGlass, settings.reducedEffects},
+                new String[] {"appearance.dialog_list_density"},
+                new String[] {settings.dialogListDensity});
     }
 
     public void resetAppearance() {

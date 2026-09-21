@@ -39,7 +39,10 @@ public final class SettingsRepositoryTest {
     public static void main(String[] args) {
         Store device = new Store();
         SettingsRepository repo = new SettingsRepository(device);
-        check(repo.appearance().liquidGlass && !repo.appearance().reducedEffects, "fresh install defaults");
+        check(repo.appearance().liquidGlass && !repo.appearance().reducedEffects
+                        && AppearanceSettings.DENSITY_STANDARD.equals(repo.appearance().dialogListDensity)
+                        && repo.appearance().dialogListHeightOffsetDp() == 0,
+                "fresh install defaults");
         check(device.writes == 0, "reading cannot rewrite settings");
         check(AppearanceMode.detect(repo.appearance()) == AppearanceMode.TELEGRAM,
                 "default settings are the named Telegram mode");
@@ -59,12 +62,20 @@ public final class SettingsRepositoryTest {
         check(invalidModeRejected, "custom state cannot be applied as an ambiguous named preset");
 
         device.values.put("future.unrelated", "keep");
-        repo.saveAppearance(new AppearanceSettings(false, true));
+        repo.saveAppearance(new AppearanceSettings(false, true, AppearanceSettings.DENSITY_COMPACT));
         SettingsRepository restarted = new SettingsRepository(device);
-        check(!restarted.appearance().liquidGlass && restarted.appearance().reducedEffects, "restart persistence");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 14, "additive schema migration");
+        check(!restarted.appearance().liquidGlass && restarted.appearance().reducedEffects
+                        && AppearanceSettings.DENSITY_COMPACT.equals(restarted.appearance().dialogListDensity)
+                        && restarted.appearance().dialogListHeightOffsetDp() == -8,
+                "restart persistence");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 15, "additive schema migration");
+        check(AppearanceSettings.DENSITY_STANDARD.equals(
+                        new AppearanceSettings(true, false, "future-density").dialogListDensity),
+                "unknown density fails to the upstream-sized standard mode");
         restarted.resetAppearance();
-        check(restarted.appearance().liquidGlass && !restarted.appearance().reducedEffects, "category reset defaults");
+        check(restarted.appearance().liquidGlass && !restarted.appearance().reducedEffects
+                        && AppearanceSettings.DENSITY_STANDARD.equals(restarted.appearance().dialogListDensity),
+                "category reset defaults");
         check("keep".equals(device.values.get("future.unrelated")), "reset preserves other settings");
 
         RoundVideoSettings roundDefaults = restarted.roundVideo();
@@ -247,11 +258,14 @@ public final class SettingsRepositoryTest {
                 .withHideTyping(true).withHideOnline(true).withHideContentRead(true).withHideRead(true)
                 .withHideStoryViews(true).withMarkReadOnReply(true).withDelayGhostSends(true)
                 .withNormalBehaviorForChat(123456789, true);
-        SettingsProfile profile = new SettingsProfile(new AppearanceSettings(false, true),
+        SettingsProfile profile = new SettingsProfile(new AppearanceSettings(false, true,
+                AppearanceSettings.DENSITY_COMFORTABLE),
                 new RoundVideoSettings(true, RoundVideoSettings.PROFILE_HIGH), transferablePrivacy);
         String encodedProfile = SettingsProfileCodec.encode(profile);
         SettingsProfile decodedProfile = SettingsProfileCodec.decode(encodedProfile);
-        check(!decodedProfile.appearance.liquidGlass && decodedProfile.appearance.reducedEffects,
+        check(!decodedProfile.appearance.liquidGlass && decodedProfile.appearance.reducedEffects
+                        && AppearanceSettings.DENSITY_COMFORTABLE.equals(decodedProfile.appearance.dialogListDensity)
+                        && decodedProfile.appearance.dialogListHeightOffsetDp() == 8,
                 "settings profile round-trips appearance");
         check(decodedProfile.roundVideo.enhanced && RoundVideoSettings.PROFILE_HIGH.equals(decodedProfile.roundVideo.profile),
                 "settings profile round-trips round-video policy");
@@ -270,11 +284,20 @@ public final class SettingsRepositoryTest {
                 "profile import preserves destination chat exceptions while applying global policy");
         check(encodedProfile.equals(SettingsProfileCodec.encode(decodedProfile)),
                 "settings transfer format has deterministic canonical output");
+        String legacySettingsProfile = encodedProfile.replace("format=2", "format=1")
+                .replace("appearance.dialog_list_density=comfortable\n", "");
+        SettingsProfile migratedSettingsProfile = SettingsProfileCodec.decode(legacySettingsProfile);
+        check(AppearanceSettings.DENSITY_STANDARD.equals(migratedSettingsProfile.appearance.dialogListDensity)
+                        && SettingsProfileCodec.encode(migratedSettingsProfile).contains("format=2\n")
+                        && SettingsProfileCodec.encode(migratedSettingsProfile)
+                        .contains("appearance.dialog_list_density=standard\n"),
+                "version 1 transfer profiles migrate to standard density and rewrite version 2");
 
         AppProfileState profileCurrent = new AppProfileState(profile, true, false, true, false, true,
                 AppProfileState.NETWORK_KEEP);
         AppProfileState normal = AppProfilePresets.create(AppProfilePresets.NORMAL, profileCurrent);
         check(normal.settings.appearance.liquidGlass && !normal.settings.appearance.reducedEffects
+                        && AppearanceSettings.DENSITY_COMFORTABLE.equals(normal.settings.appearance.dialogListDensity)
                         && normal.autoplayVideos && normal.autoplayGifs
                         && normal.animatedStickersChat && normal.animatedStickersKeyboard
                         && normal.notificationContent
@@ -285,6 +308,7 @@ public final class SettingsRepositoryTest {
                 "Normal preserves the current round-video experiment");
         AppProfileState stealth = AppProfilePresets.create(AppProfilePresets.STEALTH, profileCurrent);
         check(!stealth.settings.appearance.liquidGlass && !stealth.settings.appearance.reducedEffects
+                        && AppearanceSettings.DENSITY_COMFORTABLE.equals(stealth.settings.appearance.dialogListDensity)
                         && stealth.settings.privacy.ghostPreset && !stealth.autoplayVideos
                         && !stealth.autoplayGifs && !stealth.animatedStickersChat
                         && !stealth.animatedStickersKeyboard && !stealth.notificationContent,
@@ -325,7 +349,7 @@ public final class SettingsRepositoryTest {
         check(mixedStickerState.animatedStickersChat
                         && !mixedStickerState.animatedStickersKeyboard,
                 "current app profile schema preserves independent chat and keyboard sticker flags");
-        String legacyAppProfile = encodedAppProfile.replace("format=2", "format=1")
+        String legacyAppProfile = encodedAppProfile.replaceFirst("format=2", "format=1")
                 .replace("autoplay.stickers_chat=false\n", "")
                 .replace("autoplay.stickers_keyboard=false\n", "");
         AppProfileState migratedLegacy = AppProfileStateCodec.decode(legacyAppProfile);
@@ -362,8 +386,9 @@ public final class SettingsRepositoryTest {
         check(oversizedAppProfileRejected, "oversized local app profile is rejected before parsing");
 
         String[] invalidProfiles = {
-                encodedProfile.replace("format=1", "format=2"),
+                encodedProfile.replace("format=2", "format=3"),
                 encodedProfile.replace("appearance.liquid_glass=false\n", ""),
+                encodedProfile.replace("appearance.dialog_list_density=comfortable", "appearance.dialog_list_density=tiny"),
                 encodedProfile + "privacy.hide_read=true\n",
                 encodedProfile.replace("privacy.hide_read=true", "privacy.hide_read=1"),
                 encodedProfile.replace("camera.round_video_profile=high", "camera.round_video_profile=ultra"),
@@ -391,13 +416,13 @@ public final class SettingsRepositoryTest {
             check(rejected, "invalid unauthenticated identity rejected: " + invalid);
         }
 
-        device.values.put(SettingsRepository.SCHEMA_KEY, 15);
+        device.values.put(SettingsRepository.SCHEMA_KEY, 16);
         int oldWrites = device.writes;
         boolean rejected = false;
         try { restarted.resetAppearance(); }
         catch (IllegalStateException expected) { rejected = true; }
         check(rejected && device.writes == oldWrites, "newer schema cannot be downgraded by reset");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 15, "newer schema kept intact");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 16, "newer schema kept intact");
         System.out.println("PASS: settings defaults, migration, isolation, archive, round-video, safety, interactions, privacy, strict transfer, reviewed app profiles, invalid IDs, downgrade refusal");
     }
 }

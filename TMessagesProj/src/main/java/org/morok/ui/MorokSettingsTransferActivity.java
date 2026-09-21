@@ -180,6 +180,10 @@ public final class MorokSettingsTransferActivity extends BaseFragment {
         ArrayList<String> changes = new ArrayList<>();
         addBooleanChange(changes, R.string.MorokLiquidGlass, currentAppearance.liquidGlass, profile.appearance.liquidGlass);
         addBooleanChange(changes, R.string.MorokReducedEffects, currentAppearance.reducedEffects, profile.appearance.reducedEffects);
+        if (!currentAppearance.dialogListDensity.equals(profile.appearance.dialogListDensity)) {
+            addChange(changes, text(R.string.MorokDialogListDensity), densityLabel(currentAppearance),
+                    densityLabel(profile.appearance));
+        }
         addBooleanChange(changes, R.string.MorokRoundVideoEnhanced, currentRound.enhanced, profile.roundVideo.enhanced);
         if (!currentRound.profile.equals(profile.roundVideo.profile)) {
             addChange(changes, text(R.string.MorokRoundVideoQuality), profileLabel(currentRound), profileLabel(profile.roundVideo));
@@ -247,6 +251,16 @@ public final class MorokSettingsTransferActivity extends BaseFragment {
         if (RoundVideoSettings.PROFILE_HIGH.equals(settings.profile)) return text(R.string.MorokRoundVideoHigh);
         if (RoundVideoSettings.PROFILE_SAVER.equals(settings.profile)) return text(R.string.MorokRoundVideoSaver);
         return text(R.string.MorokRoundVideoAuto);
+    }
+
+    private static String densityLabel(AppearanceSettings settings) {
+        if (AppearanceSettings.DENSITY_COMPACT.equals(settings.dialogListDensity)) {
+            return text(R.string.MorokDialogListDensityCompact);
+        }
+        if (AppearanceSettings.DENSITY_COMFORTABLE.equals(settings.dialogListDensity)) {
+            return text(R.string.MorokDialogListDensityComfortable);
+        }
+        return text(R.string.MorokDialogListDensityStandard);
     }
 
     private void showMessage(int message) {

@@ -33,6 +33,8 @@ public final class AppProfilePresets {
         } else {
             throw new IllegalArgumentException("Unknown app profile preset");
         }
+        // Density is an independent device preference and is not silently changed by behavior profiles.
+        appearance = appearance.withDialogListDensity(current.settings.appearance.dialogListDensity);
         SettingsProfile settings = new SettingsProfile(appearance, current.settings.roundVideo, privacy);
         return new AppProfileState(settings, autoplay, autoplay, autoplay, autoplay, notificationContent,
                 AppProfileState.NETWORK_KEEP);
