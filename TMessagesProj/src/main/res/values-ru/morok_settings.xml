@@ -33,6 +33,8 @@
     <string name="MorokDialogListLineSpacingRelaxed">Свободный</string>
     <string name="MorokDialogListTimestampSeconds">Секунды в недавнем времени</string>
     <string name="MorokDialogListTimestampSecondsInfo">Добавляет секунды только там, где Telegram уже показывает время недавнего чата. Дни недели и календарные даты сохраняют штатный локализованный формат.</string>
+    <string name="MorokTelegramTextSizeInfo">Открывает штатную настройку Telegram с живым превью размера текста сообщений. Значение действует на текст сообщений и хранится в штатных настройках Telegram на устройстве.</string>
+    <string name="MorokTelegramBubbleRadiusInfo">Открывает штатную настройку Telegram с живым превью скругления сообщений. Значение согласованно применяется к тексту, медиа и группам пузырей и хранится в штатных настройках Telegram.</string>
     <string name="MorokThemes">Темы и оформление чатов</string>
     <string name="MorokPowerSettings">Энергосбережение и эффекты</string>
     <string name="MorokResetAppearance">Сбросить оформление Морока</string>

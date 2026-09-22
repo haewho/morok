@@ -16,9 +16,11 @@ import org.morok.settings.AppearanceMode;
 import org.morok.settings.AppearanceSettings;
 import org.morok.settings.MorokSettings;
 import org.morok.settings.PrivacySettings;
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
@@ -44,7 +46,7 @@ public final class MorokSettingsActivity extends BaseFragment {
     private static final int TRANSFER = 11, APPEARANCE_MODE = 12, APP_PROFILES = 13, SAFETY = 14,
             INTERACTIONS = 15, DIAGNOSTICS = 16, CHAT_METADATA = 17, REPLY_TEMPLATES = 18, UPDATE = 19;
     private static final int DIALOG_DENSITY = 20, DIALOG_AVATAR_SIZE = 21, DIALOG_TIMESTAMP_SECONDS = 22,
-            DIALOG_LINE_SPACING = 23;
+            DIALOG_LINE_SPACING = 23, CHAT_TEXT_SIZE = 24, BUBBLE_RADIUS = 25;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -134,8 +136,14 @@ public final class MorokSettingsActivity extends BaseFragment {
                 case DIALOG_LINE_SPACING:
                     showDialogLineSpacing(context);
                     break;
+                case CHAT_TEXT_SIZE:
+                    openTelegramAppearance("textSizeRow");
+                    break;
+                case BUBBLE_RADIUS:
+                    openTelegramAppearance("bubbleRadiusRow");
+                    break;
                 case THEMES:
-                    presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC));
+                    openTelegramAppearance(null);
                     break;
                 case POWER:
                     presentFragment(new LiteModeSettingsActivity());
@@ -211,6 +219,10 @@ public final class MorokSettingsActivity extends BaseFragment {
         if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListLineSpacingInfo);
         add(CHECK, DIALOG_TIMESTAMP_SECONDS, R.string.MorokDialogListTimestampSeconds);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListTimestampSecondsInfo);
+        add(ACTION, CHAT_TEXT_SIZE, R.string.TextSizeHeader);
+        if (query.isEmpty()) add(INFO, 0, R.string.MorokTelegramTextSizeInfo);
+        add(ACTION, BUBBLE_RADIUS, R.string.BubbleRadius);
+        if (query.isEmpty()) add(INFO, 0, R.string.MorokTelegramBubbleRadiusInfo);
         add(ACTION, THEMES, R.string.MorokThemes);
         add(ACTION, POWER, R.string.MorokPowerSettings);
         add(ACTION, RESET, R.string.MorokResetAppearance);
@@ -362,6 +374,12 @@ public final class MorokSettingsActivity extends BaseFragment {
         return text(R.string.MorokDialogListLineSpacingStandard);
     }
 
+    private void openTelegramAppearance(String rowName) {
+        Theme.createChatResources(getContext(), false);
+        presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC));
+        if (rowName != null) AndroidUtilities.scrollToFragmentRow(getParentLayout(), rowName);
+    }
+
     private static String appearanceModeLabel(AppearanceSettings settings) {
         switch (AppearanceMode.detect(settings)) {
             case AppearanceMode.TELEGRAM: return text(R.string.MorokAppearanceModeTelegram);
@@ -428,6 +446,10 @@ public final class MorokSettingsActivity extends BaseFragment {
                     cell.setTextAndValue(row.title, dialogAvatarSizeLabel(MorokSettings.appearance()), true);
                 } else if (row.id == DIALOG_LINE_SPACING) {
                     cell.setTextAndValue(row.title, dialogLineSpacingLabel(MorokSettings.appearance()), true);
+                } else if (row.id == CHAT_TEXT_SIZE) {
+                    cell.setTextAndValue(row.title, Integer.toString(SharedConfig.fontSize), true);
+                } else if (row.id == BUBBLE_RADIUS) {
+                    cell.setTextAndValue(row.title, Integer.toString(SharedConfig.bubbleRadius), true);
                 } else if (row.id == ROUND_VIDEO) {
                     cell.setTextAndValue(row.title, text(MorokSettings.roundVideo().enhanced
                             ? R.string.MorokRoundVideoEnabledStatus : R.string.MorokPrivacyOffStatus), true);

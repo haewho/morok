@@ -33,6 +33,8 @@
     <string name="MorokDialogListLineSpacingRelaxed">Relaxed</string>
     <string name="MorokDialogListTimestampSeconds">Seconds in recent timestamps</string>
     <string name="MorokDialogListTimestampSecondsInfo">Adds seconds only when Telegram already shows a clock for a recent chat. Weekdays and calendar dates keep Telegram’s locale-aware format.</string>
+    <string name="MorokTelegramTextSizeInfo">Opens Telegram’s live message text-size preview. The value applies to message text and remains in Telegram’s own device settings.</string>
+    <string name="MorokTelegramBubbleRadiusInfo">Opens Telegram’s live message-corner preview. The value applies consistently to text, media and grouped message bubbles and remains in Telegram’s own device settings.</string>
     <string name="MorokThemes">Themes and chat appearance</string>
     <string name="MorokPowerSettings">Power saving and effects</string>
     <string name="MorokResetAppearance">Reset MOROK appearance</string>
