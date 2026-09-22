@@ -160,6 +160,7 @@ public final class MorokProfilesActivity extends BaseFragment {
         line(result, R.string.MorokReducedEffects, enabled(state.settings.appearance.reducedEffects));
         line(result, R.string.MorokDialogListDensity, densityName(state.settings.appearance));
         line(result, R.string.MorokDialogListAvatarSize, avatarSizeName(state.settings.appearance));
+        line(result, R.string.MorokDialogListLineSpacing, lineSpacingName(state.settings.appearance));
         line(result, R.string.MorokDialogListTimestampSeconds,
                 enabled(state.settings.appearance.dialogListTimestampSeconds));
         line(result, R.string.MorokAppProfilesAutoplayVideo, enabled(state.autoplayVideos));
@@ -214,6 +215,16 @@ public final class MorokProfilesActivity extends BaseFragment {
             return text(R.string.MorokDialogListAvatarLarge);
         }
         return text(R.string.MorokDialogListAvatarStandard);
+    }
+
+    private static String lineSpacingName(org.morok.settings.AppearanceSettings appearance) {
+        if (org.morok.settings.AppearanceSettings.LINE_SPACING_TIGHT.equals(appearance.dialogListLineSpacing)) {
+            return text(R.string.MorokDialogListLineSpacingTight);
+        }
+        if (org.morok.settings.AppearanceSettings.LINE_SPACING_RELAXED.equals(appearance.dialogListLineSpacing)) {
+            return text(R.string.MorokDialogListLineSpacingRelaxed);
+        }
+        return text(R.string.MorokDialogListLineSpacingStandard);
     }
 
     private static String privacyName(PrivacySettings privacy) {

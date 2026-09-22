@@ -1101,11 +1101,11 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                     || dialogsType == DialogsActivity.DIALOGS_TYPE_FOLDER2);
     }
 
-    private boolean forceMorokTimestampLayout;
+    private boolean forceMorokContentLayout;
 
-    public void refreshMorokDialogListTimestamp() {
+    public void refreshMorokDialogListContent() {
         if (!usesMorokDialogListGeometry()) return;
-        forceMorokTimestampLayout = true;
+        forceMorokContentLayout = true;
         if (getMeasuredWidth() != 0 && getMeasuredHeight() != 0) buildLayout();
         else updateLayout = true;
         requestLayout();
@@ -1115,6 +1115,11 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     private String dialogListDate(long date) {
         return usesMorokDialogListGeometry()
                 ? MorokAppearance.dialogListDate(date) : LocaleController.stringForMessageListDate(date);
+    }
+
+    private int dialogListLineSpacingExtra() {
+        return dp(usesMorokDialogListGeometry()
+                ? MorokAppearance.dialogListLineSpacingExtraDp() : 1);
     }
 
     private void setDialogAvatarRect(int avatarLeft, int avatarTop, int upstreamSizeDp) {
@@ -1332,11 +1337,11 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         if (isTransitionSupport) {
             return;
         }
-        boolean forceTimestampLayout = forceMorokTimestampLayout;
-        forceMorokTimestampLayout = false;
+        boolean forceContentLayout = forceMorokContentLayout;
+        forceMorokContentLayout = false;
         if (isDialogCell) {
             boolean needUpdate = updateHelper.update();
-            if (!forceTimestampLayout && !needUpdate && currentDialogFolderId == 0
+            if (!forceContentLayout && !needUpdate && currentDialogFolderId == 0
                     && currentDialogCommunityId == 0 && encryptedChat == null) {
                 return;
             }
@@ -2816,7 +2821,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         try {
             if (!TextUtils.isEmpty(typingString)) {
                 if ((useForceThreeLines || SharedConfig.useThreeLinesLayout) && !hasTags()) {
-                    typingLayout = StaticLayoutEx.createStaticLayout(typingString, Theme.dialogs_messagePrintingPaint[paintIndex], messageWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, dp(1), false, TextUtils.TruncateAt.END, messageWidth, typingString != null ? 1 : 2);
+                    typingLayout = StaticLayoutEx.createStaticLayout(typingString, Theme.dialogs_messagePrintingPaint[paintIndex], messageWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, dialogListLineSpacingExtra(), false, TextUtils.TruncateAt.END, messageWidth, typingString != null ? 1 : 2);
                 } else {
                     typingString = TextUtils.ellipsize(typingString, currentMessagePaint, messageWidth - dp(12), TextUtils.TruncateAt.END);
                     typingLayout = new StaticLayout(typingString, Theme.dialogs_messagePrintingPaint[paintIndex], messageWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
@@ -2856,7 +2861,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 if (thumbsCount > 0 && messageNameString != null) {
                     messageWidth += dp(5);
                 }
-                messageLayout = StaticLayoutEx.createStaticLayout(messageStringFinal, currentMessagePaint, messageWidth, align, 1.0f, dp(1), false, TextUtils.TruncateAt.END, messageWidth, messageNameString != null ? 1 : 2);
+                messageLayout = StaticLayoutEx.createStaticLayout(messageStringFinal, currentMessagePaint, messageWidth, align, 1.0f, dialogListLineSpacingExtra(), false, TextUtils.TruncateAt.END, messageWidth, messageNameString != null ? 1 : 2);
             } else {
                 if (thumbsCount > 0) {
                     messageWidth += dp((thumbsCount * (thumbSize + 2) - 2) + 5);

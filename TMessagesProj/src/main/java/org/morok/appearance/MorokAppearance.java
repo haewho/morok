@@ -41,6 +41,11 @@ public final class MorokAppearance {
         return MorokSettings.appearance().dialogListAvatarSizeDp(upstreamDp);
     }
 
+    /** Applies bounded preview line spacing without changing Telegram text size or content. */
+    public static int dialogListLineSpacingExtraDp() {
+        return MorokSettings.appearance().dialogListLineSpacingExtraDp();
+    }
+
     /** Adds seconds only where Telegram itself selected the recent-message clock formatter. */
     public static String dialogListDate(long dateSeconds) {
         String upstream = LocaleController.stringForMessageListDate(dateSeconds);
@@ -70,8 +75,9 @@ public final class MorokAppearance {
         final boolean animationChanged = previous.reducedEffects != settings.reducedEffects;
         final boolean geometryChanged = !previous.dialogListDensity.equals(settings.dialogListDensity)
                 || !previous.dialogListAvatarSize.equals(settings.dialogListAvatarSize);
-        final boolean timestampChanged = previous.dialogListTimestampSeconds
-                != settings.dialogListTimestampSeconds;
+        final boolean contentChanged = previous.dialogListTimestampSeconds
+                != settings.dialogListTimestampSeconds
+                || !previous.dialogListLineSpacing.equals(settings.dialogListLineSpacing);
         // Refresh existing drawables; no Activity/Fragment recreation or draft/scroll reset.
         for (BlurredBackgroundDrawable drawable : drawableSnapshot()) {
             if (drawable != null) {
@@ -84,23 +90,23 @@ public final class MorokAppearance {
             SvgHelper.SvgDrawable.updateLiteValues();
             Theme.reloadWallpaper(true);
         }
-        if (activity != null) refreshTree(activity.getWindow().getDecorView(), geometryChanged, timestampChanged);
+        if (activity != null) refreshTree(activity.getWindow().getDecorView(), geometryChanged, contentChanged);
     }
 
     private static synchronized ArrayList<BlurredBackgroundDrawable> drawableSnapshot() {
         return new ArrayList<>(drawables.keySet());
     }
 
-    private static void refreshTree(View view, boolean requestLayout, boolean rebuildTimestamp) {
-        if (rebuildTimestamp && view instanceof DialogCell) {
-            ((DialogCell) view).refreshMorokDialogListTimestamp();
+    private static void refreshTree(View view, boolean requestLayout, boolean rebuildContent) {
+        if (rebuildContent && view instanceof DialogCell) {
+            ((DialogCell) view).refreshMorokDialogListContent();
         }
         view.invalidate();
         if (requestLayout) view.requestLayout();
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;
             for (int i = 0; i < group.getChildCount(); i++) {
-                refreshTree(group.getChildAt(i), requestLayout, rebuildTimestamp);
+                refreshTree(group.getChildAt(i), requestLayout, rebuildContent);
             }
         }
     }

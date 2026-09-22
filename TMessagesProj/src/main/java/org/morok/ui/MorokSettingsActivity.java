@@ -43,7 +43,8 @@ public final class MorokSettingsActivity extends BaseFragment {
     private static final int MEMORY = 6, PROXY = 7, PRIVACY = 8, ROUND_VIDEO = 9, ARCHIVE = 10;
     private static final int TRANSFER = 11, APPEARANCE_MODE = 12, APP_PROFILES = 13, SAFETY = 14,
             INTERACTIONS = 15, DIAGNOSTICS = 16, CHAT_METADATA = 17, REPLY_TEMPLATES = 18, UPDATE = 19;
-    private static final int DIALOG_DENSITY = 20, DIALOG_AVATAR_SIZE = 21, DIALOG_TIMESTAMP_SECONDS = 22;
+    private static final int DIALOG_DENSITY = 20, DIALOG_AVATAR_SIZE = 21, DIALOG_TIMESTAMP_SECONDS = 22,
+            DIALOG_LINE_SPACING = 23;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -130,6 +131,9 @@ public final class MorokSettingsActivity extends BaseFragment {
                 case DIALOG_TIMESTAMP_SECONDS:
                     apply(settings.withDialogListTimestampSeconds(!settings.dialogListTimestampSeconds));
                     break;
+                case DIALOG_LINE_SPACING:
+                    showDialogLineSpacing(context);
+                    break;
                 case THEMES:
                     presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC));
                     break;
@@ -203,6 +207,8 @@ public final class MorokSettingsActivity extends BaseFragment {
         if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListDensityInfo);
         add(ACTION, DIALOG_AVATAR_SIZE, R.string.MorokDialogListAvatarSize);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListAvatarSizeInfo);
+        add(ACTION, DIALOG_LINE_SPACING, R.string.MorokDialogListLineSpacing);
+        if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListLineSpacingInfo);
         add(CHECK, DIALOG_TIMESTAMP_SECONDS, R.string.MorokDialogListTimestampSeconds);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListTimestampSecondsInfo);
         add(ACTION, THEMES, R.string.MorokThemes);
@@ -276,7 +282,8 @@ public final class MorokSettingsActivity extends BaseFragment {
                         (dialog, which) -> apply(AppearanceMode.settings(mode).withDialogListDensity(
                                 MorokSettings.appearance().dialogListDensity).withDialogListAvatarSize(
                                 MorokSettings.appearance().dialogListAvatarSize).withDialogListTimestampSeconds(
-                                MorokSettings.appearance().dialogListTimestampSeconds)))
+                                MorokSettings.appearance().dialogListTimestampSeconds).withDialogListLineSpacing(
+                                MorokSettings.appearance().dialogListLineSpacing)))
                 .setNegativeButton(text(R.string.Cancel), null).create());
     }
 
@@ -328,6 +335,31 @@ public final class MorokSettingsActivity extends BaseFragment {
             return text(R.string.MorokDialogListAvatarLarge);
         }
         return text(R.string.MorokDialogListAvatarStandard);
+    }
+
+    private void showDialogLineSpacing(Context context) {
+        CharSequence[] labels = {
+                text(R.string.MorokDialogListLineSpacingTight),
+                text(R.string.MorokDialogListLineSpacingStandard),
+                text(R.string.MorokDialogListLineSpacingRelaxed)
+        };
+        showDialog(new AlertDialog.Builder(context).setTitle(text(R.string.MorokDialogListLineSpacing))
+                .setItems(labels, (dialog, which) -> {
+                    String spacing = which == 0 ? AppearanceSettings.LINE_SPACING_TIGHT
+                            : which == 2 ? AppearanceSettings.LINE_SPACING_RELAXED
+                            : AppearanceSettings.LINE_SPACING_STANDARD;
+                    apply(MorokSettings.appearance().withDialogListLineSpacing(spacing));
+                }).create());
+    }
+
+    private static String dialogLineSpacingLabel(AppearanceSettings settings) {
+        if (AppearanceSettings.LINE_SPACING_TIGHT.equals(settings.dialogListLineSpacing)) {
+            return text(R.string.MorokDialogListLineSpacingTight);
+        }
+        if (AppearanceSettings.LINE_SPACING_RELAXED.equals(settings.dialogListLineSpacing)) {
+            return text(R.string.MorokDialogListLineSpacingRelaxed);
+        }
+        return text(R.string.MorokDialogListLineSpacingStandard);
     }
 
     private static String appearanceModeLabel(AppearanceSettings settings) {
@@ -394,6 +426,8 @@ public final class MorokSettingsActivity extends BaseFragment {
                     cell.setTextAndValue(row.title, dialogDensityLabel(MorokSettings.appearance()), true);
                 } else if (row.id == DIALOG_AVATAR_SIZE) {
                     cell.setTextAndValue(row.title, dialogAvatarSizeLabel(MorokSettings.appearance()), true);
+                } else if (row.id == DIALOG_LINE_SPACING) {
+                    cell.setTextAndValue(row.title, dialogLineSpacingLabel(MorokSettings.appearance()), true);
                 } else if (row.id == ROUND_VIDEO) {
                     cell.setTextAndValue(row.title, text(MorokSettings.roundVideo().enhanced
                             ? R.string.MorokRoundVideoEnabledStatus : R.string.MorokPrivacyOffStatus), true);
