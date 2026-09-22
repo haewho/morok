@@ -6,7 +6,7 @@ import java.util.Map;
 
 /** Strict, deterministic and secret-free text format for explicit settings transfer. */
 public final class SettingsProfileCodec {
-    public static final int FORMAT_VERSION = 5;
+    public static final int FORMAT_VERSION = 6;
     public static final int MAX_CHARACTERS = 16 * 1024;
     public static final String MAGIC = "MOROK_SETTINGS_PROFILE";
 
@@ -17,6 +17,7 @@ public final class SettingsProfileCodec {
     private static final String AVATAR_SIZE = "appearance.dialog_list_avatar_size";
     private static final String TIMESTAMP_SECONDS = "appearance.dialog_list_timestamp_seconds";
     private static final String LINE_SPACING = "appearance.dialog_list_line_spacing";
+    private static final String TEXT_SIZE = "appearance.dialog_list_text_size";
     private static final String ROUND_ENABLED = "camera.round_video_enhanced";
     private static final String ROUND_PROFILE = "camera.round_video_profile";
     private static final String GHOST = "privacy.ghost_preset";
@@ -32,6 +33,7 @@ public final class SettingsProfileCodec {
     private static final int V3_FIELD_COUNT = 15;
     private static final int V4_FIELD_COUNT = 16;
     private static final int V5_FIELD_COUNT = 17;
+    private static final int V6_FIELD_COUNT = 18;
 
     private SettingsProfileCodec() {}
 
@@ -45,6 +47,7 @@ public final class SettingsProfileCodec {
         append(result, AVATAR_SIZE, profile.appearance.dialogListAvatarSize);
         append(result, TIMESTAMP_SECONDS, bool(profile.appearance.dialogListTimestampSeconds));
         append(result, LINE_SPACING, profile.appearance.dialogListLineSpacing);
+        append(result, TEXT_SIZE, profile.appearance.dialogListTextSize);
         append(result, ROUND_ENABLED, bool(profile.roundVideo.enhanced));
         append(result, ROUND_PROFILE, profile.roundVideo.profile);
         append(result, GHOST, bool(profile.privacy.ghostPreset));
@@ -82,7 +85,8 @@ public final class SettingsProfileCodec {
         catch (NumberFormatException error) { throw new IllegalArgumentException("Invalid profile version", error); }
         if (version < 1 || version > FORMAT_VERSION) throw new IllegalArgumentException("Unsupported profile version");
         int fieldCount = version == 1 ? V1_FIELD_COUNT : version == 2 ? V2_FIELD_COUNT
-                : version == 3 ? V3_FIELD_COUNT : version == 4 ? V4_FIELD_COUNT : V5_FIELD_COUNT;
+                : version == 3 ? V3_FIELD_COUNT : version == 4 ? V4_FIELD_COUNT
+                : version == 5 ? V5_FIELD_COUNT : V6_FIELD_COUNT;
         if (values.size() != fieldCount || !values.keySet().equals(knownKeys(version))) {
             throw new IllegalArgumentException("Unknown or incomplete profile");
         }
@@ -98,8 +102,13 @@ public final class SettingsProfileCodec {
         if (!AppearanceSettings.validLineSpacing(lineSpacing)) {
             throw new IllegalArgumentException("Invalid dialog-list line spacing");
         }
+        String textSize = version < 6 ? AppearanceSettings.TEXT_SIZE_STANDARD
+                : required(values, TEXT_SIZE);
+        if (!AppearanceSettings.validTextSize(textSize)) {
+            throw new IllegalArgumentException("Invalid dialog-list text size");
+        }
         AppearanceSettings appearance = new AppearanceSettings(booleanValue(values, GLASS),
-                booleanValue(values, EFFECTS), density, avatarSize, timestampSeconds, lineSpacing);
+                booleanValue(values, EFFECTS), density, avatarSize, timestampSeconds, lineSpacing, textSize);
         RoundVideoSettings roundVideo = new RoundVideoSettings(booleanValue(values, ROUND_ENABLED), roundProfile);
         PrivacySettings privacy = new PrivacySettings(booleanValue(values, GHOST), booleanValue(values, TYPING),
                 booleanValue(values, ONLINE), booleanValue(values, CONTENT_READ), booleanValue(values, READ),
@@ -136,6 +145,7 @@ public final class SettingsProfileCodec {
         if (version >= 3) keys.add(AVATAR_SIZE);
         if (version >= 4) keys.add(TIMESTAMP_SECONDS);
         if (version >= 5) keys.add(LINE_SPACING);
+        if (version >= 6) keys.add(TEXT_SIZE);
         keys.add(ROUND_ENABLED);
         keys.add(ROUND_PROFILE);
         keys.add(GHOST);

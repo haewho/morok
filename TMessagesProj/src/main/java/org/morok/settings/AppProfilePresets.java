@@ -40,6 +40,8 @@ public final class AppProfilePresets {
                 current.settings.appearance.dialogListTimestampSeconds);
         appearance = appearance.withDialogListLineSpacing(
                 current.settings.appearance.dialogListLineSpacing);
+        appearance = appearance.withDialogListTextSize(
+                current.settings.appearance.dialogListTextSize);
         SettingsProfile settings = new SettingsProfile(appearance, current.settings.roundVideo, privacy);
         return new AppProfileState(settings, autoplay, autoplay, autoplay, autoplay, notificationContent,
                 AppProfileState.NETWORK_KEEP);

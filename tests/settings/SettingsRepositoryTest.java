@@ -47,6 +47,8 @@ public final class SettingsRepositoryTest {
                         && !repo.appearance().dialogListTimestampSeconds
                         && AppearanceSettings.LINE_SPACING_STANDARD.equals(repo.appearance().dialogListLineSpacing)
                         && repo.appearance().dialogListLineSpacingExtraDp() == 1
+                        && AppearanceSettings.TEXT_SIZE_STANDARD.equals(repo.appearance().dialogListTextSize)
+                        && repo.appearance().dialogListTextSizeDp(16) == 16
                         && repo.appearance().dialogListHeightDp(70) == 70
                         && repo.appearance().dialogListAvatarSizeDp(52) == 52,
                 "fresh install defaults");
@@ -70,7 +72,8 @@ public final class SettingsRepositoryTest {
 
         device.values.put("future.unrelated", "keep");
         repo.saveAppearance(new AppearanceSettings(false, true, AppearanceSettings.DENSITY_COMPACT,
-                AppearanceSettings.AVATAR_LARGE, true, AppearanceSettings.LINE_SPACING_RELAXED));
+                AppearanceSettings.AVATAR_LARGE, true, AppearanceSettings.LINE_SPACING_RELAXED,
+                AppearanceSettings.TEXT_SIZE_LARGE));
         SettingsRepository restarted = new SettingsRepository(device);
         check(!restarted.appearance().liquidGlass && restarted.appearance().reducedEffects
                         && AppearanceSettings.DENSITY_COMPACT.equals(restarted.appearance().dialogListDensity)
@@ -80,10 +83,12 @@ public final class SettingsRepositoryTest {
                         && restarted.appearance().dialogListTimestampSeconds
                         && AppearanceSettings.LINE_SPACING_RELAXED.equals(restarted.appearance().dialogListLineSpacing)
                         && restarted.appearance().dialogListLineSpacingExtraDp() == 2
+                        && AppearanceSettings.TEXT_SIZE_LARGE.equals(restarted.appearance().dialogListTextSize)
+                        && restarted.appearance().dialogListTextSizeDp(16) == 17
                         && restarted.appearance().dialogListHeightDp(70) == 64
                         && restarted.appearance().dialogListAvatarSizeDp(52) == 56,
                 "restart persistence");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 18, "additive schema migration");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 19, "additive schema migration");
         check(AppearanceSettings.DENSITY_STANDARD.equals(
                         new AppearanceSettings(true, false, "future-density").dialogListDensity),
                 "unknown density fails to the upstream-sized standard mode");
@@ -95,6 +100,11 @@ public final class SettingsRepositoryTest {
                         new AppearanceSettings(true, false, AppearanceSettings.DENSITY_STANDARD,
                                 AppearanceSettings.AVATAR_STANDARD, false, "future-spacing").dialogListLineSpacing),
                 "unknown line spacing fails to the upstream standard mode");
+        check(AppearanceSettings.TEXT_SIZE_STANDARD.equals(
+                        new AppearanceSettings(true, false, AppearanceSettings.DENSITY_STANDARD,
+                                AppearanceSettings.AVATAR_STANDARD, false,
+                                AppearanceSettings.LINE_SPACING_STANDARD, "future-text").dialogListTextSize),
+                "unknown text size fails to the upstream standard mode");
         check(restarted.appearance().withDialogListLineSpacing(AppearanceSettings.LINE_SPACING_TIGHT)
                         .dialogListLineSpacingExtraDp() == 0,
                 "tight line spacing removes only Telegram's one-dp preview extra");
@@ -104,7 +114,9 @@ public final class SettingsRepositoryTest {
                         && AppearanceSettings.AVATAR_STANDARD.equals(restarted.appearance().dialogListAvatarSize)
                         && !restarted.appearance().dialogListTimestampSeconds
                         && AppearanceSettings.LINE_SPACING_STANDARD.equals(
-                                restarted.appearance().dialogListLineSpacing),
+                                restarted.appearance().dialogListLineSpacing)
+                        && AppearanceSettings.TEXT_SIZE_STANDARD.equals(
+                                restarted.appearance().dialogListTextSize),
                 "category reset defaults");
         check("keep".equals(device.values.get("future.unrelated")), "reset preserves other settings");
 
@@ -290,7 +302,7 @@ public final class SettingsRepositoryTest {
                 .withNormalBehaviorForChat(123456789, true);
         SettingsProfile profile = new SettingsProfile(new AppearanceSettings(false, true,
                 AppearanceSettings.DENSITY_COMFORTABLE, AppearanceSettings.AVATAR_LARGE, true,
-                AppearanceSettings.LINE_SPACING_RELAXED),
+                AppearanceSettings.LINE_SPACING_RELAXED, AppearanceSettings.TEXT_SIZE_LARGE),
                 new RoundVideoSettings(true, RoundVideoSettings.PROFILE_HIGH), transferablePrivacy);
         String encodedProfile = SettingsProfileCodec.encode(profile);
         SettingsProfile decodedProfile = SettingsProfileCodec.decode(encodedProfile);
@@ -303,6 +315,8 @@ public final class SettingsRepositoryTest {
                         && AppearanceSettings.LINE_SPACING_RELAXED.equals(
                                 decodedProfile.appearance.dialogListLineSpacing)
                         && decodedProfile.appearance.dialogListLineSpacingExtraDp() == 2
+                        && AppearanceSettings.TEXT_SIZE_LARGE.equals(decodedProfile.appearance.dialogListTextSize)
+                        && decodedProfile.appearance.dialogListTextSizeDp(16) == 17
                         && decodedProfile.appearance.dialogListHeightDp(70) == 78
                         && decodedProfile.appearance.dialogListAvatarSizeDp(58) == 60,
                 "settings profile round-trips appearance");
@@ -323,7 +337,14 @@ public final class SettingsRepositoryTest {
                 "profile import preserves destination chat exceptions while applying global policy");
         check(encodedProfile.equals(SettingsProfileCodec.encode(decodedProfile)),
                 "settings transfer format has deterministic canonical output");
-        String version4SettingsProfile = encodedProfile.replace("format=5", "format=4")
+        String version5SettingsProfile = encodedProfile.replace("format=6", "format=5")
+                .replace("appearance.dialog_list_text_size=large\n", "");
+        SettingsProfile migratedVersion5 = SettingsProfileCodec.decode(version5SettingsProfile);
+        check(AppearanceSettings.LINE_SPACING_RELAXED.equals(migratedVersion5.appearance.dialogListLineSpacing)
+                        && AppearanceSettings.TEXT_SIZE_STANDARD.equals(
+                                migratedVersion5.appearance.dialogListTextSize),
+                "version 5 transfer profiles preserve spacing and migrate text size to standard");
+        String version4SettingsProfile = version5SettingsProfile.replace("format=5", "format=4")
                 .replace("appearance.dialog_list_line_spacing=relaxed\n", "");
         SettingsProfile migratedVersion4 = SettingsProfileCodec.decode(version4SettingsProfile);
         check(migratedVersion4.appearance.dialogListTimestampSeconds
@@ -348,14 +369,16 @@ public final class SettingsRepositoryTest {
                 .replace("appearance.dialog_list_density=comfortable\n", "");
         SettingsProfile migratedSettingsProfile = SettingsProfileCodec.decode(legacySettingsProfile);
         check(AppearanceSettings.DENSITY_STANDARD.equals(migratedSettingsProfile.appearance.dialogListDensity)
-                        && SettingsProfileCodec.encode(migratedSettingsProfile).contains("format=5\n")
+                        && SettingsProfileCodec.encode(migratedSettingsProfile).contains("format=6\n")
                         && SettingsProfileCodec.encode(migratedSettingsProfile)
                         .contains("appearance.dialog_list_density=standard\n")
                         && SettingsProfileCodec.encode(migratedSettingsProfile)
                         .contains("appearance.dialog_list_avatar_size=standard\n")
                         && SettingsProfileCodec.encode(migratedSettingsProfile)
-                        .contains("appearance.dialog_list_line_spacing=standard\n"),
-                "version 1 transfer profiles migrate appearance defaults and rewrite version 5");
+                        .contains("appearance.dialog_list_line_spacing=standard\n")
+                        && SettingsProfileCodec.encode(migratedSettingsProfile)
+                        .contains("appearance.dialog_list_text_size=standard\n"),
+                "version 1 transfer profiles migrate appearance defaults and rewrite version 6");
 
         AppProfileState profileCurrent = new AppProfileState(profile, true, false, true, false, true,
                 AppProfileState.NETWORK_KEEP);
@@ -366,6 +389,8 @@ public final class SettingsRepositoryTest {
                         && normal.settings.appearance.dialogListTimestampSeconds
                         && AppearanceSettings.LINE_SPACING_RELAXED.equals(
                                 normal.settings.appearance.dialogListLineSpacing)
+                        && AppearanceSettings.TEXT_SIZE_LARGE.equals(
+                                normal.settings.appearance.dialogListTextSize)
                         && normal.autoplayVideos && normal.autoplayGifs
                         && normal.animatedStickersChat && normal.animatedStickersKeyboard
                         && normal.notificationContent
@@ -458,7 +483,7 @@ public final class SettingsRepositoryTest {
         check(oversizedAppProfileRejected, "oversized local app profile is rejected before parsing");
 
         String[] invalidProfiles = {
-                encodedProfile.replace("format=5", "format=6"),
+                encodedProfile.replace("format=6", "format=7"),
                 encodedProfile.replace("appearance.liquid_glass=false\n", ""),
                 encodedProfile.replace("appearance.dialog_list_density=comfortable", "appearance.dialog_list_density=tiny"),
                 encodedProfile.replace("appearance.dialog_list_avatar_size=large", "appearance.dialog_list_avatar_size=huge"),
@@ -466,6 +491,8 @@ public final class SettingsRepositoryTest {
                         "appearance.dialog_list_timestamp_seconds=1"),
                 encodedProfile.replace("appearance.dialog_list_line_spacing=relaxed",
                         "appearance.dialog_list_line_spacing=huge"),
+                encodedProfile.replace("appearance.dialog_list_text_size=large",
+                        "appearance.dialog_list_text_size=huge"),
                 encodedProfile + "privacy.hide_read=true\n",
                 encodedProfile.replace("privacy.hide_read=true", "privacy.hide_read=1"),
                 encodedProfile.replace("camera.round_video_profile=high", "camera.round_video_profile=ultra"),
@@ -493,13 +520,13 @@ public final class SettingsRepositoryTest {
             check(rejected, "invalid unauthenticated identity rejected: " + invalid);
         }
 
-        device.values.put(SettingsRepository.SCHEMA_KEY, 19);
+        device.values.put(SettingsRepository.SCHEMA_KEY, 20);
         int oldWrites = device.writes;
         boolean rejected = false;
         try { restarted.resetAppearance(); }
         catch (IllegalStateException expected) { rejected = true; }
         check(rejected && device.writes == oldWrites, "newer schema cannot be downgraded by reset");
-        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 19, "newer schema kept intact");
+        check(device.getInt(SettingsRepository.SCHEMA_KEY, -1) == 20, "newer schema kept intact");
         System.out.println("PASS: settings defaults, migration, isolation, archive, round-video, safety, interactions, privacy, strict transfer, reviewed app profiles, invalid IDs, downgrade refusal");
     }
 }

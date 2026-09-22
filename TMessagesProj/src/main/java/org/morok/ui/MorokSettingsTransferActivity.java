@@ -192,6 +192,10 @@ public final class MorokSettingsTransferActivity extends BaseFragment {
             addChange(changes, text(R.string.MorokDialogListLineSpacing), lineSpacingLabel(currentAppearance),
                     lineSpacingLabel(profile.appearance));
         }
+        if (!currentAppearance.dialogListTextSize.equals(profile.appearance.dialogListTextSize)) {
+            addChange(changes, text(R.string.MorokDialogListTextSize), textSizeLabel(currentAppearance),
+                    textSizeLabel(profile.appearance));
+        }
         addBooleanChange(changes, R.string.MorokDialogListTimestampSeconds,
                 currentAppearance.dialogListTimestampSeconds,
                 profile.appearance.dialogListTimestampSeconds);
@@ -292,6 +296,16 @@ public final class MorokSettingsTransferActivity extends BaseFragment {
             return text(R.string.MorokDialogListLineSpacingRelaxed);
         }
         return text(R.string.MorokDialogListLineSpacingStandard);
+    }
+
+    private static String textSizeLabel(AppearanceSettings settings) {
+        if (AppearanceSettings.TEXT_SIZE_SMALL.equals(settings.dialogListTextSize)) {
+            return text(R.string.MorokDialogListTextSmall);
+        }
+        if (AppearanceSettings.TEXT_SIZE_LARGE.equals(settings.dialogListTextSize)) {
+            return text(R.string.MorokDialogListTextLarge);
+        }
+        return text(R.string.MorokDialogListTextStandard);
     }
 
     private void showMessage(int message) {

@@ -31,6 +31,11 @@
     <string name="MorokDialogListLineSpacingTight">Tight</string>
     <string name="MorokDialogListLineSpacingStandard">Standard</string>
     <string name="MorokDialogListLineSpacingRelaxed">Relaxed</string>
+    <string name="MorokDialogListTextSize">Chat list text</string>
+    <string name="MorokDialogListTextSizeInfo">Changes chat names and message previews only in the main chat list and custom folders. Message text, search and share screens keep their own sizes.</string>
+    <string name="MorokDialogListTextSmall">Smaller</string>
+    <string name="MorokDialogListTextStandard">Standard</string>
+    <string name="MorokDialogListTextLarge">Larger</string>
     <string name="MorokDialogListTimestampSeconds">Seconds in recent timestamps</string>
     <string name="MorokDialogListTimestampSecondsInfo">Adds seconds only when Telegram already shows a clock for a recent chat. Weekdays and calendar dates keep Telegram’s locale-aware format.</string>
     <string name="MorokTelegramTextSizeInfo">Opens Telegram’s live message text-size preview. The value applies to message text and remains in Telegram’s own device settings.</string>

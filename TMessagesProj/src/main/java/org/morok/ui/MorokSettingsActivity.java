@@ -46,7 +46,8 @@ public final class MorokSettingsActivity extends BaseFragment {
     private static final int TRANSFER = 11, APPEARANCE_MODE = 12, APP_PROFILES = 13, SAFETY = 14,
             INTERACTIONS = 15, DIAGNOSTICS = 16, CHAT_METADATA = 17, REPLY_TEMPLATES = 18, UPDATE = 19;
     private static final int DIALOG_DENSITY = 20, DIALOG_AVATAR_SIZE = 21, DIALOG_TIMESTAMP_SECONDS = 22,
-            DIALOG_LINE_SPACING = 23, CHAT_TEXT_SIZE = 24, BUBBLE_RADIUS = 25;
+            DIALOG_LINE_SPACING = 23, CHAT_TEXT_SIZE = 24, BUBBLE_RADIUS = 25,
+            DIALOG_TEXT_SIZE = 26;
     private static final int HEADER = 0, CHECK = 1, ACTION = 2, INFO = 3;
     private final ArrayList<Row> rows = new ArrayList<>();
     private Adapter adapter;
@@ -136,6 +137,9 @@ public final class MorokSettingsActivity extends BaseFragment {
                 case DIALOG_LINE_SPACING:
                     showDialogLineSpacing(context);
                     break;
+                case DIALOG_TEXT_SIZE:
+                    showDialogTextSize(context);
+                    break;
                 case CHAT_TEXT_SIZE:
                     openTelegramAppearance("textSizeRow");
                     break;
@@ -217,6 +221,8 @@ public final class MorokSettingsActivity extends BaseFragment {
         if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListAvatarSizeInfo);
         add(ACTION, DIALOG_LINE_SPACING, R.string.MorokDialogListLineSpacing);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListLineSpacingInfo);
+        add(ACTION, DIALOG_TEXT_SIZE, R.string.MorokDialogListTextSize);
+        if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListTextSizeInfo);
         add(CHECK, DIALOG_TIMESTAMP_SECONDS, R.string.MorokDialogListTimestampSeconds);
         if (query.isEmpty()) add(INFO, 0, R.string.MorokDialogListTimestampSecondsInfo);
         add(ACTION, CHAT_TEXT_SIZE, R.string.TextSizeHeader);
@@ -295,7 +301,8 @@ public final class MorokSettingsActivity extends BaseFragment {
                                 MorokSettings.appearance().dialogListDensity).withDialogListAvatarSize(
                                 MorokSettings.appearance().dialogListAvatarSize).withDialogListTimestampSeconds(
                                 MorokSettings.appearance().dialogListTimestampSeconds).withDialogListLineSpacing(
-                                MorokSettings.appearance().dialogListLineSpacing)))
+                                MorokSettings.appearance().dialogListLineSpacing).withDialogListTextSize(
+                                MorokSettings.appearance().dialogListTextSize)))
                 .setNegativeButton(text(R.string.Cancel), null).create());
     }
 
@@ -374,6 +381,31 @@ public final class MorokSettingsActivity extends BaseFragment {
         return text(R.string.MorokDialogListLineSpacingStandard);
     }
 
+    private void showDialogTextSize(Context context) {
+        CharSequence[] labels = {
+                text(R.string.MorokDialogListTextSmall),
+                text(R.string.MorokDialogListTextStandard),
+                text(R.string.MorokDialogListTextLarge)
+        };
+        showDialog(new AlertDialog.Builder(context).setTitle(text(R.string.MorokDialogListTextSize))
+                .setItems(labels, (dialog, which) -> {
+                    String size = which == 0 ? AppearanceSettings.TEXT_SIZE_SMALL
+                            : which == 2 ? AppearanceSettings.TEXT_SIZE_LARGE
+                            : AppearanceSettings.TEXT_SIZE_STANDARD;
+                    apply(MorokSettings.appearance().withDialogListTextSize(size));
+                }).create());
+    }
+
+    private static String dialogTextSizeLabel(AppearanceSettings settings) {
+        if (AppearanceSettings.TEXT_SIZE_SMALL.equals(settings.dialogListTextSize)) {
+            return text(R.string.MorokDialogListTextSmall);
+        }
+        if (AppearanceSettings.TEXT_SIZE_LARGE.equals(settings.dialogListTextSize)) {
+            return text(R.string.MorokDialogListTextLarge);
+        }
+        return text(R.string.MorokDialogListTextStandard);
+    }
+
     private void openTelegramAppearance(String rowName) {
         Theme.createChatResources(getContext(), false);
         presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC));
@@ -446,6 +478,8 @@ public final class MorokSettingsActivity extends BaseFragment {
                     cell.setTextAndValue(row.title, dialogAvatarSizeLabel(MorokSettings.appearance()), true);
                 } else if (row.id == DIALOG_LINE_SPACING) {
                     cell.setTextAndValue(row.title, dialogLineSpacingLabel(MorokSettings.appearance()), true);
+                } else if (row.id == DIALOG_TEXT_SIZE) {
+                    cell.setTextAndValue(row.title, dialogTextSizeLabel(MorokSettings.appearance()), true);
                 } else if (row.id == CHAT_TEXT_SIZE) {
                     cell.setTextAndValue(row.title, Integer.toString(SharedConfig.fontSize), true);
                 } else if (row.id == BUBBLE_RADIUS) {

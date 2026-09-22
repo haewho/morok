@@ -11,8 +11,12 @@ public final class AppearanceSettings {
     public static final String LINE_SPACING_TIGHT = "tight";
     public static final String LINE_SPACING_STANDARD = "standard";
     public static final String LINE_SPACING_RELAXED = "relaxed";
+    public static final String TEXT_SIZE_SMALL = "small";
+    public static final String TEXT_SIZE_STANDARD = "standard";
+    public static final String TEXT_SIZE_LARGE = "large";
     public static final AppearanceSettings DEFAULT = new AppearanceSettings(
-            true, false, DENSITY_STANDARD, AVATAR_STANDARD, false, LINE_SPACING_STANDARD);
+            true, false, DENSITY_STANDARD, AVATAR_STANDARD, false, LINE_SPACING_STANDARD,
+            TEXT_SIZE_STANDARD);
 
     public final boolean liquidGlass;
     public final boolean reducedEffects;
@@ -20,29 +24,40 @@ public final class AppearanceSettings {
     public final String dialogListAvatarSize;
     public final boolean dialogListTimestampSeconds;
     public final String dialogListLineSpacing;
+    public final String dialogListTextSize;
 
     public AppearanceSettings(boolean liquidGlass, boolean reducedEffects) {
-        this(liquidGlass, reducedEffects, DENSITY_STANDARD, AVATAR_STANDARD, false, LINE_SPACING_STANDARD);
+        this(liquidGlass, reducedEffects, DENSITY_STANDARD, AVATAR_STANDARD, false,
+                LINE_SPACING_STANDARD, TEXT_SIZE_STANDARD);
     }
 
     public AppearanceSettings(boolean liquidGlass, boolean reducedEffects, String dialogListDensity) {
-        this(liquidGlass, reducedEffects, dialogListDensity, AVATAR_STANDARD, false, LINE_SPACING_STANDARD);
+        this(liquidGlass, reducedEffects, dialogListDensity, AVATAR_STANDARD, false,
+                LINE_SPACING_STANDARD, TEXT_SIZE_STANDARD);
     }
 
     public AppearanceSettings(boolean liquidGlass, boolean reducedEffects, String dialogListDensity,
                               String dialogListAvatarSize) {
-        this(liquidGlass, reducedEffects, dialogListDensity, dialogListAvatarSize, false, LINE_SPACING_STANDARD);
+        this(liquidGlass, reducedEffects, dialogListDensity, dialogListAvatarSize, false,
+                LINE_SPACING_STANDARD, TEXT_SIZE_STANDARD);
     }
 
     public AppearanceSettings(boolean liquidGlass, boolean reducedEffects, String dialogListDensity,
                               String dialogListAvatarSize, boolean dialogListTimestampSeconds) {
         this(liquidGlass, reducedEffects, dialogListDensity, dialogListAvatarSize,
-                dialogListTimestampSeconds, LINE_SPACING_STANDARD);
+                dialogListTimestampSeconds, LINE_SPACING_STANDARD, TEXT_SIZE_STANDARD);
     }
 
     public AppearanceSettings(boolean liquidGlass, boolean reducedEffects, String dialogListDensity,
                               String dialogListAvatarSize, boolean dialogListTimestampSeconds,
                               String dialogListLineSpacing) {
+        this(liquidGlass, reducedEffects, dialogListDensity, dialogListAvatarSize,
+                dialogListTimestampSeconds, dialogListLineSpacing, TEXT_SIZE_STANDARD);
+    }
+
+    public AppearanceSettings(boolean liquidGlass, boolean reducedEffects, String dialogListDensity,
+                              String dialogListAvatarSize, boolean dialogListTimestampSeconds,
+                              String dialogListLineSpacing, String dialogListTextSize) {
         this.liquidGlass = liquidGlass;
         this.reducedEffects = reducedEffects;
         this.dialogListDensity = validDensity(dialogListDensity) ? dialogListDensity : DENSITY_STANDARD;
@@ -51,36 +66,43 @@ public final class AppearanceSettings {
         this.dialogListTimestampSeconds = dialogListTimestampSeconds;
         this.dialogListLineSpacing = validLineSpacing(dialogListLineSpacing)
                 ? dialogListLineSpacing : LINE_SPACING_STANDARD;
+        this.dialogListTextSize = validTextSize(dialogListTextSize)
+                ? dialogListTextSize : TEXT_SIZE_STANDARD;
     }
 
     public AppearanceSettings withLiquidGlass(boolean enabled) {
         return new AppearanceSettings(enabled, reducedEffects, dialogListDensity, dialogListAvatarSize,
-                dialogListTimestampSeconds, dialogListLineSpacing);
+                dialogListTimestampSeconds, dialogListLineSpacing, dialogListTextSize);
     }
 
     public AppearanceSettings withReducedEffects(boolean enabled) {
         return new AppearanceSettings(liquidGlass, enabled, dialogListDensity, dialogListAvatarSize,
-                dialogListTimestampSeconds, dialogListLineSpacing);
+                dialogListTimestampSeconds, dialogListLineSpacing, dialogListTextSize);
     }
 
     public AppearanceSettings withDialogListDensity(String density) {
         return new AppearanceSettings(liquidGlass, reducedEffects, density, dialogListAvatarSize,
-                dialogListTimestampSeconds, dialogListLineSpacing);
+                dialogListTimestampSeconds, dialogListLineSpacing, dialogListTextSize);
     }
 
     public AppearanceSettings withDialogListAvatarSize(String size) {
         return new AppearanceSettings(liquidGlass, reducedEffects, dialogListDensity, size,
-                dialogListTimestampSeconds, dialogListLineSpacing);
+                dialogListTimestampSeconds, dialogListLineSpacing, dialogListTextSize);
     }
 
     public AppearanceSettings withDialogListTimestampSeconds(boolean enabled) {
         return new AppearanceSettings(liquidGlass, reducedEffects, dialogListDensity,
-                dialogListAvatarSize, enabled, dialogListLineSpacing);
+                dialogListAvatarSize, enabled, dialogListLineSpacing, dialogListTextSize);
     }
 
     public AppearanceSettings withDialogListLineSpacing(String spacing) {
         return new AppearanceSettings(liquidGlass, reducedEffects, dialogListDensity,
-                dialogListAvatarSize, dialogListTimestampSeconds, spacing);
+                dialogListAvatarSize, dialogListTimestampSeconds, spacing, dialogListTextSize);
+    }
+
+    public AppearanceSettings withDialogListTextSize(String size) {
+        return new AppearanceSettings(liquidGlass, reducedEffects, dialogListDensity,
+                dialogListAvatarSize, dialogListTimestampSeconds, dialogListLineSpacing, size);
     }
 
     public int dialogListHeightOffsetDp() {
@@ -125,5 +147,16 @@ public final class AppearanceSettings {
     public static boolean validLineSpacing(String spacing) {
         return LINE_SPACING_TIGHT.equals(spacing) || LINE_SPACING_STANDARD.equals(spacing)
                 || LINE_SPACING_RELAXED.equals(spacing);
+    }
+
+    public int dialogListTextSizeDp(int upstreamDp) {
+        int offset = TEXT_SIZE_SMALL.equals(dialogListTextSize) ? -1
+                : TEXT_SIZE_LARGE.equals(dialogListTextSize) ? 1 : 0;
+        return Math.max(13, Math.min(20, upstreamDp + offset));
+    }
+
+    public static boolean validTextSize(String size) {
+        return TEXT_SIZE_SMALL.equals(size) || TEXT_SIZE_STANDARD.equals(size)
+                || TEXT_SIZE_LARGE.equals(size);
     }
 }

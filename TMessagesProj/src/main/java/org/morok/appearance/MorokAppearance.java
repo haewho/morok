@@ -49,6 +49,10 @@ public final class MorokAppearance {
         return MorokSettings.appearance().dialogListLineSpacingExtraDp();
     }
 
+    public static int dialogListTextSizeDp(int upstreamDp) {
+        return MorokSettings.appearance().dialogListTextSizeDp(upstreamDp);
+    }
+
     /** Adds seconds only where Telegram itself selected the recent-message clock formatter. */
     public static String dialogListDate(long dateSeconds) {
         String upstream = LocaleController.stringForMessageListDate(dateSeconds);
@@ -80,7 +84,8 @@ public final class MorokAppearance {
                 || !previous.dialogListAvatarSize.equals(settings.dialogListAvatarSize);
         final boolean contentChanged = previous.dialogListTimestampSeconds
                 != settings.dialogListTimestampSeconds
-                || !previous.dialogListLineSpacing.equals(settings.dialogListLineSpacing);
+                || !previous.dialogListLineSpacing.equals(settings.dialogListLineSpacing)
+                || !previous.dialogListTextSize.equals(settings.dialogListTextSize);
         // Refresh existing drawables; no Activity/Fragment recreation or draft/scroll reset.
         for (BlurredBackgroundDrawable drawable : drawableSnapshot()) {
             if (drawable != null) {

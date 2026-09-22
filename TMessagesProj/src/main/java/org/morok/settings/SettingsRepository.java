@@ -2,7 +2,7 @@ package org.morok.settings;
 
 /** Versioned local-only schema. Unknown newer schemas are readable but never overwritten. */
 public final class SettingsRepository {
-    public static final int SCHEMA_VERSION = 18;
+    public static final int SCHEMA_VERSION = 19;
     public static final String SCHEMA_KEY = "schema_version";
     private final SettingsStore store;
 
@@ -16,7 +16,8 @@ public final class SettingsRepository {
                 store.getString("appearance.dialog_list_density", AppearanceSettings.DENSITY_STANDARD),
                 store.getString("appearance.dialog_list_avatar_size", AppearanceSettings.AVATAR_STANDARD),
                 store.getBoolean("appearance.dialog_list_timestamp_seconds", false),
-                store.getString("appearance.dialog_list_line_spacing", AppearanceSettings.LINE_SPACING_STANDARD));
+                store.getString("appearance.dialog_list_line_spacing", AppearanceSettings.LINE_SPACING_STANDARD),
+                store.getString("appearance.dialog_list_text_size", AppearanceSettings.TEXT_SIZE_STANDARD));
     }
 
     public void saveAppearance(AppearanceSettings settings) {
@@ -28,9 +29,9 @@ public final class SettingsRepository {
                 new boolean[] {settings.liquidGlass, settings.reducedEffects,
                         settings.dialogListTimestampSeconds},
                 new String[] {"appearance.dialog_list_density", "appearance.dialog_list_avatar_size",
-                        "appearance.dialog_list_line_spacing"},
+                        "appearance.dialog_list_line_spacing", "appearance.dialog_list_text_size"},
                 new String[] {settings.dialogListDensity, settings.dialogListAvatarSize,
-                        settings.dialogListLineSpacing});
+                        settings.dialogListLineSpacing, settings.dialogListTextSize});
     }
 
     public void resetAppearance() {
