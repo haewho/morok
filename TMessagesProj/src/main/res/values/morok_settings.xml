@@ -15,7 +15,7 @@
     <string name="MorokLiquidGlassInfo">On allows Telegram’s built-in glass effects, subject to your device and power saving settings. Off uses solid surfaces for the new glass panels and disables their blur rendering. Some older effects are not yet covered.</string>
     <string name="MorokLiquidGlassLegacyInfo">This Android version does not support Telegram’s glass refraction shader (Android 13 required). On allows supported native blur; off makes the new glass panels solid. Some older effects are not yet covered.</string>
     <string name="MorokReducedEffects">Reduce animations</string>
-    <string name="MorokReducedEffectsInfo">Reduces animated emoji, stickers, chat backgrounds, particles and call effects controlled by Telegram’s power settings. Navigation transitions and media playback keep their separate settings.</string>
+    <string name="MorokReducedEffectsInfo">Reduces animated emoji, stickers, chat backgrounds, particles and call effects controlled by Telegram’s power settings. Android’s disabled animator setting also activates this policy. Navigation transitions and media playback keep their separate settings.</string>
     <string name="MorokDialogListDensity">Chat list density</string>
     <string name="MorokDialogListDensityInfo">Changes only the height of ordinary rows in the main chat list and custom folders. Avatars, text size, message previews, ordering and search stay unchanged.</string>
     <string name="MorokDialogListDensityCompact">Compact</string>

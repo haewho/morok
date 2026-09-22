@@ -29,6 +29,8 @@ assert 'version < 3 ? AppearanceSettings.AVATAR_STANDARD' in codec
 assert 'version >= 4 && booleanValue(values, TIMESTAMP_SECONDS)' in codec
 assert 'version < 5 ? AppearanceSettings.LINE_SPACING_STANDARD' in codec
 assert 'geometryChanged' in policy and 'contentChanged' in policy and 'view.requestLayout()' in policy
+assert 'Build.VERSION.SDK_INT >= Build.VERSION_CODES.O' in policy
+assert '!ValueAnimator.areAnimatorsEnabled()' in policy
 assert 'dialogListHeightDp(upstreamDp)' in policy and 'dialogListAvatarSizeDp(upstreamDp)' in policy
 assert 'getFormatterDayWithSeconds().format(date)' in policy
 assert 'dialogListLineSpacingExtraDp()' in policy

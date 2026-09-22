@@ -42,7 +42,7 @@ Off also suppresses blur3 RenderNode source updates, visible capture positions, 
 | Classic chat blur | LiteMode → SharedConfig.chatBlurEnabled → SizeNotifierFrameLayout | Flag-governed blur suppressed; a previously queued bitmap job is not cancelled |
 | Other older backdrop effects, calls, story editor, premium decorative effects | Independent legacy producers | No blanket coverage claim; pending inventory, hooks and device measurements |
 
-Reduced effects clears only the effective LiteMode bits for animated stickers, emoji, chat backgrounds, scale/Thanos effects, calls and particles. It leaves stored masks and media autoplay choices intact. Animated emoji and wallpaper consumers are explicitly refreshed. This is not a universal reduced-motion implementation: navigation transitions, independently cached effects, system reduced-motion integration and TalkBack/large-font checks remain device verification work.
+Reduced effects clears only the effective LiteMode bits for animated stickers, emoji, chat backgrounds, scale/Thanos effects, calls and particles. It leaves stored masks and media autoplay choices intact. On Android 8+, a disabled system animator scale activates the same effective policy without rewriting the MOROK preference or saved profile. Animated emoji and wallpaper consumers are explicitly refreshed after a MOROK toggle. This is not a universal reduced-motion implementation: navigation transitions, independently cached effects and TalkBack/large-font checks remain device verification work.
 
 ## Upstream hook contract
 

@@ -1,6 +1,8 @@
 package org.morok.appearance;
 
+import android.animation.ValueAnimator;
 import android.app.Activity;
+import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -28,7 +30,8 @@ public final class MorokAppearance {
     }
 
     public static boolean reducedEffects() {
-        return MorokSettings.appearance().reducedEffects;
+        if (MorokSettings.appearance().reducedEffects) return true;
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !ValueAnimator.areAnimatorsEnabled();
     }
 
     /** Applies the device density only to Telegram's ordinary dialog-list row heights. */
