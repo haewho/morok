@@ -5,7 +5,7 @@ import java.util.Map;
 
 /** Strict private persistence format for custom/previous local app profiles. */
 public final class AppProfileStateCodec {
-    public static final int FORMAT_VERSION = 2;
+    public static final int FORMAT_VERSION = 3;
     public static final int MAX_CHARACTERS = 24 * 1024;
     public static final String MAGIC = "MOROK_LOCAL_APP_PROFILE";
     private AppProfileStateCodec() {}
@@ -19,6 +19,7 @@ public final class AppProfileStateCodec {
         append(output, "autoplay.stickers_chat", bool(state.animatedStickersChat));
         append(output, "autoplay.stickers_keyboard", bool(state.animatedStickersKeyboard));
         append(output, "notifications.content", bool(state.notificationContent));
+        append(output, "notifications.names", bool(state.notificationNames));
         append(output, "network.policy", state.networkPolicy);
         output.append('\n').append(SettingsProfileCodec.encode(state.settings));
         if (output.length() > MAX_CHARACTERS) throw new IllegalArgumentException("App profile is too large");
@@ -47,7 +48,7 @@ public final class AppProfileStateCodec {
         int format;
         try { format = Integer.parseInt(values.get("format")); }
         catch (NumberFormatException error) { throw new IllegalArgumentException("Invalid app profile version", error); }
-        if (format != 1 && format != FORMAT_VERSION) {
+        if (format < 1 || format > FORMAT_VERSION) {
             throw new IllegalArgumentException("Unsupported app profile version");
         }
         if (!values.keySet().equals(knownKeys(format))) {
@@ -58,9 +59,10 @@ public final class AppProfileStateCodec {
         boolean gifs = booleanValue(values, "autoplay.gifs");
         boolean stickersChat = format == 1 ? gifs : booleanValue(values, "autoplay.stickers_chat");
         boolean stickersKeyboard = format == 1 ? gifs : booleanValue(values, "autoplay.stickers_keyboard");
+        boolean notificationNames = format >= 3 ? booleanValue(values, "notifications.names") : true;
         return new AppProfileState(settings, booleanValue(values, "autoplay.videos"),
                 gifs, stickersChat, stickersKeyboard,
-                booleanValue(values, "notifications.content"), network);
+                booleanValue(values, "notifications.content"), notificationNames, network);
     }
 
     private static java.util.Set<String> knownKeys(int format) {
@@ -73,6 +75,7 @@ public final class AppProfileStateCodec {
             keys.add("autoplay.stickers_keyboard");
         }
         keys.add("notifications.content");
+        if (format >= 3) keys.add("notifications.names");
         keys.add("network.policy");
         return keys;
     }

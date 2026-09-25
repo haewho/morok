@@ -16,6 +16,7 @@ public final class AppProfilePresets {
         PrivacySettings privacy = PrivacySettings.DEFAULT;
         boolean autoplay;
         boolean notificationContent = true;
+        boolean notificationNames = true;
         if (preset == NORMAL) {
             appearance = AppearanceSettings.DEFAULT;
             autoplay = true;
@@ -24,6 +25,7 @@ public final class AppProfilePresets {
             privacy = PrivacySettings.DEFAULT.withGhostPreset(true);
             autoplay = false;
             notificationContent = false;
+            notificationNames = false;
         } else if (preset == WORK) {
             appearance = AppearanceSettings.DEFAULT;
             autoplay = false;
@@ -44,7 +46,7 @@ public final class AppProfilePresets {
                 current.settings.appearance.dialogListTextSize);
         SettingsProfile settings = new SettingsProfile(appearance, current.settings.roundVideo, privacy);
         return new AppProfileState(settings, autoplay, autoplay, autoplay, autoplay, notificationContent,
-                AppProfileState.NETWORK_KEEP);
+                notificationNames, AppProfileState.NETWORK_KEEP);
     }
 
     public static int detect(AppProfileState state) {
@@ -62,6 +64,7 @@ public final class AppProfilePresets {
                 && first.animatedStickersChat == second.animatedStickersChat
                 && first.animatedStickersKeyboard == second.animatedStickersKeyboard
                 && first.notificationContent == second.notificationContent
+                && first.notificationNames == second.notificationNames
                 && first.settings.appearance.liquidGlass == second.settings.appearance.liquidGlass
                 && first.settings.appearance.reducedEffects == second.settings.appearance.reducedEffects
                 && samePrivacy(first.settings.privacy, second.settings.privacy);

@@ -175,6 +175,7 @@
     <string name="MorokAppProfilesAnimatedStickersKeyboard">Animated stickers in keyboard</string>
     <string name="MorokAppProfilesPrivacy">Privacy behavior</string>
     <string name="MorokAppProfilesNotificationContent">Notification message content</string>
+    <string name="MorokAppProfilesNotificationNames">Notification sender and chat names</string>
     <string name="MorokAppProfilesShown">Shown</string>
     <string name="MorokAppProfilesHidden">Hidden</string>
     <string name="MorokAppProfilesNetwork">Network route</string>
@@ -212,7 +213,7 @@
     <string name="MorokInteractionsSaveError">The gesture setting could not be saved. Settings from a newer MOROK version are left unchanged.</string>
     <string name="MorokSafetyHeader">Safety</string>
     <string name="MorokSafetyTitle">Safety and screen privacy</string>
-    <string name="MorokSafetyShortcutInfo">Protect screen capture, confirm outgoing private calls and control notification message text.</string>
+    <string name="MorokSafetyShortcutInfo">Protect screen capture, confirm outgoing private calls and control notification identity and message text.</string>
     <string name="MorokSafetyScreenHeader">Screen privacy</string>
     <string name="MorokSafetyScreenPrivacy">Protect MOROK screen</string>
     <string name="MorokSafetyScreenPrivacyInfo">Uses Android’s secure-window protection for MOROK. Supported screenshots, screen recordings and recent-app previews cannot capture the app. Notifications, other devices and system surfaces outside this window are not hidden.</string>
@@ -221,9 +222,12 @@
     <string name="MorokSafetyConfirmCallsInfo">Shows a confirmation after required permissions are granted and before Telegram starts a private voice or video call. Group-call join and creation keep Telegram’s own dialogs.</string>
     <string name="MorokSafetyConfirmRoundVideos">Review round videos before sending</string>
     <string name="MorokSafetyConfirmRoundVideosInfo">Releasing the record button opens Telegram’s existing preview instead of sending immediately. The round video is sent only after you press Send in the preview.</string>
+    <string name="MorokSafetyNotificationNames">Show sender and chat names in notifications</string>
+    <string name="MorokSafetyNotificationNamesInfo">Account-local. Turning this off rebuilds active notifications with generic identities and content. Avatars, Android Person/phone metadata, notification reply and inline actions are omitted while names are hidden. Tapping the notification still opens the intended chat.</string>
     <string name="MorokSafetyNotificationContent">Show message text in notifications</string>
-    <string name="MorokSafetyNotificationContentInfo">Account-local. Turning this off rebuilds active notifications and hides message or story content; sender and chat names may remain visible.</string>
-    <string name="MorokSafetyLoginRequired">Sign in to change notification content for an account.</string>
+    <string name="MorokSafetyNotificationContentInfo">Account-local. Turning this off rebuilds active notifications and hides message or story content. Hiding names always hides content as well.</string>
+    <string name="MorokSafetyNotificationNamesRequired">Enable notification names before enabling message text.</string>
+    <string name="MorokSafetyLoginRequired">Sign in to change notification privacy for an account.</string>
     <string name="MorokSafetyAccessHeader">App access</string>
     <string name="MorokSafetyAppLock">Telegram local passcode</string>
     <string name="MorokSafetyAppLockInfo">Opens Telegram’s existing local passcode and biometric settings. MOROK does not store another password.</string>

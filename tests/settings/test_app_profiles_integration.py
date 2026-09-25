@@ -8,14 +8,23 @@ settings = (ROOT / "TMessagesProj/src/main/java/org/morok/settings/MorokSettings
 screen = (ROOT / "TMessagesProj/src/main/java/org/morok/ui/MorokProfilesActivity.java").read_text()
 
 assert notifications.count("MorokAppProfiles.showsNotificationContent(currentAccount)") >= 2
+assert notifications.count("MorokAppProfiles.showsNotificationNames(currentAccount)") >= 3
 assert "messageObject.isStoryPush || messageObject.isStoryMentionPush" in notifications
 assert "return LocaleController.getString(R.string.YouHaveNewMessage);" in notifications
+assert "|| !morokShowsNotificationNames" in notifications
+assert "morokShowsNotificationNames && chat == null && user != null" in notifications
+assert "if (morokShowsNotificationNames && !AndroidUtilities.needShowPasscode()" in notifications
+assert "if (morokShowsNotificationNames && !hasCallback" in notifications
+assert "!waitingForPasscode && copybutton != null" in notifications
+assert "if (!waitingForPasscode)" in notifications
 for forbidden in ("ConnectionsManager", "MorokProxyManager", "updateServerNotificationsSettings", "sendRequest"):
     assert forbidden not in manager, f"profile manager must not access {forbidden}"
 assert "authenticatedUserId(accountSlot)" in manager
 assert "public static long authenticatedUserId" in settings
 assert manager.index("putString(PREVIOUS") < manager.index("applyState(accountSlot, target")
 assert "NotificationsController.getInstance(accountSlot).showNotifications()" in manager
+assert "CURRENT_NOTIFICATION_NAMES" in manager
+assert "setNotificationNames" in manager
 for flag in ("FLAG_AUTOPLAY_VIDEOS", "FLAG_AUTOPLAY_GIFS",
              "FLAG_ANIMATED_STICKERS_CHAT", "FLAG_ANIMATED_STICKERS_KEYBOARD"):
     assert f"LiteMode.isEnabledSetting(LiteMode.{flag})" in manager
@@ -23,6 +32,7 @@ for flag in ("FLAG_AUTOPLAY_VIDEOS", "FLAG_AUTOPLAY_GIFS",
 assert "setPositiveButton(text(R.string.MorokAppProfilesApply)" in screen
 assert "state.animatedStickersChat" in screen
 assert "state.animatedStickersKeyboard" in screen
+assert "state.notificationNames" in screen
 assert "MorokAppProfilesNetworkKept" in screen
 assert "MorokAppProfilesPreviewFooter" in screen
 print("PASS: app-profile notification, stable-account, previous-state, preview and no-network invariants")

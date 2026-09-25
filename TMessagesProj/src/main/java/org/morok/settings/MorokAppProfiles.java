@@ -12,6 +12,7 @@ import org.telegram.messenger.NotificationsController;
 /** Applies reviewed local profiles; it never changes the Telegram proxy route or server settings. */
 public final class MorokAppProfiles {
     private static final String CURRENT_NOTIFICATION_CONTENT = "current.notification_content";
+    private static final String CURRENT_NOTIFICATION_NAMES = "current.notification_names";
     private static final String CUSTOM = "saved.custom";
     private static final String PREVIOUS = "saved.previous";
 
@@ -24,7 +25,8 @@ public final class MorokAppProfiles {
                 LiteMode.isEnabledSetting(LiteMode.FLAG_AUTOPLAY_GIFS),
                 LiteMode.isEnabledSetting(LiteMode.FLAG_ANIMATED_STICKERS_CHAT),
                 LiteMode.isEnabledSetting(LiteMode.FLAG_ANIMATED_STICKERS_KEYBOARD),
-                preferences.getBoolean(CURRENT_NOTIFICATION_CONTENT, true), AppProfileState.NETWORK_KEEP);
+                preferences.getBoolean(CURRENT_NOTIFICATION_CONTENT, true),
+                preferences.getBoolean(CURRENT_NOTIFICATION_NAMES, true), AppProfileState.NETWORK_KEEP);
     }
 
     public static void saveCustom(int accountSlot) {
@@ -55,13 +57,29 @@ public final class MorokAppProfiles {
     }
 
     public static boolean showsNotificationContent(int accountSlot) {
-        try { return preferences(accountSlot).getBoolean(CURRENT_NOTIFICATION_CONTENT, true); }
+        try {
+            SharedPreferences preferences = preferences(accountSlot);
+            return preferences.getBoolean(CURRENT_NOTIFICATION_NAMES, true)
+                    && preferences.getBoolean(CURRENT_NOTIFICATION_CONTENT, true);
+        }
+        catch (RuntimeException unavailableAccount) { return true; }
+    }
+
+    public static boolean showsNotificationNames(int accountSlot) {
+        try { return preferences(accountSlot).getBoolean(CURRENT_NOTIFICATION_NAMES, true); }
         catch (RuntimeException unavailableAccount) { return true; }
     }
 
     public static void setNotificationContent(int accountSlot, boolean showContent) {
         if (!preferences(accountSlot).edit().putBoolean(CURRENT_NOTIFICATION_CONTENT, showContent).commit()) {
             throw new IllegalStateException("Could not save notification privacy setting");
+        }
+        NotificationsController.getInstance(accountSlot).showNotifications();
+    }
+
+    public static void setNotificationNames(int accountSlot, boolean showNames) {
+        if (!preferences(accountSlot).edit().putBoolean(CURRENT_NOTIFICATION_NAMES, showNames).commit()) {
+            throw new IllegalStateException("Could not save notification identity privacy setting");
         }
         NotificationsController.getInstance(accountSlot).showNotifications();
     }
@@ -74,7 +92,8 @@ public final class MorokAppProfiles {
         LiteMode.toggleFlag(LiteMode.FLAG_ANIMATED_STICKERS_CHAT, state.animatedStickersChat);
         LiteMode.toggleFlag(LiteMode.FLAG_ANIMATED_STICKERS_KEYBOARD, state.animatedStickersKeyboard);
         if (!preferences(accountSlot).edit()
-                .putBoolean(CURRENT_NOTIFICATION_CONTENT, state.notificationContent).commit()) {
+                .putBoolean(CURRENT_NOTIFICATION_CONTENT, state.notificationContent)
+                .putBoolean(CURRENT_NOTIFICATION_NAMES, state.notificationNames).commit()) {
             throw new IllegalStateException("Could not save notification privacy profile");
         }
         NotificationsController.getInstance(accountSlot).showNotifications();

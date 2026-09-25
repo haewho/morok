@@ -71,10 +71,29 @@ public final class MorokSafetyActivity extends BaseFragment {
                 MorokSettings.safety().withConfirmRoundVideos(!MorokSettings.safety().confirmRoundVideos)));
         info(R.string.MorokSafetyConfirmRoundVideosInfo);
         boolean activated = isAvailable();
+        check(R.string.MorokSafetyNotificationNames,
+                !activated || MorokAppProfiles.showsNotificationNames(currentAccount), () -> {
+                    if (!isAvailable()) {
+                        message(R.string.MorokSafetyLoginRequired);
+                        return;
+                    }
+                    try {
+                        MorokAppProfiles.setNotificationNames(currentAccount,
+                                !MorokAppProfiles.showsNotificationNames(currentAccount));
+                        rebuild();
+                    } catch (RuntimeException error) {
+                        message(R.string.MorokSafetySaveError);
+                    }
+                });
+        info(activated ? R.string.MorokSafetyNotificationNamesInfo : R.string.MorokSafetyLoginRequired);
         check(R.string.MorokSafetyNotificationContent,
                 !activated || MorokAppProfiles.showsNotificationContent(currentAccount), () -> {
                     if (!isAvailable()) {
                         message(R.string.MorokSafetyLoginRequired);
+                        return;
+                    }
+                    if (!MorokAppProfiles.showsNotificationNames(currentAccount)) {
+                        message(R.string.MorokSafetyNotificationNamesRequired);
                         return;
                     }
                     try {

@@ -1803,6 +1803,13 @@ public class NotificationsController extends BaseController implements Notificat
         if (AndroidUtilities.needShowPasscode() || SharedConfig.isWaitingForPasscodeEnter) {
             return LocaleController.getString(R.string.NotificationHiddenMessage);
         }
+        if (!MorokAppProfiles.showsNotificationNames(currentAccount)) {
+            if (userName != null && userName.length > 0) {
+                userName[0] = LocaleController.getString(R.string.NotificationHiddenName);
+            }
+            if (preview != null) preview[0] = false;
+            return LocaleController.getString(R.string.YouHaveNewMessage);
+        }
         long dialogId = messageObject.messageOwner.dialog_id;
         long chat_id = messageObject.messageOwner.peer_id.chat_id != 0 ? messageObject.messageOwner.peer_id.chat_id : messageObject.messageOwner.peer_id.channel_id;
         long fromId = messageObject.messageOwner.peer_id.user_id;
@@ -2488,6 +2495,11 @@ public class NotificationsController extends BaseController implements Notificat
 
     private String getStringForMessage(MessageObject messageObject, boolean shortMessage, boolean[] text, boolean[] preview) {
         if (AndroidUtilities.needShowPasscode() || SharedConfig.isWaitingForPasscodeEnter) {
+            return LocaleController.getString(R.string.YouHaveNewMessage);
+        }
+        if (!MorokAppProfiles.showsNotificationNames(currentAccount)) {
+            if (text != null) text[0] = false;
+            if (preview != null) preview[0] = false;
             return LocaleController.getString(R.string.YouHaveNewMessage);
         }
         boolean morokShowsNotificationContent = MorokAppProfiles.showsNotificationContent(currentAccount);
@@ -4111,6 +4123,7 @@ public class NotificationsController extends BaseController implements Notificat
         }
         try {
             getConnectionsManager().resumeNetworkMaybe();
+            boolean morokShowsNotificationNames = MorokAppProfiles.showsNotificationNames(currentAccount);
 
             Object lastNotification = null;
             long maxDate = 0;
@@ -4251,7 +4264,8 @@ public class NotificationsController extends BaseController implements Notificat
             } else {
                 chatName = UserObject.getUserName(user);
             }
-            boolean passcode = AndroidUtilities.needShowPasscode() || SharedConfig.isWaitingForPasscodeEnter;
+            boolean passcode = AndroidUtilities.needShowPasscode() || SharedConfig.isWaitingForPasscodeEnter
+                    || !morokShowsNotificationNames;
             final boolean allowSummary = !"samsung".equalsIgnoreCase(Build.MANUFACTURER);
             if (DialogObject.isEncryptedDialog(dialog_id) || allowSummary && pushDialogs.size() > 1 || passcode) {
                 if (passcode) {
@@ -4273,20 +4287,30 @@ public class NotificationsController extends BaseController implements Notificat
 
             String detailText;
             if (allowSummary) {
-                if (UserConfig.getActivatedAccountsCount() > 1) {
-                    if (pushDialogs.size() == 1) {
-                        detailText = UserObject.getFirstName(getUserConfig().getCurrentUser());
+                if (morokShowsNotificationNames) {
+                    if (UserConfig.getActivatedAccountsCount() > 1) {
+                        if (pushDialogs.size() == 1) {
+                            detailText = UserObject.getFirstName(getUserConfig().getCurrentUser());
+                        } else {
+                            detailText = UserObject.getFirstName(getUserConfig().getCurrentUser()) + "・";
+                        }
                     } else {
-                        detailText = UserObject.getFirstName(getUserConfig().getCurrentUser()) + "・";
+                        detailText = "";
+                    }
+                    if (pushDialogs.size() != 1 || Build.VERSION.SDK_INT < 23) {
+                        if (pushDialogs.size() == 1) {
+                            detailText += LocaleController.formatPluralString("NewMessages", total_unread_count);
+                        } else {
+                            detailText += LocaleController.formatString(R.string.NotificationMessagesPeopleDisplayOrder, LocaleController.formatPluralString("NewMessages", total_unread_count), LocaleController.formatPluralString("FromChats", pushDialogs.size()));
+                        }
                     }
                 } else {
-                    detailText = "";
-                }
-                if (pushDialogs.size() != 1 || Build.VERSION.SDK_INT < 23) {
                     if (pushDialogs.size() == 1) {
-                        detailText += LocaleController.formatPluralString("NewMessages", total_unread_count);
+                        detailText = LocaleController.formatPluralString("NewMessages", total_unread_count);
                     } else {
-                        detailText += LocaleController.formatString(R.string.NotificationMessagesPeopleDisplayOrder, LocaleController.formatPluralString("NewMessages", total_unread_count), LocaleController.formatPluralString("FromChats", pushDialogs.size()));
+                        detailText = LocaleController.formatString(R.string.NotificationMessagesPeopleDisplayOrder,
+                                LocaleController.formatPluralString("NewMessages", total_unread_count),
+                                LocaleController.formatPluralString("FromChats", pushDialogs.size()));
                     }
                 }
             } else {
@@ -4603,7 +4627,8 @@ public class NotificationsController extends BaseController implements Notificat
             Uri sound = null;
 
             mBuilder.setCategory(NotificationCompat.CATEGORY_MESSAGE);
-            if (chat == null && user != null && user.phone != null && user.phone.length() > 0) {
+            if (morokShowsNotificationNames && chat == null && user != null
+                    && user.phone != null && user.phone.length() > 0) {
                 mBuilder.addPerson("tel:+" + user.phone);
             }
 
@@ -4622,9 +4647,9 @@ public class NotificationsController extends BaseController implements Notificat
                 FileLog.e(e);
             }
 
-            if (largeBitmap != null) {
+            if (morokShowsNotificationNames && largeBitmap != null) {
                 mBuilder.setLargeIcon(largeBitmap);
-            } else if (photoPath != null) {
+            } else if (morokShowsNotificationNames && photoPath != null) {
                 BitmapDrawable img = ImageLoader.getInstance().getImageFromMemory(photoPath, null, "50_50");
                 if (img != null) {
                     mBuilder.setLargeIcon(img.getBitmap());
@@ -4729,7 +4754,9 @@ public class NotificationsController extends BaseController implements Notificat
             }
 
             boolean hasCallback = false;
-            if (!AndroidUtilities.needShowPasscode() && !SharedConfig.isWaitingForPasscodeEnter && lastMessageObject.getDialogId() == 777000) {
+            if (morokShowsNotificationNames && !AndroidUtilities.needShowPasscode()
+                    && !SharedConfig.isWaitingForPasscodeEnter
+                    && lastMessageObject.getDialogId() == 777000) {
                 if (lastMessageObject.messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup) {
                     final TLRPC.TL_replyInlineMarkup replyInlineMarkup = (TLRPC.TL_replyInlineMarkup) lastMessageObject.messageOwner.reply_markup;
                     ArrayList<TL_keyboard.KeyboardInlineButtonRow> rows = replyInlineMarkup.rows;
@@ -4754,7 +4781,8 @@ public class NotificationsController extends BaseController implements Notificat
                 }
             }
 
-            if (!hasCallback && Build.VERSION.SDK_INT < 24 && SharedConfig.passcodeHash.length() == 0 && hasMessagesToReply()) {
+            if (morokShowsNotificationNames && !hasCallback && Build.VERSION.SDK_INT < 24
+                    && SharedConfig.passcodeHash.length() == 0 && hasMessagesToReply()) {
                 Intent replyIntent = new Intent(ApplicationLoader.applicationContext, PopupReplyReceiver.class);
                 replyIntent.putExtra("currentAccount", currentAccount);
                 if (Build.VERSION.SDK_INT <= 19) {
@@ -4763,7 +4791,10 @@ public class NotificationsController extends BaseController implements Notificat
                     mBuilder.addAction(R.drawable.ic_ab_reply, LocaleController.getString(R.string.Reply), PendingIntent.getBroadcast(ApplicationLoader.applicationContext, 2, replyIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT));
                 }
             }
-            showExtraNotifications(mBuilder, detailText, dialog_id, topicId, chatName, vibrationPattern, ledColor, sound, configImportance, isDefault, isInApp, notifyDisabled, chatType);
+            showExtraNotifications(mBuilder, detailText, dialog_id, topicId,
+                    morokShowsNotificationNames ? chatName : LocaleController.getString(R.string.AppName),
+                    vibrationPattern, ledColor, sound, configImportance, isDefault, isInApp,
+                    notifyDisabled, chatType);
             scheduleNotificationRepeat();
         } catch (Exception e) {
             FileLog.e(e);
@@ -4831,6 +4862,7 @@ public class NotificationsController extends BaseController implements Notificat
     @SuppressLint("InlinedApi")
     private void showExtraNotifications(NotificationCompat.Builder notificationBuilder, String summary, long lastDialogId, long lastTopicId, String chatName, long[] vibrationPattern, int ledColor, Uri sound, int importance, boolean isDefault, boolean isInApp, boolean isSilent, int chatType) {
         FileLog.d("showExtraNotifications pushMessages.size()=" + pushMessages.size());
+        boolean morokShowsNotificationNames = MorokAppProfiles.showsNotificationNames(currentAccount);
         if (Build.VERSION.SDK_INT >= 26) {
             notificationBuilder.setChannelId(validateChannelId(lastDialogId, lastTopicId, chatName, vibrationPattern, ledColor, sound, importance, isDefault, isInApp, isSilent, chatType));
         }
@@ -4918,7 +4950,9 @@ public class NotificationsController extends BaseController implements Notificat
         }
 
         long selfUserId = getUserConfig().getClientUserId();
-        boolean waitingForPasscode = AndroidUtilities.needShowPasscode() || SharedConfig.isWaitingForPasscodeEnter;
+        boolean systemWaitingForPasscode = AndroidUtilities.needShowPasscode()
+                || SharedConfig.isWaitingForPasscodeEnter;
+        boolean waitingForPasscode = systemWaitingForPasscode || !morokShowsNotificationNames;
         boolean passcode = SharedConfig.passcodeHash.length() > 0;
         FileLog.d("showExtraNotifications: passcode="+passcode+" waitingForPasscode=" + waitingForPasscode + " selfUserId=" + selfUserId + " useSummaryNotification=" + useSummaryNotification);
 
@@ -5642,7 +5676,7 @@ public class NotificationsController extends BaseController implements Notificat
                     if (copybutton != null) break;
                 }
             }
-            if (copybutton != null) {
+            if (!waitingForPasscode && copybutton != null) {
                 Intent copyIntent = new Intent(ApplicationLoader.applicationContext, CopyCodeReceiver.class);
                 copyIntent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
                 copyIntent.setAction("org.telegram.messenger.ACTION_COPY_CODE");
@@ -5657,7 +5691,8 @@ public class NotificationsController extends BaseController implements Notificat
                 if (wearReplyAction != null) {
                     builder.addAction(wearReplyAction);
                 }
-                if (!waitingForPasscode && !dialogKey.story && (lastMessageObject == null || !lastMessageObject.isStoryReactionPush)) {
+                if (!systemWaitingForPasscode && !dialogKey.story
+                        && (lastMessageObject == null || !lastMessageObject.isStoryReactionPush)) {
                     builder.addAction(readAction);
                 }
             }
@@ -5671,7 +5706,7 @@ public class NotificationsController extends BaseController implements Notificat
                 builder.setLargeIcon(avatarBitmap);
             }
 
-            if (!AndroidUtilities.needShowPasscode(false) && !SharedConfig.isWaitingForPasscodeEnter) {
+            if (!waitingForPasscode) {
                 if (rows != null) {
                     for (int r = 0, rc = rows.size(); r < rc; r++) {
                         TL_keyboard.KeyboardInlineButtonRow row = rows.get(r);
@@ -5693,7 +5728,8 @@ public class NotificationsController extends BaseController implements Notificat
                 }
             }
 
-            if (chat == null && user != null && user.phone != null && user.phone.length() > 0) {
+            if (morokShowsNotificationNames && chat == null && user != null
+                    && user.phone != null && user.phone.length() > 0) {
                 builder.addPerson("tel:+" + user.phone);
             }
 

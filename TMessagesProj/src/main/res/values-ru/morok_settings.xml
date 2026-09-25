@@ -175,6 +175,7 @@
     <string name="MorokAppProfilesAnimatedStickersKeyboard">Анимированные стикеры в клавиатуре</string>
     <string name="MorokAppProfilesPrivacy">Поведение приватности</string>
     <string name="MorokAppProfilesNotificationContent">Текст сообщений в уведомлениях</string>
+    <string name="MorokAppProfilesNotificationNames">Имена отправителей и чатов в уведомлениях</string>
     <string name="MorokAppProfilesShown">Показывается</string>
     <string name="MorokAppProfilesHidden">Скрыт</string>
     <string name="MorokAppProfilesNetwork">Сетевой маршрут</string>
@@ -212,7 +213,7 @@
     <string name="MorokInteractionsSaveError">Не удалось сохранить настройку жестов. Параметры из более новой версии Морока оставлены без изменений.</string>
     <string name="MorokSafetyHeader">Безопасность</string>
     <string name="MorokSafetyTitle">Безопасность и защита экрана</string>
-    <string name="MorokSafetyShortcutInfo">Защита захвата экрана, подтверждение исходящих личных звонков и управление текстом сообщений в уведомлениях.</string>
+    <string name="MorokSafetyShortcutInfo">Защита захвата экрана, подтверждение исходящих личных звонков и управление именами и текстом в уведомлениях.</string>
     <string name="MorokSafetyScreenHeader">Защита экрана</string>
     <string name="MorokSafetyScreenPrivacy">Защищать экран Морока</string>
     <string name="MorokSafetyScreenPrivacyInfo">Использует системную защиту окна Android для Морока. Поддерживаемые скриншоты, запись экрана и превью недавних приложений не смогут захватить приложение. Уведомления, другие устройства и системные поверхности вне этого окна не скрываются.</string>
@@ -221,9 +222,12 @@
     <string name="MorokSafetyConfirmCallsInfo">Показывает подтверждение после выдачи нужных разрешений и до запуска Telegram личного аудио- или видеозвонка. Вход и создание группового звонка сохраняют собственные диалоги Telegram.</string>
     <string name="MorokSafetyConfirmRoundVideos">Просматривать кружочки перед отправкой</string>
     <string name="MorokSafetyConfirmRoundVideosInfo">После отпускания кнопки записи открывается штатный предпросмотр Telegram вместо немедленной отправки. Кружочек отправляется только после нажатия кнопки отправки в предпросмотре.</string>
+    <string name="MorokSafetyNotificationNames">Показывать имена отправителей и чатов в уведомлениях</string>
+    <string name="MorokSafetyNotificationNamesInfo">Настройка отдельного аккаунта. Выключение перестраивает активные уведомления с нейтральными именами и содержимым. Пока имена скрыты, не добавляются аватары, Android Person/телефонные метаданные, быстрый ответ и inline-действия. Нажатие уведомления по-прежнему открывает нужный чат.</string>
     <string name="MorokSafetyNotificationContent">Показывать текст сообщений в уведомлениях</string>
-    <string name="MorokSafetyNotificationContentInfo">Настройка отдельного аккаунта. Выключение перестраивает активные уведомления и скрывает содержимое сообщения или истории; имя отправителя и название чата могут остаться видимыми.</string>
-    <string name="MorokSafetyLoginRequired">Войдите в аккаунт, чтобы изменить показ текста в его уведомлениях.</string>
+    <string name="MorokSafetyNotificationContentInfo">Настройка отдельного аккаунта. Выключение перестраивает активные уведомления и скрывает содержимое сообщения или истории. Скрытие имён всегда скрывает и содержимое.</string>
+    <string name="MorokSafetyNotificationNamesRequired">Сначала включите показ имён в уведомлениях, чтобы включить текст сообщений.</string>
+    <string name="MorokSafetyLoginRequired">Войдите в аккаунт, чтобы изменить приватность его уведомлений.</string>
     <string name="MorokSafetyAccessHeader">Доступ к приложению</string>
     <string name="MorokSafetyAppLock">Локальный код-пароль Telegram</string>
     <string name="MorokSafetyAppLockInfo">Открывает существующие настройки локального кода-пароля и биометрии Telegram. Морок не хранит дополнительный пароль.</string>

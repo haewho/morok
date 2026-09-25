@@ -168,6 +168,8 @@ public final class MorokProfilesActivity extends BaseFragment {
         line(result, R.string.MorokAppProfilesAnimatedStickersChat, enabled(state.animatedStickersChat));
         line(result, R.string.MorokAppProfilesAnimatedStickersKeyboard, enabled(state.animatedStickersKeyboard));
         line(result, R.string.MorokAppProfilesPrivacy, privacyName(state.settings.privacy));
+        line(result, R.string.MorokAppProfilesNotificationNames,
+                text(state.notificationNames ? R.string.MorokAppProfilesShown : R.string.MorokAppProfilesHidden));
         line(result, R.string.MorokAppProfilesNotificationContent,
                 text(state.notificationContent ? R.string.MorokAppProfilesShown : R.string.MorokAppProfilesHidden));
         line(result, R.string.MorokRoundVideoTitle, roundVideoName(state.settings.roundVideo));
