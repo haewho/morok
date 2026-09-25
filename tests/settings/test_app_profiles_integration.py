@@ -17,12 +17,23 @@ assert "if (morokShowsNotificationNames && !AndroidUtilities.needShowPasscode()"
 assert "if (morokShowsNotificationNames && !hasCallback" in notifications
 assert "!waitingForPasscode && copybutton != null" in notifications
 assert "if (!waitingForPasscode)" in notifications
+assert "public void refreshMorokNotificationPrivacyLabels()" in notifications
+assert "redactMorokDialogNotificationChannels();" in notifications
+assert "isMorokDialogNotificationChannel(channel.getId())" in notifications
+assert "channel.setName(name);" in notifications
+assert "systemNotificationManager.createNotificationChannel(channel);" in notifications
+assert "MorokAppProfiles.showsNotificationNames(currentAccount) && user != null" in notifications
+assert "systemNotificationManager.createNotificationChannelGroups(channelGroups);" in notifications
+redaction = notifications.split("private void redactMorokDialogNotificationChannels()", 1)[1]
+redaction = redaction.split("private boolean isMorokDialogNotificationChannel", 1)[0]
+assert "deleteNotificationChannel" not in redaction
 for forbidden in ("ConnectionsManager", "MorokProxyManager", "updateServerNotificationsSettings", "sendRequest"):
     assert forbidden not in manager, f"profile manager must not access {forbidden}"
 assert "authenticatedUserId(accountSlot)" in manager
 assert "public static long authenticatedUserId" in settings
 assert manager.index("putString(PREVIOUS") < manager.index("applyState(accountSlot, target")
 assert "NotificationsController.getInstance(accountSlot).showNotifications()" in manager
+assert manager.count("refreshMorokNotificationPrivacyLabels()") == 2
 assert "CURRENT_NOTIFICATION_NAMES" in manager
 assert "setNotificationNames" in manager
 for flag in ("FLAG_AUTOPLAY_VIDEOS", "FLAG_AUTOPLAY_GIFS",

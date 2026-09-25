@@ -3286,6 +3286,19 @@ public class NotificationsController extends BaseController implements Notificat
         notificationsQueue.postRunnable(() -> showOrUpdateNotification(false));
     }
 
+    public void refreshMorokNotificationPrivacyLabels() {
+        notificationsQueue.postRunnable(() -> {
+            if (Build.VERSION.SDK_INT >= 26) {
+                channelGroupsCreated = false;
+                ensureGroupsCreated();
+                if (!MorokAppProfiles.showsNotificationNames(currentAccount)) {
+                    redactMorokDialogNotificationChannels();
+                }
+            }
+            showOrUpdateNotification(false);
+        });
+    }
+
     public void hideNotifications() {
         notificationsQueue.postRunnable(() -> {
             notificationManager.cancel(notificationId);
@@ -3607,6 +3620,46 @@ public class NotificationsController extends BaseController implements Notificat
         });
     }
 
+    @TargetApi(26)
+    private void redactMorokDialogNotificationChannels() {
+        try {
+            CharSequence genericName = LocaleController.getString(R.string.AppName);
+            List<NotificationChannel> channels = systemNotificationManager.getNotificationChannels();
+            for (int index = 0; index < channels.size(); index++) {
+                NotificationChannel channel = channels.get(index);
+                if (isMorokDialogNotificationChannel(channel.getId())) {
+                    updateNotificationChannelName(channel, genericName);
+                }
+            }
+        } catch (Exception error) {
+            FileLog.e(error);
+        }
+    }
+
+    private boolean isMorokDialogNotificationChannel(String channelId) {
+        String prefix = currentAccount + "channel_";
+        if (channelId == null || !channelId.startsWith(prefix)) {
+            return false;
+        }
+        int separator = channelId.indexOf('_', prefix.length());
+        if (separator <= prefix.length()) {
+            return false;
+        }
+        try {
+            return Long.parseLong(channelId.substring(prefix.length(), separator)) != 0;
+        } catch (NumberFormatException invalidDialogId) {
+            return false;
+        }
+    }
+
+    @TargetApi(26)
+    private void updateNotificationChannelName(NotificationChannel channel, CharSequence name) {
+        if (channel != null && name != null && !TextUtils.equals(channel.getName(), name)) {
+            channel.setName(name);
+            systemNotificationManager.createNotificationChannel(channel);
+        }
+    }
+
     private boolean unsupportedNotificationShortcut() {
         return Build.VERSION.SDK_INT < 29 || !SharedConfig.chatBubbles;
     }
@@ -3746,67 +3799,29 @@ public class NotificationsController extends BaseController implements Notificat
             groupsCreated = true;
         }
         if (!channelGroupsCreated) {
-            List<NotificationChannelGroup> list = systemNotificationManager.getNotificationChannelGroups();
-            String channelsId = "channels" + currentAccount;
-            String groupsId = "groups" + currentAccount;
-            String privateId = "private" + currentAccount;
-            String storiesId = "stories" + currentAccount;
-            String reactionsId = "reactions" + currentAccount;
-            String otherId = "other" + currentAccount;
-            for (int a = 0, N = list.size(); a < N; a++) {
-                String id = list.get(a).getId();
-                if (channelsId != null && channelsId.equals(id)) {
-                    channelsId = null;
-                } else if (groupsId != null && groupsId.equals(id)) {
-                    groupsId = null;
-                } else if (storiesId != null && storiesId.equals(id)) {
-                    storiesId = null;
-                } else if (reactionsId != null && reactionsId.equals(id)) {
-                    reactionsId = null;
-                } else if (privateId != null && privateId.equals(id)) {
-                    privateId = null;
-                } else if (otherId != null && otherId.equals(id)) {
-                    otherId = null;
-                }
-                if (channelsId == null && storiesId == null && reactionsId == null && groupsId == null && privateId == null && otherId == null) {
-                    break;
-                }
+            TLRPC.User user = getMessagesController().getUser(getUserConfig().getClientUserId());
+            if (user == null) {
+                user = getUserConfig().getCurrentUser();
+            }
+            String userName = "";
+            if (MorokAppProfiles.showsNotificationNames(currentAccount) && user != null) {
+                userName = " (" + ContactsController.formatName(user.first_name, user.last_name) + ")";
             }
 
-            if (channelsId != null || groupsId != null || reactionsId != null || storiesId != null || privateId != null || otherId != null) {
-                final TLRPC.User user = getMessagesController().getUser(getUserConfig().getClientUserId());
-                if (user == null) {
-                    getUserConfig().getCurrentUser();
-                }
-                String userName;
-                if (user != null) {
-                    userName = " (" + ContactsController.formatName(user.first_name, user.last_name) + ")";
-                } else {
-                    userName = "";
-                }
-
-                final ArrayList<NotificationChannelGroup> channelGroups = new ArrayList<>();
-                if (channelsId != null) {
-                    channelGroups.add(new NotificationChannelGroup(channelsId, LocaleController.getString(R.string.NotificationsChannels) + userName));
-                }
-                if (groupsId != null) {
-                    channelGroups.add(new NotificationChannelGroup(groupsId, LocaleController.getString(R.string.NotificationsGroups) + userName));
-                }
-                if (storiesId != null) {
-                    channelGroups.add(new NotificationChannelGroup(storiesId, LocaleController.getString(R.string.NotificationsStories) + userName));
-                }
-                if (reactionsId != null) {
-                    channelGroups.add(new NotificationChannelGroup(reactionsId, LocaleController.getString(R.string.NotificationsReactions) + userName));
-                }
-                if (privateId != null) {
-                    channelGroups.add(new NotificationChannelGroup(privateId, LocaleController.getString(R.string.NotificationsPrivateChats) + userName));
-                }
-                if (otherId != null) {
-                    channelGroups.add(new NotificationChannelGroup(otherId, LocaleController.getString(R.string.NotificationsOther) + userName));
-                }
-
-                systemNotificationManager.createNotificationChannelGroups(channelGroups);
-            }
+            final ArrayList<NotificationChannelGroup> channelGroups = new ArrayList<>();
+            channelGroups.add(new NotificationChannelGroup("channels" + currentAccount,
+                    LocaleController.getString(R.string.NotificationsChannels) + userName));
+            channelGroups.add(new NotificationChannelGroup("groups" + currentAccount,
+                    LocaleController.getString(R.string.NotificationsGroups) + userName));
+            channelGroups.add(new NotificationChannelGroup("stories" + currentAccount,
+                    LocaleController.getString(R.string.NotificationsStories) + userName));
+            channelGroups.add(new NotificationChannelGroup("reactions" + currentAccount,
+                    LocaleController.getString(R.string.NotificationsReactions) + userName));
+            channelGroups.add(new NotificationChannelGroup("private" + currentAccount,
+                    LocaleController.getString(R.string.NotificationsPrivateChats) + userName));
+            channelGroups.add(new NotificationChannelGroup("other" + currentAccount,
+                    LocaleController.getString(R.string.NotificationsOther) + userName));
+            systemNotificationManager.createNotificationChannelGroups(channelGroups);
 
             channelGroupsCreated = true;
         }
@@ -3885,6 +3900,8 @@ public class NotificationsController extends BaseController implements Notificat
                 FileLog.d("current channel for " + channelId + " = " + existingChannel);
             }
             if (existingChannel != null) {
+                updateNotificationChannelName(existingChannel,
+                        secretChat ? LocaleController.getString(R.string.SecretChatName) : name);
                 if (!isSilent && !shouldOverwrite) {
                     int channelImportance = existingChannel.getImportance();
                     Uri channelSound = existingChannel.getSound();

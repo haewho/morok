@@ -223,7 +223,7 @@
     <string name="MorokSafetyConfirmRoundVideos">Review round videos before sending</string>
     <string name="MorokSafetyConfirmRoundVideosInfo">Releasing the record button opens Telegram’s existing preview instead of sending immediately. The round video is sent only after you press Send in the preview.</string>
     <string name="MorokSafetyNotificationNames">Show sender and chat names in notifications</string>
-    <string name="MorokSafetyNotificationNamesInfo">Account-local. Turning this off rebuilds active notifications with generic identities and content. Avatars, Android Person/phone metadata, notification reply and inline actions are omitted while names are hidden. Tapping the notification still opens the intended chat.</string>
+    <string name="MorokSafetyNotificationNamesInfo">Account-local. Turning this off rebuilds active notifications and immediately renames existing Android channels and account groups with generic labels without changing their sound or vibration settings. Avatars, Person/phone metadata, notification reply and inline actions are omitted. Tapping still opens the intended chat.</string>
     <string name="MorokSafetyNotificationContent">Show message text in notifications</string>
     <string name="MorokSafetyNotificationContentInfo">Account-local. Turning this off rebuilds active notifications and hides message or story content. Hiding names always hides content as well.</string>
     <string name="MorokSafetyNotificationNamesRequired">Enable notification names before enabling message text.</string>

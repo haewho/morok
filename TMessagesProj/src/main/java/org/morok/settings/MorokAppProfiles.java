@@ -81,7 +81,7 @@ public final class MorokAppProfiles {
         if (!preferences(accountSlot).edit().putBoolean(CURRENT_NOTIFICATION_NAMES, showNames).commit()) {
             throw new IllegalStateException("Could not save notification identity privacy setting");
         }
-        NotificationsController.getInstance(accountSlot).showNotifications();
+        NotificationsController.getInstance(accountSlot).refreshMorokNotificationPrivacyLabels();
     }
 
     private static void applyState(int accountSlot, AppProfileState state,
@@ -96,7 +96,7 @@ public final class MorokAppProfiles {
                 .putBoolean(CURRENT_NOTIFICATION_NAMES, state.notificationNames).commit()) {
             throw new IllegalStateException("Could not save notification privacy profile");
         }
-        NotificationsController.getInstance(accountSlot).showNotifications();
+        NotificationsController.getInstance(accountSlot).refreshMorokNotificationPrivacyLabels();
         MorokAppearance.refreshAfterImport(previousAppearance, state.settings.appearance, activity);
     }
 
